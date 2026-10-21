@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Estação Meteorológica — APS</title>
+  <!-- Página PROVISÓRIA do back-end, só para conferir a integração.
+       O front-end (HTML/CSS + gráfico) substitui este arquivo. -->
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+    code { background: #f2f2f2; padding: 2px 4px; border-radius: 4px; }
+    pre { background: #f6f8fa; padding: 1rem; border-radius: 6px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>Estação Meteorológica — API do back-end</h1>
+  <p>Endpoints disponíveis:</p>
+  <ul>
+    <li><code>GET /api/leituras/ultima</code> — leitura mais recente</li>
+    <li><code>GET /api/leituras?limite=100</code> — últimas leituras (ordem cronológica)</li>
+    <li><code>GET /api/leituras/periodo?inicio=2026-10-20T00:00:00&amp;fim=2026-10-20T23:59:59</code></li>
+    <li><code>GET /api/leituras/total</code> — quantidade de leituras</li>
+  </ul>
+  <h2>Última leitura</h2>
+  <pre id="ultima">Carregando...</pre>
+  <script>
+    fetch('/api/leituras/ultima')
+      .then(r => r.json())
+      .then(dados => document.getElementById('ultima').textContent = JSON.stringify(dados, null, 2))
+      .catch(() => document.getElementById('ultima').textContent = 'Não foi possível consultar o servidor.');
+  </script>
+</body>
+</html>
