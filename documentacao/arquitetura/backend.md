@@ -4,9 +4,9 @@
 
 | Módulo | Papel | Pacotes |
 |---|---|---|
-| `compartilhado` | Modelo e acesso a dados usados pelas duas aplicações, e a configuração de banco (`banco.properties`) | `model`, `dao`, `dao.impl`, `util` |
+| `compartilhado` | Modelo, acesso a dados e conexão (`HibernateUtil` + `hibernate.cfg.xml`) usados pelas duas aplicações | `model`, `dao`, `dao.impl`, `config`, `util` |
 | `coletor` | **Aplicação 1:** API Open-Meteo → banco, a cada 10 s | `client`, `service` |
-| `servidor-web` | **Aplicação 2:** banco → navegador (API JSON + página estática) | `controller`, `service`, `dto` |
+| `servidor-web` | **Aplicação 2:** banco → navegador (Servlet com JSON + página em `src/main/webapp`) | `controller`, `service`, `dto` |
 
 Pacote base: `br.edu.unip.aps.meteorologia`.
 
@@ -18,17 +18,20 @@ Open-Meteo → ApiMeteorologicaClient → ColetaMeteorologicaService → Leitura
           → LeituraMeteorologicaDAO → LeituraMeteorologicaDAOImpl (Hibernate) → MySQL
 
 APLICAÇÃO 2 — WEB
-Navegador → LeituraMeteorologicaController → ConsultaMeteorologicaService
+Navegador → LeituraMeteorologicaServlet → ConsultaMeteorologicaService
           → LeituraMeteorologicaDAO → Hibernate → MySQL
 ```
 
 ## Tecnologias e onde aparecem
 
 - **Java 21** + **Maven**.
-- **Spring Boot 3.5**: inicia as aplicações, agenda a coleta (`@Scheduled`), sobe o servidor HTTP e cria a
-  `SessionFactory` do Hibernate a partir do `banco.properties` (faz o papel do `HibernateUtil` do planejamento).
-- **Hibernate 6** (ORM): mapeamento da entidade `LeituraMeteorologica` com anotações JPA; consultas HQL na
-  `LeituraMeteorologicaDAOImpl` usando `org.hibernate.Session`.
+- **Sem framework** (branch `isaque2`): cada aplicação tem um `main` que cria os objetos e os liga.
+- **Hibernate 7.4** (ORM): `hibernate.cfg.xml` + `HibernateUtil` criam a `SessionFactory` única (a URL, o usuário e a
+  senha vêm do `.env` pela classe `Configuracao`). Entidade mapeada com anotações JPA; consultas HQL na
+  `LeituraMeteorologicaDAOImpl`, que abre a `Session`, controla a `Transaction` e fecha a sessão em cada operação.
+- **Agendamento:** `ScheduledExecutorService` do Java, executando a coleta a cada 10 s.
+- **Web:** Servlet (`LeituraMeteorologicaServlet`, Jakarta Servlet 6.1) em um **Tomcat 11 embutido**, que também
+  entrega os arquivos estáticos (`index.html`, `css/`, `js/`).
 - **Padrão DAO**: interface `LeituraMeteorologicaDAO` separada da implementação `LeituraMeteorologicaDAOImpl`.
   Serviços e controller dependem só da interface. Nenhum SQL/Hibernate no controller ou na página.
 - **MySQL 8.4** (via `compose.yaml`) + driver `mysql-connector-j`.
@@ -41,7 +44,7 @@ Navegador → LeituraMeteorologicaController → ConsultaMeteorologicaService
 - **Abstração/polimorfismo:** o código usa o tipo `LeituraMeteorologicaDAO`, e a implementação Hibernate é injetada.
   Dá para trocar a implementação (ex.: um DAO falso nos testes) sem mudar quem usa.
 - **Responsabilidade única:** cada classe tem uma função (cliente HTTP, regra de coleta, acesso a dados, endpoint).
-- **Exceção própria:** `ApiMeteorologicaException` representa falhas recuperáveis da API.
+- **Exceções próprias:** `ApiMeteorologicaException` (falhas recuperáveis da API) e `PersistenciaException` (falhas de banco).
 - **Records** (`RespostaOpenMeteo`, `LeituraMeteorologicaDTO`) para objetos imutáveis de transporte de dados.
 
 ## Modelo de dados — `leitura_meteorologica`
@@ -77,8 +80,9 @@ Navegador → LeituraMeteorologicaController → ConsultaMeteorologicaService
 | `buscarPorPeriodo(LocalDateTime inicio, LocalDateTime fim)` | leituras do intervalo (inclusive), em ordem cronológica |
 | `contar()` | total de leituras |
 
-Transações: cada método roda numa transação gerenciada pelo Spring (`@Transactional`), com commit/rollback e
-fechamento da sessão automáticos. Erros do Hibernate viram `DataAccessException`.
+Sessões e transações: cada método abre uma `Session` pela `HibernateUtil` e a fecha no `finally`. A gravação usa
+`beginTransaction()` → `persist()` → `commit()`, com `rollback()` em caso de erro. Qualquer falha de banco vira
+`PersistenciaException`. Se o MySQL estiver fora do ar, a próxima chamada tenta conectar de novo.
 
 ## Tratamento de erros
 
@@ -90,7 +94,7 @@ fechamento da sessão automáticos. Erros do Hibernate viram `DataAccessExceptio
 | HTTP 429 (limite da API) | `ApiMeteorologicaException` com mensagem específica → log `WARN` |
 | HTTP 4xx/5xx | `ApiMeteorologicaException` com o status → log `WARN` |
 | JSON inválido / sem `current` / sem nenhuma variável | `ApiMeteorologicaException` → log `WARN` |
-| MySQL fora do ar durante a execução | `DataAccessException`/`TransactionException` → log `ERROR` |
+| MySQL fora do ar (na partida ou durante a execução) | `PersistenciaException` → log `SEVERE`; reconecta na coleta seguinte |
 
 Os logs não mostram credenciais.
 
@@ -132,5 +136,5 @@ Exemplo de leitura (resposta real do teste ponta a ponta):
 }
 ```
 
-Os arquivos do front-end (HTML, CSS, JS do gráfico) ficam em `servidor-web/src/main/resources/static/`
-(`index.html`, `css/`, `js/`) e são servidos pelo próprio servidor web. O `index.html` atual é provisório.
+Os arquivos do front-end (HTML, CSS, JS do gráfico) ficam em `servidor-web/src/main/webapp/`
+(`index.html`, `css/`, `js/`) e são servidos pelo próprio servidor web. Os arquivos atuais são provisórios.

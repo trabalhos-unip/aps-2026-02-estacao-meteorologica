@@ -8,7 +8,7 @@ import br.edu.unip.aps.meteorologia.dao.LeituraMeteorologicaDAO;
 import br.edu.unip.aps.meteorologia.model.LeituraMeteorologica;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.dao.DataAccessResourceFailureException;
+import br.edu.unip.aps.meteorologia.dao.PersistenciaException;
 
 import java.time.LocalDateTime;
 
@@ -103,7 +103,7 @@ class ColetaMeteorologicaServiceTest {
     @Test
     void falhaDoBancoNaoDerrubaOColetor() {
         when(client.buscarCondicoesAtuais()).thenReturn(new RespostaOpenMeteo(-23.5, -46.6, "America/Sao_Paulo", CONDICOES));
-        when(dao.salvar(any())).thenThrow(new DataAccessResourceFailureException("MySQL indisponível"));
+        when(dao.salvar(any())).thenThrow(new PersistenciaException("MySQL indisponível", null));
 
         assertThatCode(service::executarColeta).doesNotThrowAnyException();
     }

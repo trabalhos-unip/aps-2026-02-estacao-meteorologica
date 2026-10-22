@@ -2,8 +2,6 @@ package br.edu.unip.aps.meteorologia.client;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.URI;
@@ -20,7 +18,6 @@ import java.util.Locale;
  * Faz a comunicação HTTP com a Forecast API da Open-Meteo (não exige chave de API).
  * Todas as variáveis são pedidas numa única requisição por ciclo de coleta.
  */
-@Component
 public class ApiMeteorologicaClient {
 
     static final String VARIAVEIS =
@@ -32,11 +29,11 @@ public class ApiMeteorologicaClient {
     private final Duration timeout;
 
     public ApiMeteorologicaClient(ObjectMapper objectMapper,
-                                  @Value("${openmeteo.url}") String urlBase,
-                                  @Value("${openmeteo.latitude}") double latitude,
-                                  @Value("${openmeteo.longitude}") double longitude,
-                                  @Value("${openmeteo.timezone}") String timezone,
-                                  @Value("${openmeteo.timeout-segundos:10}") int timeoutSegundos) {
+                                  String urlBase,
+                                  double latitude,
+                                  double longitude,
+                                  String timezone,
+                                  int timeoutSegundos) {
         this.objectMapper = objectMapper;
         this.timeout = Duration.ofSeconds(timeoutSegundos);
         this.httpClient = HttpClient.newBuilder().connectTimeout(timeout).build();
@@ -92,7 +89,7 @@ public class ApiMeteorologicaClient {
         return resposta;
     }
 
-    URI getUri() {
+    public URI getUri() {
         return uri;
     }
 }

@@ -3,8 +3,8 @@
 -- br.edu.unip.aps.meteorologia.model.LeituraMeteorologica (módulo compartilhado).
 --
 -- Proposta inicial do back-end para revisão do responsável pelo banco.
--- Enquanto spring.jpa.hibernate.ddl-auto=update, o Hibernate cria esta tabela sozinho;
--- depois de aprovado este script, mude para "validate" em compartilhado/src/main/resources/banco.properties.
+-- Enquanto hibernate.hbm2ddl.auto=update, o Hibernate cria esta tabela sozinho;
+-- depois de aprovado este script, mude para "validate" em compartilhado/src/main/resources/hibernate.cfg.xml.
 
 CREATE DATABASE IF NOT EXISTS estacao_meteorologica
     CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

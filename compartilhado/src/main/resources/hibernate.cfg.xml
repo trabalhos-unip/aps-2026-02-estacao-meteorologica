@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+
+<!--
+    Configuração do Hibernate, lida pelo HibernateUtil (configuration.configure()).
+    A URL, o usuário e a SENHA do MySQL NÃO ficam aqui, porque este arquivo vai para o GitHub:
+    o HibernateUtil completa esses valores a partir do arquivo .env (veja .env.exemplo).
+-->
+<hibernate-configuration>
+    <session-factory>
+        <property name="hibernate.connection.driver_class">com.mysql.cj.jdbc.Driver</property>
+        <property name="hibernate.connection.pool_size">5</property>
+
+        <!-- update: cria/ajusta a tabela automaticamente. Depois de aprovado o database/schema.sql, usar "validate". -->
+        <property name="hibernate.hbm2ddl.auto">update</property>
+        <property name="hibernate.show_sql">false</property>
+
+        <mapping class="br.edu.unip.aps.meteorologia.model.LeituraMeteorologica"/>
+    </session-factory>
+</hibernate-configuration>

@@ -2,7 +2,6 @@ package br.edu.unip.aps.meteorologia.service;
 
 import br.edu.unip.aps.meteorologia.dao.LeituraMeteorologicaDAO;
 import br.edu.unip.aps.meteorologia.dto.LeituraMeteorologicaDTO;
-import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -10,7 +9,6 @@ import java.util.List;
 import java.util.Optional;
 
 /** Caso de uso da consulta: valida os parâmetros, busca pelo DAO e converte para o formato da página. */
-@Service
 public class ConsultaMeteorologicaService {
 
     /** Limite de registros por consulta, para a página não pedir o banco inteiro. */

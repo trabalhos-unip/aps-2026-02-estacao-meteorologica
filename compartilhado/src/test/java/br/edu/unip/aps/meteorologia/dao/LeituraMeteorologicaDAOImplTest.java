@@ -1,26 +1,53 @@
 package br.edu.unip.aps.meteorologia.dao;
 
+import br.edu.unip.aps.meteorologia.config.HibernateUtil;
 import br.edu.unip.aps.meteorologia.dao.impl.LeituraMeteorologicaDAOImpl;
 import br.edu.unip.aps.meteorologia.model.LeituraMeteorologica;
+import org.hibernate.Session;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.context.annotation.Import;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DataJpaTest
-@Import(LeituraMeteorologicaDAOImpl.class)
+/** Testa o DAO real (HibernateUtil + hibernate.cfg.xml) trocando o MySQL por H2 em memória. */
 class LeituraMeteorologicaDAOImplTest {
 
     private static final LocalDateTime BASE = LocalDateTime.of(2026, 10, 20, 14, 0, 0);
+    private static final Map<String, String> BANCO_DE_TESTE = Map.of(
+            "hibernate.connection.driver_class", "org.h2.Driver",
+            "hibernate.connection.url", "jdbc:h2:mem:teste;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
+            "hibernate.connection.username", "sa",
+            "hibernate.connection.password", "",
+            "hibernate.hbm2ddl.auto", "create-drop");
 
-    @Autowired
-    private LeituraMeteorologicaDAO dao;
+    private final LeituraMeteorologicaDAO dao = new LeituraMeteorologicaDAOImpl();
+
+    @BeforeAll
+    static void usarBancoDeTeste() {
+        BANCO_DE_TESTE.forEach(System::setProperty);
+    }
+
+    @AfterAll
+    static void encerrar() {
+        HibernateUtil.fechar();
+        BANCO_DE_TESTE.keySet().forEach(System::clearProperty);
+    }
+
+    @BeforeEach
+    void limparTabela() {
+        try (Session sessao = HibernateUtil.getSessionFactory().openSession()) {
+            sessao.beginTransaction();
+            sessao.createMutationQuery("delete from LeituraMeteorologica").executeUpdate();
+            sessao.getTransaction().commit();
+        }
+    }
 
     private LeituraMeteorologica leitura(LocalDateTime coleta, Double temperatura) {
         LeituraMeteorologica l = new LeituraMeteorologica();
