@@ -1,0 +1,6 @@
+/* Estilo PROVISÓRIO — substituir pelo layout do front-end. */
+body { font-family: system-ui, sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+code { background: #f2f2f2; padding: 2px 4px; border-radius: 4px; }
+pre { background: #f6f8fa; padding: 1rem; border-radius: 6px; overflow-x: auto; }
+.aviso { padding: 1rem; border: 1px dashed #bbb; border-radius: 6px; color: #666; }
+.fonte { font-size: 0.85rem; color: #666; }

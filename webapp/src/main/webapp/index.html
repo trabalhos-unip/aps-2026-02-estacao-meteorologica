@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Estação Meteorológica — APS</title>
+  <!-- Página PROVISÓRIA do back-end, só para conferir a integração.
+       O front-end (painel + gráfico) substitui este arquivo, css/style.css e js/. -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <h1>Estação Meteorológica</h1>
+
+  <section>
+    <h2>Última leitura</h2>
+    <pre id="ultima">Carregando...</pre>
+  </section>
+
+  <section>
+    <h2>Gráfico</h2>
+    <div id="grafico" class="aviso">Gráfico temporal: a ser implementado em js/grafico.js.</div>
+  </section>
+
+  <section>
+    <h2>Endpoints do back-end</h2>
+    <ul>
+      <li><code>GET /api/leituras/ultima</code> — leitura mais recente</li>
+      <li><code>GET /api/leituras?limite=100</code> — últimas leituras (ordem cronológica)</li>
+      <li><code>GET /api/leituras/periodo?inicio=2026-10-20T00:00:00&amp;fim=2026-10-20T23:59:59</code></li>
+      <li><code>GET /api/leituras/total</code> — quantidade de leituras</li>
+    </ul>
+  </section>
+
+  <p class="fonte">Dados meteorológicos: <a href="https://open-meteo.com/">Open-Meteo.com</a></p>
+
+  <script src="js/grafico.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
