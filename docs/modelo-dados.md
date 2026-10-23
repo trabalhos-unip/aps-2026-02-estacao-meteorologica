@@ -17,15 +17,25 @@ DDL: [`database/schema.sql`](../database/schema.sql) · Dados de teste: [`databa
 | `chuva` | `chuva` | `DOUBLE` | `current.rain` | mm |
 | `velocidadeVento` | `velocidade_vento` | `DOUBLE` | `current.wind_speed_10m` | km/h |
 | `codigoClima` | `codigo_clima` | `INT` | `current.weather_code` | código WMO |
+| `latitude` | `latitude` | `DOUBLE` | `latitude` da resposta (ponto de grade do modelo) | graus |
+| `longitude` | `longitude` | `DOUBLE` | `longitude` da resposta | graus |
+| `modoOperacao` | `modo_operacao` | `VARCHAR(10) NOT NULL DEFAULT 'REAL'` | `REAL` (Open-Meteo) ou `SIMULADO` (simulador) | — |
 | `presencaPrecipitacao` | `presenca_precipitacao` | `BIT(1)` | **derivado** (ver regra) | sim/não |
-| `fonteDados` | `fonte_dados` | `VARCHAR(50) NOT NULL` | fixo `"Open-Meteo"` | — |
+| `fonteDados` | `fonte_dados` | `VARCHAR(50) NOT NULL` | `"Open-Meteo"` ou `"Simulador"` | — |
 
-Índice `idx_leitura_data_hora_coleta` em `data_hora_coleta`, usado nas consultas ordenadas por tempo.
+Índices: `idx_leitura_data_hora_coleta` (`data_hora_coleta`), para as consultas ordenadas por tempo, e
+`idx_leitura_modo_data_hora` (`modo_operacao`, `data_hora_coleta`), para o histórico filtrado por modo.
 
 `descricaoClima` (ex.: "Nublado") **não é coluna**: é calculada a partir de `codigoClima` (`@Transient`) e enviada à página.
 
 ## Decisões
 
+- **Nomes dos campos novos (`latitude`, `longitude`, `modoOperacao`):** proposta inicial do back-end, a confirmar
+  com o responsável pelo banco.
+- **Coordenadas:** no modo REAL são as que a Open-Meteo devolve (o ponto de grade do modelo, ex.: -23.514938 /
+  -46.610504), que podem diferir um pouco das configuradas. No modo SIMULADO são as coordenadas configuradas.
+- **Modo de operação:** gravado como texto (`REAL`/`SIMULADO`) para ficar legível no banco. Leituras simuladas
+  nunca se misturam às reais sem identificação: a página pode filtrar por modo.
 - **Dois horários:** a Open-Meteo atualiza as condições atuais a cada **15 minutos** (`current.interval = 900`).
   Coletando a cada 10 s, várias linhas seguidas têm o mesmo `data_hora_fonte` e os mesmos valores. Isso é
   esperado: não são novas medições físicas, é o ritmo de execução exigido pelo enunciado para teste.
@@ -46,7 +56,11 @@ DDL: [`database/schema.sql`](../database/schema.sql) · Dados de teste: [`databa
 | Método | Uso |
 |---|---|
 | `salvar(LeituraMeteorologica leitura)` | collector grava cada coleta |
-| `buscarUltima()` | painel: valores mais recentes |
-| `buscarUltimas(int limite)` | gráfico/histórico, em ordem cronológica |
-| `buscarPorPeriodo(LocalDateTime dataInicio, LocalDateTime dataFim)` | histórico filtrado por período |
+| `buscarUltima(ModoOperacao modo)` | painel: valores mais recentes |
+| `buscarUltimas(int limite, ModoOperacao modo)` | gráfico/histórico, em ordem cronológica |
+| `buscarPorPeriodo(LocalDateTime dataInicio, LocalDateTime dataFim, ModoOperacao modo, int limite)` | histórico filtrado por período (as `limite` mais recentes do período, em ordem cronológica) |
+
 | `contar()` | total de leituras |
+
+`modo = null` significa "todos os modos". As versões sem modo do contrato original (`buscarUltima()`,
+`buscarUltimas(int)`, `buscarPorPeriodo(inicio, fim)`) continuam disponíveis.

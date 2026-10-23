@@ -24,10 +24,11 @@
   <section>
     <h2>Endpoints do back-end</h2>
     <ul>
-      <li><code>GET /api/leituras/ultima</code> — leitura mais recente</li>
-      <li><code>GET /api/leituras?limite=100</code> — últimas leituras (ordem cronológica)</li>
-      <li><code>GET /api/leituras/periodo?inicio=2026-10-20T00:00:00&amp;fim=2026-10-20T23:59:59</code></li>
+      <li><code>GET /api/leituras/ultima?modo=REAL</code> — leitura mais recente</li>
+      <li><code>GET /api/leituras?limite=100&amp;modo=REAL</code> — últimas leituras (ordem cronológica)</li>
+      <li><code>GET /api/leituras/periodo?inicio=2026-10-20T00:00:00&amp;fim=2026-10-20T23:59:59&amp;modo=SIMULADO&amp;limite=1000</code> — máx. 31 dias e 1000 registros</li>
       <li><code>GET /api/leituras/total</code> — quantidade de leituras</li>
+      <li><code>modo</code> é opcional: <code>REAL</code>, <code>SIMULADO</code> ou ausente (os dois)</li>
     </ul>
   </section>
 

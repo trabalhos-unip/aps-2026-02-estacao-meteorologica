@@ -44,7 +44,8 @@ aps-2026-02-estacao-meteorologica/
 │       │   │   │   ├── HibernateUtil.java
 │       │   │   │   └── Configuracao.java          # lê o .env (usuário/senha do banco)
 │       │   │   ├── model/
-│       │   │   │   └── LeituraMeteorologica.java
+│       │   │   │   ├── LeituraMeteorologica.java
+│       │   │   │   └── ModoOperacao.java              # REAL ou SIMULADO
 │       │   │   ├── dao/
 │       │   │   │   ├── LeituraMeteorologicaDAO.java
 │       │   │   │   ├── PersistenciaException.java
@@ -65,13 +66,16 @@ aps-2026-02-estacao-meteorologica/
 │       │   │   ├── service/
 │       │   │   │   └── ColetaMeteorologicaService.java
 │       │   │   ├── client/
-│       │   │   │   ├── ApiMeteorologicaClient.java
+│       │   │   │   ├── FonteMeteorologica.java       # interface: de onde vêm os dados
+│       │   │   │   ├── SimuladorMeteorologico.java   # fonte SIMULADA (cenários de teste)
+│       │   │   │   ├── CenarioSimulado.java
+│       │   │   │   ├── ApiMeteorologicaClient.java   # fonte REAL (Open-Meteo)
 │       │   │   │   ├── ApiMeteorologicaException.java
 │       │   │   │   └── RespostaOpenMeteo.java     # formato do JSON da Open-Meteo
 │       │   │   └── util/
 │       │   │       └── DataHoraUtil.java
 │       │   └── resources/
-│       │       └── application.properties         # coordenadas e intervalo de coleta
+│       │       └── application.properties         # coordenadas, intervalo e modo de coleta
 │       └── test/
 ├── webapp/                           # Aplicação 2: banco → navegador
 │   ├── pom.xml
@@ -106,9 +110,9 @@ aps-2026-02-estacao-meteorologica/
 
 ```text
 APLICAÇÃO 1 — COLETOR (collector)
-API Open-Meteo
+API Open-Meteo                  (ou SimuladorMeteorologico, no modo SIMULADO)
        ↓  HTTP GET (java.net.http.HttpClient)
-ApiMeteorologicaClient          → valida status HTTP e JSON
+ApiMeteorologicaClient          → valida status HTTP e JSON   (implementa FonteMeteorologica)
        ↓
 ColetaMeteorologicaService      → converte, calcula presença de precipitação  (@Scheduled a cada 10 s)
        ↓
@@ -135,7 +139,7 @@ Navegador → LeituraMeteorologicaServlet → ConsultaMeteorologicaService → D
 | `model/` | `LeituraMeteorologica` | Uma leitura meteorológica como objeto Java, mapeada para a tabela `leitura_meteorologica`. |
 | `dao/` | `LeituraMeteorologicaDAO` | Contrato (interface) de acesso aos dados. |
 | `dao/impl/` | `LeituraMeteorologicaDAOImpl` | Implementação com Hibernate: abre a sessão, controla a transação, fecha a sessão. Todo acesso ao banco está aqui. |
-| `client/` | `ApiMeteorologicaClient` | Comunicação HTTP com a Open-Meteo e leitura do JSON. |
+| `client/` | `FonteMeteorologica`, `ApiMeteorologicaClient`, `SimuladorMeteorologico` | Origem dos dados: Open-Meteo via HTTP (REAL) ou cenários de teste (SIMULADO). |
 | `service/` | `ColetaMeteorologicaService`, `ConsultaMeteorologicaService` | Regras dos casos de uso: obter/converter/salvar e validar/consultar. |
 | `controller/` | `LeituraMeteorologicaServlet` | Recebe a requisição Web, chama o serviço e devolve JSON. Sem SQL nem Hibernate. |
 | `util/` | `DataHoraUtil`, `CodigoClimaWMO` | Funções auxiliares de data/hora e tradução do código do clima. |
@@ -164,6 +168,7 @@ substitui nenhum desses itens. O Hibernate e o DAO continuam explícitos no cód
 | Criar os objetos e ligá-los (client → service → DAO) | Spring Boot (injeção de dependência) | `@Service`, `@Component`, `@Bean`, construtores |
 | Ler configurações (coordenadas, intervalo, porta) | Spring Boot | `application.properties` + `.env`, `@Value` |
 | Executar a coleta a cada 10 segundos | Spring Boot (agendador) | `@EnableScheduling` + `@Scheduled(fixedDelayString = "${coleta.intervalo-ms}")` |
+| Escolher a fonte (API real ou simulador) | Spring Boot | `@ConditionalOnProperty(name = "coleta.modo", ...)` |
 | Servidor web (Tomcat embutido) | Spring Boot | `spring-boot-starter-web` |
 | Registrar o Servlet em `/api/leituras/*` | Spring Boot | `ServletRegistrationBean` em `WebappApplication` |
 | Entregar `index.html`, `css/`, `js/` | Spring Boot | pasta `webapp/src/main/webapp` (copiada para `static` no build) |
@@ -227,6 +232,7 @@ public class CollectorApplication {
 | `@Bean` | métodos em `app/` | Cria manualmente um objeto que o Spring passa a gerenciar (DAO e Servlet). |
 | `@Value("${...}")` | construtor do `ApiMeteorologicaClient`, `ColetaMeteorologicaService` | Injeta um valor do `application.properties`/`.env`. |
 | `@PreDestroy` | `app/` | Método executado ao encerrar a aplicação (fecha o Hibernate). |
+| `@ConditionalOnProperty` | `ApiMeteorologicaClient`, `SimuladorMeteorologico` | Cria o objeto só quando `coleta.modo` tem o valor indicado (REAL é o padrão). |
 
 ### 4.5 Configurações (`application.properties` + `.env`)
 
@@ -237,6 +243,8 @@ da raiz do projeto. As propriedades usam `${VARIAVEL:padrão}`:
 |---|---|---|
 | `openmeteo.latitude` / `openmeteo.longitude` | `OPENMETEO_LATITUDE` / `OPENMETEO_LONGITUDE` | São Paulo (-23.5505 / -46.6333) |
 | `coleta.intervalo-ms` | `COLETA_INTERVALO_MS` | 10000 |
+| `coleta.modo` | `COLETA_MODO` | `REAL` (ou `SIMULADO`) |
+| `coleta.cenario` | `COLETA_CENARIO` | vazio = alterna os cenários (ou `TEMPO_SECO`, `CHUVA_FORTE`, `VENTO_FORTE`, `DADOS_INCOMPLETOS`) |
 | `server.port` (webapp) | `SERVIDOR_PORTA` | 8080 |
 
 Os dados do banco (`MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`) são lidos pela
@@ -297,22 +305,28 @@ de abrir/fechar sessão.
 | Método | Retorno |
 |---|---|
 | `salvar(LeituraMeteorologica)` | a leitura com `id` preenchido |
-| `buscarUltima()` | `Optional` com a leitura mais recente |
-| `buscarUltimas(int limite)` | as N mais recentes, **em ordem cronológica** (da mais antiga para a mais recente) |
-| `buscarPorPeriodo(LocalDateTime inicio, LocalDateTime fim)` | leituras do intervalo (inclusive), em ordem cronológica |
+| `buscarUltima(ModoOperacao modo)` | `Optional` com a leitura mais recente |
+| `buscarUltimas(int limite, ModoOperacao modo)` | as N mais recentes, **em ordem cronológica** (da mais antiga para a mais recente) |
+| `buscarPorPeriodo(LocalDateTime inicio, LocalDateTime fim, ModoOperacao modo, int limite)` | leituras do intervalo (inclusive), em ordem cronológica; se passar do limite, as mais recentes do período |
 | `contar()` | total de leituras |
+
+`modo = null` = todos os modos. As versões do contrato original sem modo (`buscarUltima()`, `buscarUltimas(int)`,
+`buscarPorPeriodo(inicio, fim)`) continuam disponíveis como métodos `default` da interface.
 
 ---
 
 ## 6. Orientação a objetos aplicada
 
 - **Encapsulamento:** atributos privados na entidade, acesso por getters/setters.
-- **Abstração e polimorfismo:** serviços dependem da interface `LeituraMeteorologicaDAO`; a implementação
-  Hibernate é entregue pelo Spring. Nos testes, o DAO é trocado por um simulado sem mudar o serviço.
+- **Abstração e polimorfismo:** serviços dependem das interfaces `LeituraMeteorologicaDAO` e `FonteMeteorologica`.
+  O `ColetaMeteorologicaService` não sabe se os dados vêm da Open-Meteo (`ApiMeteorologicaClient`) ou do
+  `SimuladorMeteorologico`; os dois seguem o mesmo caminho de validação e gravação. Nos testes, o DAO é trocado
+  por um simulado sem mudar o serviço.
 - **Herança:** `LeituraMeteorologicaServlet extends HttpServlet`; exceções próprias estendem `RuntimeException`.
 - **Responsabilidade única:** cada classe tem uma função (cliente HTTP, regra de coleta, acesso a dados, Servlet).
 - **Exceções próprias:** `ApiMeteorologicaException` (falhas recuperáveis da API) e `PersistenciaException` (banco).
 - **Records** (`RespostaOpenMeteo`, `ErroResposta`) para objetos imutáveis de transporte de dados.
+- **Enums** (`ModoOperacao`, `CenarioSimulado`) para valores fixos com significado.
 
 ## 7. Tratamento de erros
 
@@ -333,7 +347,7 @@ Os logs não mostram credenciais.
 | Situação | HTTP |
 |---|---|
 | Banco sem leituras (`/ultima`) | 404 `"Nenhuma leitura registrada ainda"` |
-| Parâmetro inválido/ausente | 400 |
+| Parâmetro inválido/ausente (inclui `modo` diferente de REAL/SIMULADO, limite fora de 1–1000, período > 31 dias) | 400 |
 | MySQL indisponível | 503 `"Banco de dados indisponível no momento"` |
 | Erro inesperado | 500 |
 
@@ -343,10 +357,12 @@ Base: `http://localhost:8080`. Datas em ISO 8601 (`2026-10-20T22:20:05`). Campos
 
 | Endpoint | Descrição |
 |---|---|
-| `GET /api/leituras/ultima` | leitura mais recente (404 se vazio) |
-| `GET /api/leituras?limite=100` | últimas N leituras (1–1000, padrão 100), **já em ordem cronológica** para o gráfico; `[]` se vazio |
-| `GET /api/leituras/periodo?inicio=2026-10-20T00:00:00&fim=2026-10-20T23:59:59` | leituras do período (máx. 31 dias) |
+| `GET /api/leituras/ultima?modo=REAL` | leitura mais recente (404 se vazio) |
+| `GET /api/leituras?limite=100&modo=REAL` | últimas N leituras (1–1000, padrão 100), **já em ordem cronológica** para o gráfico; `[]` se vazio |
+| `GET /api/leituras/periodo?inicio=2026-10-20T00:00:00&fim=2026-10-20T23:59:59&modo=SIMULADO&limite=500` | leituras do período: máx. **31 dias** e **1000 registros** (padrão 1000; acima disso vêm as mais recentes do período) |
 | `GET /api/leituras/total` | `{"total": 123}` |
+
+`modo` é opcional em todos: `REAL`, `SIMULADO` (maiúsculas ou minúsculas) ou ausente = os dois.
 
 Exemplo de leitura:
 
@@ -361,6 +377,9 @@ Exemplo de leitura:
   "chuva": 0.0,
   "velocidadeVento": 9.9,
   "codigoClima": 3,
+  "latitude": -23.514938,
+  "longitude": -46.610504,
+  "modoOperacao": "REAL",
   "presencaPrecipitacao": false,
   "fonteDados": "Open-Meteo",
   "descricaoClima": "Nublado"

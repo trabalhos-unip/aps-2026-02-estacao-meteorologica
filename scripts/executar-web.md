@@ -28,6 +28,9 @@ Depois abra <http://localhost:8080>. Para parar: `Ctrl+C`.
 | <http://localhost:8080> | página com a última leitura e o gráfico |
 | <http://localhost:8080/api/leituras/ultima> | JSON da leitura mais recente (ou `"Nenhuma leitura registrada ainda"`, HTTP 404) |
 | <http://localhost:8080/api/leituras?limite=20> | JSON com as 20 últimas leituras, em ordem cronológica |
+| <http://localhost:8080/api/leituras?modo=REAL> | só leituras reais (Open-Meteo) |
+| <http://localhost:8080/api/leituras?modo=SIMULADO> | só leituras simuladas (cenários de teste) |
+| <http://localhost:8080/api/leituras/periodo?inicio=2026-10-20T00:00:00&fim=2026-10-20T23:59:59> | leituras do período (máx. 31 dias e 1000 registros; aceita `modo` e `limite`) |
 | <http://localhost:8080/api/leituras/total> | `{"total": N}` |
 
 Se aparecer `"Banco de dados indisponível no momento"` (HTTP 503), confira se o MySQL está rodando e o `.env`.

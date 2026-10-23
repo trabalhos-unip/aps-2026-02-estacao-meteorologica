@@ -1,7 +1,8 @@
 package br.com.aps.meteorologia.service;
 
-import br.com.aps.meteorologia.client.ApiMeteorologicaClient;
 import br.com.aps.meteorologia.client.ApiMeteorologicaException;
+import br.com.aps.meteorologia.client.FonteMeteorologica;
+import br.com.aps.meteorologia.client.RespostaOpenMeteo;
 import br.com.aps.meteorologia.client.RespostaOpenMeteo.CondicoesAtuais;
 import br.com.aps.meteorologia.dao.LeituraMeteorologicaDAO;
 import br.com.aps.meteorologia.dao.PersistenciaException;
@@ -17,8 +18,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 
 /**
- * Caso de uso da coleta: obtém os dados da API, converte para {@link LeituraMeteorologica}
- * e salva pelo DAO. Executado a cada {@code coleta.intervalo-ms} (10 segundos, conforme o enunciado).
+ * Caso de uso da coleta: obtém os dados da fonte (API real ou simulador), converte para
+ * {@link LeituraMeteorologica} e salva pelo DAO. Executado a cada {@code coleta.intervalo-ms} (10 segundos, conforme o enunciado).
  *
  * <p>A Open-Meteo atualiza as condições atuais a cada 15 minutos; por isso várias coletas seguidas
  * podem ter o mesmo {@code dataHoraFonte} e os mesmos valores. Isso é esperado.
@@ -28,14 +29,14 @@ public class ColetaMeteorologicaService {
 
     private static final Logger log = LoggerFactory.getLogger(ColetaMeteorologicaService.class);
 
-    private final ApiMeteorologicaClient client;
+    private final FonteMeteorologica fonte;
     private final LeituraMeteorologicaDAO dao;
     private final ZoneId zona;
 
-    public ColetaMeteorologicaService(ApiMeteorologicaClient client,
+    public ColetaMeteorologicaService(FonteMeteorologica fonte,
                                       LeituraMeteorologicaDAO dao,
                                       @Value("${openmeteo.timezone}") String timezone) {
-        this.client = client;
+        this.fonte = fonte;
         this.dao = dao;
         this.zona = ZoneId.of(timezone);
     }
@@ -48,12 +49,12 @@ public class ColetaMeteorologicaService {
     public void executarColeta() {
         try {
             LeituraMeteorologica leitura = coletar();
-            log.info("Leitura #{} salva | coleta={} fonte={} | {} °C, {} %, precip. {} mm, chuva {} mm, vento {} km/h, código WMO {}",
-                    leitura.getId(), leitura.getDataHoraColeta(), leitura.getDataHoraFonte(),
+            log.info("Leitura #{} salva [{}] | coleta={} fonte={} | {} °C, {} %, precip. {} mm, chuva {} mm, vento {} km/h, código WMO {}",
+                    leitura.getId(), leitura.getModoOperacao(), leitura.getDataHoraColeta(), leitura.getDataHoraFonte(),
                     leitura.getTemperatura(), leitura.getUmidadeRelativa(), leitura.getPrecipitacao(),
                     leitura.getChuva(), leitura.getVelocidadeVento(), leitura.getCodigoClima());
         } catch (ApiMeteorologicaException e) {
-            log.warn("Coleta ignorada — falha na API: {}", e.getMessage());
+            log.warn("Coleta ignorada — falha na fonte de dados ({}): {}", fonte.nomeFonte(), e.getMessage());
         } catch (PersistenciaException e) {
             log.error("Coleta ignorada — falha no banco de dados: {}", e.getMessage());
         } catch (RuntimeException e) {
@@ -61,10 +62,14 @@ public class ColetaMeteorologicaService {
         }
     }
 
-    /** Executa uma coleta completa (API → conversão → banco) e devolve a leitura gravada. */
+    /** Executa uma coleta completa (fonte → conversão → banco) e devolve a leitura gravada. */
     public LeituraMeteorologica coletar() {
-        CondicoesAtuais atuais = client.buscarCondicoesAtuais().current();
-        LeituraMeteorologica leitura = converter(atuais, DataHoraUtil.agora(zona));
+        RespostaOpenMeteo resposta = fonte.buscarCondicoesAtuais();
+        LeituraMeteorologica leitura = converter(resposta.current(), DataHoraUtil.agora(zona));
+        leitura.setLatitude(resposta.latitude());
+        leitura.setLongitude(resposta.longitude());
+        leitura.setModoOperacao(fonte.modo());
+        leitura.setFonteDados(fonte.nomeFonte());
         return dao.salvar(leitura);
     }
 

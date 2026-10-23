@@ -4,8 +4,10 @@ import br.com.aps.meteorologia.config.HibernateUtil;
 import br.com.aps.meteorologia.dao.LeituraMeteorologicaDAO;
 import br.com.aps.meteorologia.dao.PersistenciaException;
 import br.com.aps.meteorologia.model.LeituraMeteorologica;
+import br.com.aps.meteorologia.model.ModoOperacao;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import org.hibernate.query.Query;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -44,13 +46,11 @@ public class LeituraMeteorologicaDAOImpl implements LeituraMeteorologicaDAO {
     }
 
     @Override
-    public Optional<LeituraMeteorologica> buscarUltima() {
+    public Optional<LeituraMeteorologica> buscarUltima(ModoOperacao modo) {
         Session sessao = null;
         try {
             sessao = HibernateUtil.getSessionFactory().openSession();
-            return sessao
-                    .createQuery("from LeituraMeteorologica l order by l.dataHoraColeta desc, l.id desc",
-                            LeituraMeteorologica.class)
+            return consulta(sessao, filtroModo("", modo) + " order by l.dataHoraColeta desc, l.id desc", modo)
                     .setMaxResults(1)
                     .uniqueResultOptional();
         } catch (RuntimeException e) {
@@ -61,21 +61,16 @@ public class LeituraMeteorologicaDAOImpl implements LeituraMeteorologicaDAO {
     }
 
     @Override
-    public List<LeituraMeteorologica> buscarUltimas(int limite) {
-        if (limite <= 0) {
-            throw new IllegalArgumentException("O limite deve ser maior que zero");
-        }
+    public List<LeituraMeteorologica> buscarUltimas(int limite, ModoOperacao modo) {
+        validarLimite(limite);
         Session sessao = null;
         try {
             sessao = HibernateUtil.getSessionFactory().openSession();
-            List<LeituraMeteorologica> maisRecentesPrimeiro = sessao
-                    .createQuery("from LeituraMeteorologica l order by l.dataHoraColeta desc, l.id desc",
-                            LeituraMeteorologica.class)
+            List<LeituraMeteorologica> maisRecentesPrimeiro = consulta(sessao,
+                    filtroModo("", modo) + " order by l.dataHoraColeta desc, l.id desc", modo)
                     .setMaxResults(limite)
                     .getResultList();
-            List<LeituraMeteorologica> cronologica = new ArrayList<>(maisRecentesPrimeiro);
-            Collections.reverse(cronologica);
-            return cronologica;
+            return emOrdemCronologica(maisRecentesPrimeiro);
         } catch (RuntimeException e) {
             throw falha("Erro ao buscar as últimas leituras", e);
         } finally {
@@ -84,24 +79,26 @@ public class LeituraMeteorologicaDAOImpl implements LeituraMeteorologicaDAO {
     }
 
     @Override
-    public List<LeituraMeteorologica> buscarPorPeriodo(LocalDateTime dataInicio, LocalDateTime dataFim) {
+    public List<LeituraMeteorologica> buscarPorPeriodo(LocalDateTime dataInicio, LocalDateTime dataFim,
+                                                       ModoOperacao modo, int limite) {
         if (dataInicio == null || dataFim == null) {
             throw new IllegalArgumentException("Data de início e data de fim são obrigatórias");
         }
         if (dataInicio.isAfter(dataFim)) {
             throw new IllegalArgumentException("A data de início deve ser anterior à data de fim");
         }
+        validarLimite(limite);
         Session sessao = null;
         try {
             sessao = HibernateUtil.getSessionFactory().openSession();
-            return sessao
-                    .createQuery("from LeituraMeteorologica l"
-                                    + " where l.dataHoraColeta between :inicio and :fim"
-                                    + " order by l.dataHoraColeta asc, l.id asc",
-                            LeituraMeteorologica.class)
+            String hql = filtroModo(" where l.dataHoraColeta between :inicio and :fim", modo)
+                    + " order by l.dataHoraColeta desc, l.id desc";
+            List<LeituraMeteorologica> maisRecentesPrimeiro = consulta(sessao, hql, modo)
                     .setParameter("inicio", dataInicio)
                     .setParameter("fim", dataFim)
+                    .setMaxResults(limite)
                     .getResultList();
+            return emOrdemCronologica(maisRecentesPrimeiro);
         } catch (RuntimeException e) {
             throw falha("Erro ao buscar leituras por período", e);
         } finally {
@@ -121,6 +118,37 @@ public class LeituraMeteorologicaDAOImpl implements LeituraMeteorologicaDAO {
         } finally {
             fechar(sessao);
         }
+    }
+
+    /** Acrescenta o filtro de modo à cláusula where, quando um modo foi informado. */
+    private static String filtroModo(String where, ModoOperacao modo) {
+        if (modo == null) {
+            return where;
+        }
+        return where.isEmpty() ? " where l.modoOperacao = :modo" : where + " and l.modoOperacao = :modo";
+    }
+
+    /** Cria a consulta HQL sobre LeituraMeteorologica e preenche o parâmetro do modo, se houver. */
+    private static Query<LeituraMeteorologica> consulta(Session sessao, String restoHql, ModoOperacao modo) {
+        Query<LeituraMeteorologica> consulta =
+                sessao.createQuery("from LeituraMeteorologica l" + restoHql, LeituraMeteorologica.class);
+        if (modo != null) {
+            consulta.setParameter("modo", modo);
+        }
+        return consulta;
+    }
+
+    private static void validarLimite(int limite) {
+        if (limite <= 0) {
+            throw new IllegalArgumentException("O limite deve ser maior que zero");
+        }
+    }
+
+    /** As consultas buscam as mais recentes primeiro (para o limite); a página recebe em ordem cronológica. */
+    private static List<LeituraMeteorologica> emOrdemCronologica(List<LeituraMeteorologica> maisRecentesPrimeiro) {
+        List<LeituraMeteorologica> cronologica = new ArrayList<>(maisRecentesPrimeiro);
+        Collections.reverse(cronologica);
+        return cronologica;
     }
 
     private static void desfazer(Transaction transacao) {

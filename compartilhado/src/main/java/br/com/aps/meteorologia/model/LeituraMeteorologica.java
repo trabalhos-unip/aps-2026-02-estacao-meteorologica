@@ -4,17 +4,22 @@ import br.com.aps.meteorologia.util.CodigoClimaWMO;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
 /**
- * Uma leitura meteorológica obtida da API Open-Meteo e mapeada para a tabela
+ * Uma leitura meteorológica (real, da API Open-Meteo, ou simulada) mapeada para a tabela
  * {@code leitura_meteorologica} via Hibernate.
  *
  * <p>Os valores numéricos usam tipos wrapper ({@link Double}, {@link Integer}) para que
@@ -26,10 +31,14 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "leitura_meteorologica",
-        indexes = @Index(name = "idx_leitura_data_hora_coleta", columnList = "data_hora_coleta"))
+        indexes = {
+                @Index(name = "idx_leitura_data_hora_coleta", columnList = "data_hora_coleta"),
+                @Index(name = "idx_leitura_modo_data_hora", columnList = "modo_operacao, data_hora_coleta")
+        })
 public class LeituraMeteorologica {
 
     public static final String FONTE_OPEN_METEO = "Open-Meteo";
+    public static final String FONTE_SIMULADOR = "Simulador";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -66,6 +75,21 @@ public class LeituraMeteorologica {
     /** {@code weather_code}, código WMO da condição do tempo. */
     @Column(name = "codigo_clima")
     private Integer codigoClima;
+
+    /** Latitude da localização dos dados, em graus (a Open-Meteo devolve a do ponto de grade do modelo). */
+    @Column(name = "latitude")
+    private Double latitude;
+
+    /** Longitude da localização dos dados, em graus. */
+    @Column(name = "longitude")
+    private Double longitude;
+
+    /** REAL (Open-Meteo) ou SIMULADO (cenário de teste). */
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR) // VARCHAR(10), igual ao schema.sql (sem isso o MySQL usaria o tipo ENUM)
+    @ColumnDefault("'REAL'")
+    @Column(name = "modo_operacao", nullable = false, length = 10)
+    private ModoOperacao modoOperacao = ModoOperacao.REAL;
 
     /** Indicador derivado: {@code true} quando precipitação ou chuva é maior que zero. */
     @Column(name = "presenca_precipitacao")
@@ -156,6 +180,30 @@ public class LeituraMeteorologica {
         return CodigoClimaWMO.descrever(codigoClima);
     }
 
+    public Double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(Double latitude) {
+        this.latitude = latitude;
+    }
+
+    public Double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(Double longitude) {
+        this.longitude = longitude;
+    }
+
+    public ModoOperacao getModoOperacao() {
+        return modoOperacao;
+    }
+
+    public void setModoOperacao(ModoOperacao modoOperacao) {
+        this.modoOperacao = modoOperacao;
+    }
+
     public Boolean getPresencaPrecipitacao() {
         return presencaPrecipitacao;
     }
@@ -183,6 +231,9 @@ public class LeituraMeteorologica {
                 + ", chuva=" + chuva
                 + ", velocidadeVento=" + velocidadeVento
                 + ", codigoClima=" + codigoClima
+                + ", latitude=" + latitude
+                + ", longitude=" + longitude
+                + ", modoOperacao=" + modoOperacao
                 + ", presencaPrecipitacao=" + presencaPrecipitacao + '}';
     }
 }
