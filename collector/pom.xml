@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>br.com.aps</groupId><artifactId>estacao-meteorologica</artifactId><version>0.0.1-SNAPSHOT</version></parent>
+  <artifactId>collector</artifactId>
+  <description>Aplicação 1 (coletor): consulta a Open-Meteo a cada 10 segundos e grava as leituras no MySQL.</description>
+  <dependencies>
+    <dependency><groupId>br.com.aps</groupId><artifactId>compartilhado</artifactId><version>${project.version}</version></dependency>
+    <!-- Spring Boot: inicia a aplicação, lê as configurações e agenda a coleta (@Scheduled) -->
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter</artifactId></dependency>
+    <!-- Jackson: leitura do JSON devolvido pela Open-Meteo -->
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-json</artifactId></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <!-- mvn -pl collector spring-boot:run -->
+      <plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId></plugin>
+    </plugins>
+  </build>
+</project>
