@@ -58,6 +58,9 @@ mvn -pl webapp spring-boot:run
 - Pare o coletor com `Ctrl+C`. Uma coleta a cada 10 s soma 8.640 chamadas por dia, então rode só durante os testes
   (veja os limites de uso da Open-Meteo).
 - Para popular o banco sem rodar o coletor: `database/dados-teste.sql`.
+- **Modo simulado:** com `COLETA_MODO=SIMULADO` no `.env`, o coletor gera cenários de teste (tempo seco, chuva forte,
+  vento forte, dados incompletos) sem acessar a internet. Cada leitura guarda `modoOperacao` (`REAL`/`SIMULADO`),
+  `latitude` e `longitude`, e a página pode filtrar com `?modo=REAL` ou `?modo=SIMULADO`.
 
 Detalhes: [`scripts/iniciar-coletor.md`](scripts/iniciar-coletor.md) e [`scripts/executar-web.md`](scripts/executar-web.md).
 

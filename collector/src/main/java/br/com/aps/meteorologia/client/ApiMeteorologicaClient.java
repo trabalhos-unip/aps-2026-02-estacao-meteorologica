@@ -1,8 +1,11 @@
 package br.com.aps.meteorologia.client;
 
+import br.com.aps.meteorologia.model.LeituraMeteorologica;
+import br.com.aps.meteorologia.model.ModoOperacao;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -17,11 +20,13 @@ import java.time.Duration;
 import java.util.Locale;
 
 /**
- * Faz a comunicação HTTP com a Forecast API da Open-Meteo (não exige chave de API).
+ * Fonte REAL: faz a comunicação HTTP com a Forecast API da Open-Meteo (não exige chave de API).
  * Todas as variáveis são pedidas numa única requisição por ciclo de coleta.
+ * Ativa com {@code coleta.modo=REAL} (padrão, quando a propriedade não é informada).
  */
 @Component
-public class ApiMeteorologicaClient {
+@ConditionalOnProperty(name = "coleta.modo", havingValue = "REAL", matchIfMissing = true)
+public class ApiMeteorologicaClient implements FonteMeteorologica {
 
     static final String VARIAVEIS =
             "temperature_2m,relative_humidity_2m,precipitation,rain,wind_speed_10m,weather_code";
@@ -50,6 +55,7 @@ public class ApiMeteorologicaClient {
      *
      * @throws ApiMeteorologicaException em timeout, falha de rede, status HTTP de erro ou JSON inválido
      */
+    @Override
     public RespostaOpenMeteo buscarCondicoesAtuais() {
         HttpRequest requisicao = HttpRequest.newBuilder(uri)
                 .timeout(timeout)
@@ -76,6 +82,16 @@ public class ApiMeteorologicaClient {
             throw new ApiMeteorologicaException("Open-Meteo respondeu com HTTP " + status + ": " + resposta.body());
         }
         return converter(resposta.body());
+    }
+
+    @Override
+    public ModoOperacao modo() {
+        return ModoOperacao.REAL;
+    }
+
+    @Override
+    public String nomeFonte() {
+        return LeituraMeteorologica.FONTE_OPEN_METEO;
     }
 
     /** Converte o corpo JSON da resposta, validando que o bloco {@code current} está presente. */

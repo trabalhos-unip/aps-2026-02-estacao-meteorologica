@@ -7,8 +7,11 @@
 //   umidadeRelativa 89                      → %
 //   precipitacao    0.0                     → mm
 //   velocidadeVento 9.8                     → km/h
-//   presencaPrecipitacao false              → sim/não
+//   presencaPrecipitacao false              → sim/não (null = desconhecido)
+//   modoOperacao    "REAL" | "SIMULADO"     → origem da leitura
+//   latitude / longitude -23.514938 / -46.610504 → localização dos dados
 // Valores ausentes chegam como null.
+// Para separar leituras reais e simuladas: GET /api/leituras?limite=N&modo=REAL (ou SIMULADO).
 //
 // Sugestão: Chart.js (gráfico de linha), um gráfico por variável ou eixos separados para preservar as unidades.
 

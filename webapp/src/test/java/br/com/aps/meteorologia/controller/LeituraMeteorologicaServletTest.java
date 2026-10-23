@@ -4,6 +4,7 @@ import br.com.aps.meteorologia.app.WebappApplication;
 import br.com.aps.meteorologia.dao.LeituraMeteorologicaDAO;
 import br.com.aps.meteorologia.dao.PersistenciaException;
 import br.com.aps.meteorologia.model.LeituraMeteorologica;
+import br.com.aps.meteorologia.model.ModoOperacao;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -20,6 +21,10 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /** Sobe o webapp (Spring Boot + Tomcat embutido) numa porta livre, com o DAO simulado — sem banco. */
@@ -48,24 +53,28 @@ class LeituraMeteorologicaServletTest {
         l.setUmidadeRelativa(89);
         l.setCodigoClima(3);
         l.setPresencaPrecipitacao(false);
+        l.setLatitude(-23.514938);
+        l.setLongitude(-46.610504);
+        l.setModoOperacao(ModoOperacao.REAL);
         return l;
     }
 
     @Test
     void ultimaLeitura() throws Exception {
-        when(dao.buscarUltima()).thenReturn(Optional.of(leitura(7, 14.0)));
+        when(dao.buscarUltima(null)).thenReturn(Optional.of(leitura(7, 14.0)));
 
         HttpResponse<String> resposta = get("/api/leituras/ultima");
 
         assertThat(resposta.statusCode()).isEqualTo(200);
         assertThat(resposta.headers().firstValue("Content-Type")).get().asString().contains("application/json");
         assertThat(resposta.body()).contains("\"id\":7", "\"temperatura\":14.0", "\"descricaoClima\":\"Nublado\"",
-                "\"dataHoraColeta\":\"2026-10-20T22:20:05\"", "\"precipitacao\":null");
+                "\"dataHoraColeta\":\"2026-10-20T22:20:05\"", "\"precipitacao\":null",
+                "\"latitude\":-23.514938", "\"longitude\":-46.610504", "\"modoOperacao\":\"REAL\"");
     }
 
     @Test
     void bancoVazioDevolveMensagem() throws Exception {
-        when(dao.buscarUltima()).thenReturn(Optional.empty());
+        when(dao.buscarUltima(null)).thenReturn(Optional.empty());
 
         HttpResponse<String> resposta = get("/api/leituras/ultima");
 
@@ -75,7 +84,7 @@ class LeituraMeteorologicaServletTest {
 
     @Test
     void ultimasLeituras() throws Exception {
-        when(dao.buscarUltimas(2)).thenReturn(List.of(leitura(1, 13.0), leitura(2, 14.0)));
+        when(dao.buscarUltimas(2, null)).thenReturn(List.of(leitura(1, 13.0), leitura(2, 14.0)));
 
         HttpResponse<String> resposta = get("/api/leituras?limite=2");
 
@@ -87,11 +96,12 @@ class LeituraMeteorologicaServletTest {
     void limiteInvalido() throws Exception {
         assertThat(get("/api/leituras?limite=0").statusCode()).isEqualTo(400);
         assertThat(get("/api/leituras?limite=abc").statusCode()).isEqualTo(400);
+        assertThat(get("/api/leituras?limite=1001").statusCode()).isEqualTo(400);
     }
 
     @Test
     void consultaPorPeriodo() throws Exception {
-        when(dao.buscarPorPeriodo(any(), any())).thenReturn(List.of(leitura(1, 13.0)));
+        when(dao.buscarPorPeriodo(any(), any(), isNull(), eq(1000))).thenReturn(List.of(leitura(1, 13.0)));
 
         HttpResponse<String> resposta = get("/api/leituras/periodo?inicio=2026-10-20T00:00:00&fim=2026-10-20T23:59:59");
 
@@ -107,12 +117,45 @@ class LeituraMeteorologicaServletTest {
 
     @Test
     void bancoIndisponivel() throws Exception {
-        when(dao.buscarUltimas(100)).thenThrow(new PersistenciaException("Connection refused", null));
+        when(dao.buscarUltimas(100, null)).thenThrow(new PersistenciaException("Connection refused", null));
 
         HttpResponse<String> resposta = get("/api/leituras");
 
         assertThat(resposta.statusCode()).isEqualTo(503);
         assertThat(resposta.body()).contains("Banco de dados indisponível no momento");
+    }
+
+    @Test
+    void filtraPorModo() throws Exception {
+        when(dao.buscarUltimas(eq(100), any())).thenReturn(List.of(leitura(1, 13.0)));
+        when(dao.buscarUltima(any())).thenReturn(Optional.of(leitura(1, 13.0)));
+        when(dao.buscarPorPeriodo(any(), any(), any(), anyInt())).thenReturn(List.of());
+
+        assertThat(get("/api/leituras?modo=SIMULADO").statusCode()).isEqualTo(200);
+        assertThat(get("/api/leituras/ultima?modo=real").statusCode()).isEqualTo(200);
+        assertThat(get("/api/leituras/periodo?inicio=2026-10-20T00:00:00&fim=2026-10-20T23:59:59&modo=SIMULADO&limite=50")
+                .statusCode()).isEqualTo(200);
+
+        verify(dao).buscarUltimas(100, ModoOperacao.SIMULADO);
+        verify(dao).buscarUltima(ModoOperacao.REAL);
+        verify(dao).buscarPorPeriodo(LocalDateTime.of(2026, 10, 20, 0, 0), LocalDateTime.of(2026, 10, 20, 23, 59, 59),
+                ModoOperacao.SIMULADO, 50);
+    }
+
+    @Test
+    void modoInvalido() throws Exception {
+        HttpResponse<String> resposta = get("/api/leituras?modo=TESTE");
+
+        assertThat(resposta.statusCode()).isEqualTo(400);
+        assertThat(resposta.body()).contains("Modo inválido");
+    }
+
+    @Test
+    void periodoMuitoLongo() throws Exception {
+        HttpResponse<String> resposta = get("/api/leituras/periodo?inicio=2026-09-01T00:00:00&fim=2026-10-20T00:00:00");
+
+        assertThat(resposta.statusCode()).isEqualTo(400);
+        assertThat(resposta.body()).contains("31 dias");
     }
 
     @Test

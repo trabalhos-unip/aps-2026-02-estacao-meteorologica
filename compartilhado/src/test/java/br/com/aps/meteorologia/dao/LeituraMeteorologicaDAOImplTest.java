@@ -3,6 +3,7 @@ package br.com.aps.meteorologia.dao;
 import br.com.aps.meteorologia.config.HibernateUtil;
 import br.com.aps.meteorologia.dao.impl.LeituraMeteorologicaDAOImpl;
 import br.com.aps.meteorologia.model.LeituraMeteorologica;
+import br.com.aps.meteorologia.model.ModoOperacao;
 import org.hibernate.Session;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -63,6 +64,12 @@ class LeituraMeteorologicaDAOImplTest {
         return l;
     }
 
+    private LeituraMeteorologica leitura(LocalDateTime coleta, Double temperatura, ModoOperacao modo) {
+        LeituraMeteorologica l = leitura(coleta, temperatura);
+        l.setModoOperacao(modo);
+        return l;
+    }
+
     @Test
     void salvaERecuperaLeitura() {
         LeituraMeteorologica salva = dao.salvar(leitura(BASE, 22.4));
@@ -120,10 +127,62 @@ class LeituraMeteorologicaDAOImplTest {
     }
 
     @Test
+    void gravaCoordenadasEModo() {
+        LeituraMeteorologica l = leitura(BASE, 20.0, ModoOperacao.SIMULADO);
+        l.setLatitude(-23.5149);
+        l.setLongitude(-46.6105);
+
+        dao.salvar(l);
+
+        LeituraMeteorologica lida = dao.buscarUltima().orElseThrow();
+        assertThat(lida.getLatitude()).isEqualTo(-23.5149);
+        assertThat(lida.getLongitude()).isEqualTo(-46.6105);
+        assertThat(lida.getModoOperacao()).isEqualTo(ModoOperacao.SIMULADO);
+    }
+
+    @Test
+    void modoPadraoEReal() {
+        dao.salvar(leitura(BASE, 20.0));
+
+        assertThat(dao.buscarUltima().orElseThrow().getModoOperacao()).isEqualTo(ModoOperacao.REAL);
+    }
+
+    @Test
+    void filtraPorModo() {
+        dao.salvar(leitura(BASE, 1.0, ModoOperacao.REAL));
+        dao.salvar(leitura(BASE.plusSeconds(10), 2.0, ModoOperacao.SIMULADO));
+        dao.salvar(leitura(BASE.plusSeconds(20), 3.0, ModoOperacao.REAL));
+        dao.salvar(leitura(BASE.plusSeconds(30), 4.0, ModoOperacao.SIMULADO));
+
+        assertThat(dao.buscarUltimas(10, ModoOperacao.REAL))
+                .extracting(LeituraMeteorologica::getTemperatura).containsExactly(1.0, 3.0);
+        assertThat(dao.buscarUltimas(10, ModoOperacao.SIMULADO))
+                .extracting(LeituraMeteorologica::getTemperatura).containsExactly(2.0, 4.0);
+        assertThat(dao.buscarUltimas(10, null)).hasSize(4);
+        assertThat(dao.buscarUltima(ModoOperacao.REAL)).get()
+                .extracting(LeituraMeteorologica::getTemperatura).isEqualTo(3.0);
+        assertThat(dao.buscarPorPeriodo(BASE, BASE.plusMinutes(1), ModoOperacao.SIMULADO, 100))
+                .extracting(LeituraMeteorologica::getTemperatura).containsExactly(2.0, 4.0);
+    }
+
+    @Test
+    void periodoRespeitaOLimiteDevolvendoAsMaisRecentes() {
+        for (int i = 0; i < 5; i++) {
+            dao.salvar(leitura(BASE.plusSeconds(i * 10L), (double) i));
+        }
+
+        List<LeituraMeteorologica> periodo = dao.buscarPorPeriodo(BASE, BASE.plusMinutes(1), null, 3);
+
+        assertThat(periodo).extracting(LeituraMeteorologica::getTemperatura).containsExactly(2.0, 3.0, 4.0);
+    }
+
+    @Test
     void validaParametros() {
         assertThatThrownBy(() -> dao.salvar(null)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> dao.buscarUltimas(0)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> dao.buscarPorPeriodo(BASE, BASE.minusDays(1)))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> dao.buscarPorPeriodo(BASE, BASE.plusDays(1), null, 0))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

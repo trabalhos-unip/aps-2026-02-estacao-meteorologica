@@ -1,6 +1,7 @@
 package br.com.aps.meteorologia.controller;
 
 import br.com.aps.meteorologia.dao.PersistenciaException;
+import br.com.aps.meteorologia.model.ModoOperacao;
 import br.com.aps.meteorologia.service.ConsultaMeteorologicaService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServlet;
@@ -19,11 +20,13 @@ import java.util.Map;
  * Recebe a requisição, chama o serviço e devolve os dados — sem SQL nem Hibernate aqui.
  *
  * <ul>
- *   <li>{@code GET /api/leituras?limite=100} — últimas leituras em ordem cronológica</li>
- *   <li>{@code GET /api/leituras/ultima} — leitura mais recente (404 se o banco estiver vazio)</li>
- *   <li>{@code GET /api/leituras/periodo?inicio=2026-10-20T00:00:00&fim=2026-10-20T23:59:59}</li>
+ *   <li>{@code GET /api/leituras?limite=100&modo=REAL} — últimas leituras em ordem cronológica</li>
+ *   <li>{@code GET /api/leituras/ultima?modo=REAL} — leitura mais recente (404 se não houver)</li>
+ *   <li>{@code GET /api/leituras/periodo?inicio=2026-10-20T00:00:00&fim=2026-10-20T23:59:59&modo=SIMULADO&limite=1000}
+ *       — leituras do período (máx. 31 dias e 1000 registros)</li>
  *   <li>{@code GET /api/leituras/total} — quantidade de leituras</li>
  * </ul>
+ * O parâmetro {@code modo} é opcional (REAL ou SIMULADO); sem ele, vêm leituras dos dois modos.
  * Erros também são devolvidos em JSON: {@code {"status": 400, "erro": "mensagem", "dataHora": "..."}}.
  */
 public class LeituraMeteorologicaServlet extends HttpServlet {
@@ -47,9 +50,10 @@ public class LeituraMeteorologicaServlet extends HttpServlet {
         String rota = requisicao.getPathInfo() == null ? "/" : requisicao.getPathInfo();
         try {
             switch (rota) {
-                case "/" -> responder(resposta, 200, service.buscarUltimas(inteiro(requisicao, "limite", 100)));
+                case "/" -> responder(resposta, 200,
+                        service.buscarUltimas(inteiro(requisicao, "limite", 100), modo(requisicao)));
                 case "/ultima" -> {
-                    var ultima = service.buscarUltima();
+                    var ultima = service.buscarUltima(modo(requisicao));
                     if (ultima.isPresent()) {
                         responder(resposta, 200, ultima.get());
                     } else {
@@ -57,7 +61,8 @@ public class LeituraMeteorologicaServlet extends HttpServlet {
                     }
                 }
                 case "/periodo" -> responder(resposta, 200, service.buscarPorPeriodo(
-                        dataHora(requisicao, "inicio"), dataHora(requisicao, "fim")));
+                        dataHora(requisicao, "inicio"), dataHora(requisicao, "fim"), modo(requisicao),
+                        inteiro(requisicao, "limite", ConsultaMeteorologicaService.LIMITE_MAXIMO)));
                 case "/total" -> responder(resposta, 200, Map.of("total", service.contar()));
                 default -> erro(resposta, 404, "Endereço não encontrado: /api/leituras" + rota);
             }
@@ -82,6 +87,11 @@ public class LeituraMeteorologicaServlet extends HttpServlet {
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Valor inválido para o parâmetro '" + nome + "': " + valor);
         }
+    }
+
+    /** Parâmetro opcional "modo": REAL, SIMULADO ou ausente (todos). Valor inválido gera HTTP 400. */
+    private ModoOperacao modo(HttpServletRequest requisicao) {
+        return ModoOperacao.deTexto(requisicao.getParameter("modo"));
     }
 
     private LocalDateTime dataHora(HttpServletRequest requisicao, String nome) {
