@@ -6,6 +6,9 @@ USE estacao_meteorologica;
 CREATE TABLE IF NOT EXISTS estacao (
     id           BIGINT       NOT NULL AUTO_INCREMENT,
     nome         VARCHAR(100) NOT NULL,
+    cidade       VARCHAR(100) NOT NULL,
+    estado       VARCHAR(2)   NOT NULL,
+    pais         VARCHAR(2)   NOT NULL DEFAULT 'BR',
     latitude     DOUBLE       NOT NULL,
     longitude    DOUBLE       NOT NULL,
     fuso_horario VARCHAR(50)  NOT NULL DEFAULT 'America/Sao_Paulo',
@@ -133,6 +136,6 @@ CREATE TABLE IF NOT EXISTS resumo_horario_meteorologico (
     INDEX idx_resumo_horario_estacao_momento_tipo (estacao_id, data_hora_referencia, tipo)
 ) ENGINE=InnoDB;
 
-INSERT INTO estacao (nome, latitude, longitude)
-VALUES ('Estacao Sorocaba', -23.5015, -47.4526)
+INSERT INTO estacao (nome, cidade, estado, pais, latitude, longitude)
+VALUES ('BR:SP:SOROCABA', 'Sorocaba', 'SP', 'BR', -23.5015, -47.4526)
 ON DUPLICATE KEY UPDATE nome = VALUES(nome);

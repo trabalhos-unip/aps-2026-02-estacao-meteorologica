@@ -56,7 +56,12 @@ public class ClienteOpenMeteo implements IFonteMeteorologica {
 
     @Override
     public DadosMeteorologicosAtuais obterDadosAtuais() {
-        HttpRequest requisicao = HttpRequest.newBuilder(enderecoConsulta)
+        return obterDadosAtuais(latitude, longitude, fusoHorario);
+    }
+
+    @Override
+    public DadosMeteorologicosAtuais obterDadosAtuais(double latitude, double longitude, String fusoHorario) {
+        HttpRequest requisicao = HttpRequest.newBuilder(criarEnderecoConsulta(urlBase, latitude, longitude, fusoHorario))
                 .timeout(tempoLimite)
                 .header("Accept", "application/json")
                 .GET()
@@ -78,11 +83,15 @@ public class ClienteOpenMeteo implements IFonteMeteorologica {
 
     /** Série horária contínua para cobrir dias sem o coletor e os próximos dias. */
     public RespostaSerieOpenMeteo buscarSerieHoraria(int diasPassados, int diasPrevisao) {
+        return buscarSerieHoraria(diasPassados, diasPrevisao, latitude, longitude, fusoHorario);
+    }
+
+    public RespostaSerieOpenMeteo buscarSerieHoraria(int diasPassados, int diasPrevisao, double latitude, double longitude, String fusoHorario) {
         if (diasPassados < 1 || diasPassados > 92 || diasPrevisao < 1 || diasPrevisao > 16) {
             throw new IllegalArgumentException("Histórico deve ter 1–92 dias e previsão 1–16 dias");
         }
         try {
-            RespostaSerieOpenMeteo resposta = conversorJson.readValue(enviarCorpo(criarEnderecoSerie(diasPassados, diasPrevisao)), RespostaSerieOpenMeteo.class);
+            RespostaSerieOpenMeteo resposta = conversorJson.readValue(enviarCorpo(criarEnderecoSerie(diasPassados, diasPrevisao, latitude, longitude, fusoHorario)), RespostaSerieOpenMeteo.class);
             if (resposta == null || resposta.hourly() == null || resposta.hourly().time() == null) {
                 throw new FonteMeteorologicaException("Resposta da Open-Meteo sem série horária", TipoErroColeta.RESPOSTA_INVALIDA);
             }
@@ -165,7 +174,7 @@ public class ClienteOpenMeteo implements IFonteMeteorologica {
                 URLEncoder.encode(fusoHorario, StandardCharsets.UTF_8)));
     }
 
-    private URI criarEnderecoSerie(int diasPassados, int diasPrevisao) {
+    private URI criarEnderecoSerie(int diasPassados, int diasPrevisao, double latitude, double longitude, String fusoHorario) {
         return URI.create(String.format(Locale.ROOT,
                 "%s?latitude=%.4f&longitude=%.4f&hourly=%s&past_days=%d&forecast_days=%d&timezone=%s",
                 urlBase, latitude, longitude, VARIAVEIS_METEOROLOGICAS, diasPassados, diasPrevisao,

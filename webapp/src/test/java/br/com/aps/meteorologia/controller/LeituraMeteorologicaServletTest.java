@@ -2,6 +2,7 @@ package br.com.aps.meteorologia.controller;
 
 import br.com.aps.meteorologia.app.WebappApplication;
 import br.com.aps.meteorologia.dao.ILeituraMeteorologicaDAO;
+import br.com.aps.meteorologia.dao.IEstacaoDAO;
 import br.com.aps.meteorologia.dao.PersistenciaException;
 import br.com.aps.meteorologia.model.LeituraMeteorologica;
 import br.com.aps.meteorologia.model.ModoOperacao;
@@ -38,6 +39,10 @@ class LeituraMeteorologicaServletTest {
 
     @MockitoBean
     private ILeituraMeteorologicaDAO dao;
+
+    /** Isola os contratos HTTP das regras da estação ativa, cobertas no serviço. */
+    @MockitoBean
+    private IEstacaoDAO estacaoDAO;
 
     private HttpResponse<String> get(String caminho) throws IOException, InterruptedException {
         URI uri = URI.create("http://localhost:" + porta + caminho);

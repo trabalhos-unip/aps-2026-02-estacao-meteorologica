@@ -89,8 +89,10 @@ public class SincronizacaoHistoricoPrevisaoService {
     public synchronized void sincronizar() {
         try {
             LocalDate hoje = LocalDate.now(zona);
-            Long estacaoId = estacaoDAO.buscarOuCriar(nomeEstacao, latitude, longitude).getId();
-            RespostaSerieOpenMeteo serie = client.buscarSerieHoraria(diasHistorico, diasPrevisao);
+            var estacao = estacaoDAO.buscarAtiva().orElseGet(() -> estacaoDAO.buscarOuCriar(nomeEstacao, latitude, longitude));
+            Long estacaoId = estacao.getId();
+            RespostaSerieOpenMeteo serie = client.buscarSerieHoraria(diasHistorico, diasPrevisao,
+                    estacao.getLatitude(), estacao.getLongitude(), estacao.getFusoHorario());
             if (serie == null || serie.hourly() == null) {
                 log.warn("Sincronização de histórico/previsão ignorada — série horária ausente");
                 return;

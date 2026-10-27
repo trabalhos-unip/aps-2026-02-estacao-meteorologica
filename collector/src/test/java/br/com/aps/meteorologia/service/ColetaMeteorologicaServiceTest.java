@@ -22,6 +22,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -44,6 +46,10 @@ class ColetaMeteorologicaServiceTest {
     @BeforeEach
     void preparar() {
         fonteMeteorologica = mock(IFonteMeteorologica.class);
+        // A coleta agora informa as coordenadas da estação ativa. O mock mantém
+        // o comportamento configurado pelos cenários legados de obterDadosAtuais().
+        when(fonteMeteorologica.obterDadosAtuais(anyDouble(), anyDouble(), anyString()))
+                .thenAnswer(chamada -> fonteMeteorologica.obterDadosAtuais());
         when(fonteMeteorologica.obterModoOperacao()).thenReturn(ModoOperacao.REAL);
         when(fonteMeteorologica.obterNomeFonte()).thenReturn(LeituraMeteorologica.FONTE_OPEN_METEO);
 

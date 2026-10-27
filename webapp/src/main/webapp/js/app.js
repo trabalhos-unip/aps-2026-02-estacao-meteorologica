@@ -1,4 +1,4 @@
-import { leiturasApi, resumosDiariosApi, resumosHorariosApi } from "./api.js";
+import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js";
 import { demoApi, demoForecast } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261026-4";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261026-4";
@@ -50,7 +50,7 @@ showLocation(savedPreferences());
 async function showConfiguredLocation() {
   try {
     const source = await leiturasApi.buscarFonte();
-    if (source.cidade) text("#location-label", `${source.cidade}, SP`);
+    if (source.cidade) text("#location-label", `${source.cidade}${source.estado ? `, ${source.estado}` : ""}`);
   } catch {
     // A localização configurada não impede o uso da página se a API local estiver indisponível.
   }
@@ -522,6 +522,13 @@ async function initSettings() {
   document.querySelector("#settings-interval").value = saved.interval || "900";
   document.querySelector("#settings-notes").value = saved.notes || "";
   document.querySelector(`input[name="settings-mode"][value="${saved.mode === "simulado" ? "simulado" : "real"}"]`).checked = true;
+  try {
+    const estacao = await estacaoApi.ativa();
+    if (!saved.city) document.querySelector("#settings-city").value = estacao.cidade || "";
+    if (!saved.state) document.querySelector("#settings-state").value = estacao.estado || "";
+  } catch {
+    // A tela continua disponível para cadastrar a primeira estação.
+  }
   document.querySelectorAll('input[name="settings-mode"]').forEach(radio => {
     radio.addEventListener("change", async () => {
       if (!radio.checked) return;
@@ -536,7 +543,7 @@ async function initSettings() {
       }
     });
   });
-  document.querySelector("#save-settings").addEventListener("click", () => {
+  document.querySelector("#save-settings").addEventListener("click", async () => {
     const preferences = {
       city: document.querySelector("#settings-city").value.trim(),
       state: document.querySelector("#settings-state").value,
@@ -545,12 +552,13 @@ async function initSettings() {
       notes: document.querySelector("#settings-notes").value.trim(),
     };
     try {
+      const estacao = await estacaoApi.selecionar(preferences.city, preferences.state);
       localStorage.setItem(preferencesKey, JSON.stringify(preferences));
       applyMode(preferences.mode);
-      showLocation(preferences);
-      showToast("Anotações e modo visual salvos neste navegador. Cidade real é alterada no .env.");
-    } catch {
-      showToast("Não foi possível salvar neste navegador.");
+      showLocation({ city: estacao.cidade, state: estacao.estado === "SP" ? "São Paulo" : estacao.estado });
+      showToast("Estação atualizada. O coletor buscará os dados da nova cidade no próximo ciclo.");
+    } catch (error) {
+      showToast(error.message || "Não foi possível atualizar a estação.");
     }
   });
   await fetchLatest();

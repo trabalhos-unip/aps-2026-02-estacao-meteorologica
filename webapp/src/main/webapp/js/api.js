@@ -23,3 +23,13 @@ export const resumosDiariosApi = {
 export const resumosHorariosApi = {
   buscarHistorico: (inicio, fim) => request(`/historico?inicio=${encodeURIComponent(inicio)}&fim=${encodeURIComponent(fim)}`, "/api/resumos-horarios"),
 };
+
+export const estacaoApi = {
+  ativa: () => request("/api/estacao", ""),
+  selecionar: async (cidade, estado) => {
+    const response = await fetch("/api/estacao", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ cidade, estado }) });
+    const body = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(body?.erro || "Não foi possível alterar a estação.");
+    return body;
+  },
+};

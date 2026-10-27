@@ -18,12 +18,11 @@ import java.util.List;
 @RestController
 public class ResumoMeteorologicoController {
     private final ResumoDiarioMeteorologicoDAO diarios; private final ResumoHorarioMeteorologicoDAO horarios;
-    private final IEstacaoDAO estacoes; private final String nome; private final double latitude; private final double longitude; private final ZoneId zona;
+    private final IEstacaoDAO estacoes; private final ZoneId zona;
 
     public ResumoMeteorologicoController(ResumoDiarioMeteorologicoDAO diarios, ResumoHorarioMeteorologicoDAO horarios, IEstacaoDAO estacoes,
-            @Value("${estacao.nome}") String nome, @Value("${openmeteo.latitude}") double latitude, @Value("${openmeteo.longitude}") double longitude,
             @Value("${openmeteo.timezone}") String timezone) {
-        this.diarios = diarios; this.horarios = horarios; this.estacoes = estacoes; this.nome = nome; this.latitude = latitude; this.longitude = longitude; this.zona = ZoneId.of(timezone);
+        this.diarios = diarios; this.horarios = horarios; this.estacoes = estacoes; this.zona = ZoneId.of(timezone);
     }
 
     @GetMapping("/api/resumos-diarios/historico")
@@ -44,5 +43,5 @@ public class ResumoMeteorologicoController {
         return horarios.buscarHistorico(estacaoId(), inicio, fim);
     }
 
-    private Long estacaoId() { return estacoes.buscarOuCriar(nome, latitude, longitude).getId(); }
+    private Long estacaoId() { return estacoes.buscarAtiva().orElseThrow(() -> new IllegalArgumentException("Nenhuma estação ativa")).getId(); }
 }

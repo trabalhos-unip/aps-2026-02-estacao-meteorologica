@@ -26,9 +26,10 @@ O banco possui cinco tabelas principais:
 - `resumo_diario_meteorologico`: histórico diário reconstituído e previsão diária, separados por tipo.
 - `resumo_horario_meteorologico`: série horária que preenche lacunas quando o coletor ficou desligado.
 
-A configuração atual utiliza uma estação em **Sorocaba/SP**, nas coordenadas `-23.5015, -47.4526`. Cada leitura e
-cada resumo pertencem a uma estação; assim trocar a localização não mistura os dados de cidades diferentes. Nesta
-versão, a cidade ativa é configurada no `.env` e o coletor deve ser reiniciado.
+A instalação inicial utiliza **Sorocaba/SP**. Pela tela de configurações, é possível escolher qualquer cidade do
+Brasil informando cidade e UF. A aplicação consulta a Geocoding API da Open-Meteo, persiste cidade, UF, coordenadas e
+fuso no MySQL e marca essa estação como ativa. Leituras e resumos são isolados por estação; o collector usa as
+coordenadas da estação ativa no próximo ciclo, sem precisar ser reiniciado.
 
 ## Organização e princípios SOLID
 
@@ -109,7 +110,8 @@ Java. Portanto, **o Hibernate não cria nem atualiza as tabelas automaticamente*
 
 Para atualizar uma instalação antiga, faça um backup e execute primeiro
 [`database/migrations/V2__estacao_log_e_variaveis_extras.sql`](database/migrations/V2__estacao_log_e_variaveis_extras.sql),
-e depois [`database/migrations/V3__resumos_por_estacao.sql`](database/migrations/V3__resumos_por_estacao.sql).
+depois [`database/migrations/V3__resumos_por_estacao.sql`](database/migrations/V3__resumos_por_estacao.sql) e por fim
+[`database/migrations/V4__estacao_brasileira_ativa.sql`](database/migrations/V4__estacao_brasileira_ativa.sql).
 Não execute as migrações depois do `schema.sql` atual, pois uma instalação nova já nasce completa.
 
 O arquivo [`database/dados-teste.sql`](database/dados-teste.sql) é opcional e insere leituras reais e simuladas para
@@ -157,10 +159,10 @@ Para interromper uma aplicação iniciada pelo terminal, pressione `Ctrl+C`.
 
 ### Trocar de cidade
 
-Edite no `.env` `ESTACAO_NOME` (use somente letras ASCII, por exemplo `Estacao Campinas`),
-`ESTACAO_CIDADE`, `OPENMETEO_LATITUDE`, `OPENMETEO_LONGITUDE` e, se necessário, `OPENMETEO_TIMEZONE`.
-Reinicie **collector** e **webapp**. A nova configuração cria ou reutiliza uma estação própria e mantém os dados da
-cidade anterior separados no banco.
+Com o **webapp** e o **collector** em execução, abra **Configurações**, informe a cidade e selecione a UF. O país é
+fixado em Brasil. Ao salvar, o webapp obtém as coordenadas na Open-Meteo, cria ou atualiza a estação no banco e a
+ativa. A próxima coleta já usa a nova posição. Os dados históricos da cidade anterior continuam guardados, mas não
+são exibidos enquanto outra estação estiver ativa.
 
 ## Modos de coleta
 
@@ -200,9 +202,9 @@ sempre que alterar o modo ou o cenário.
 | `MYSQL_DATABASE` | `estacao_meteorologica` | Nome do banco |
 | `MYSQL_USER` | `aps` | Usuário da aplicação |
 | `MYSQL_PASSWORD` | vazio | Senha local do usuário da aplicação |
-| `ESTACAO_NOME` | `Estação Sorocaba` | Nome da estação utilizada pelo collector |
-| `OPENMETEO_LATITUDE` | `-23.5015` | Latitude consultada ou simulada |
-| `OPENMETEO_LONGITUDE` | `-47.4526` | Longitude consultada ou simulada |
+| `ESTACAO_NOME` | `Estação Sorocaba` | Alternativa usada somente antes do primeiro cadastro no banco |
+| `OPENMETEO_LATITUDE` | `-23.5015` | Coordenada alternativa antes do primeiro cadastro ou no modo simulado |
+| `OPENMETEO_LONGITUDE` | `-47.4526` | Coordenada alternativa antes do primeiro cadastro ou no modo simulado |
 | `COLETA_INTERVALO_MS` | `10000` | Intervalo entre coletas em milissegundos |
 | `COLETA_MODO` | `REAL` | Origem da coleta: `REAL` ou `SIMULADO` |
 | `COLETA_CENARIO` | vazio | Cenário fixo no modo simulado; vazio alterna os cenários |
@@ -221,6 +223,7 @@ necessários de teste e demonstração, respeitando os limites da Open-Meteo.
 | <http://localhost:8080/api/leituras?modo=REAL> | Somente leituras reais |
 | <http://localhost:8080/api/leituras?modo=SIMULADO> | Somente leituras simuladas |
 | <http://localhost:8080/api/leituras/total> | Quantidade total de leituras |
+| <http://localhost:8080/api/estacao> | Estação brasileira ativa |
 
 A consulta por período também está disponível:
 

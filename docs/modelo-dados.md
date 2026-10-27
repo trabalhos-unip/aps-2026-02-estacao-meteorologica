@@ -5,6 +5,7 @@ O banco MySQL do projeto se chama `estacao_meteorologica` e possui cinco tabelas
 - [schema.sql](../database/schema.sql) cria uma instalação nova.
 - [V2__estacao_log_e_variaveis_extras.sql](../database/migrations/V2__estacao_log_e_variaveis_extras.sql) atualiza a estrutura antiga sem apagar leituras.
 - [V3__resumos_por_estacao.sql](../database/migrations/V3__resumos_por_estacao.sql) vincula os resumos já existentes à estação correta.
+- [V4__estacao_brasileira_ativa.sql](../database/migrations/V4__estacao_brasileira_ativa.sql) identifica cidade, UF e país, além de definir a estação ativa.
 - [dados-teste.sql](../database/dados-teste.sql) insere leituras de exemplo depois de a estação existir.
 
 ## Relacionamentos
@@ -19,17 +20,18 @@ O banco MySQL do projeto se chama `estacao_meteorologica` e possui cinco tabelas
 
 `estacao` 1 --- N `resumo_horario_meteorologico`
 
-O sistema começa com uma única estação: **Sorocaba**, nas coordenadas `-23.5015, -47.4526`. Uma nova cidade é configurada por coordenadas no `.env`; ela recebe uma estação própria e não compartilha leituras nem resumos com a anterior. A interface de seleção dinâmica entre estações ainda não faz parte do projeto.
+O sistema começa com **Sorocaba/SP**, nas coordenadas `-23.5015, -47.4526`. Pela tela de configurações o usuário informa cidade e UF brasileiras; o webapp resolve a localização na Geocoding API da Open-Meteo e persiste a estação. Só uma estação permanece `ativa` por vez. Leituras e resumos não são compartilhados entre cidades, e o collector lê a estação ativa em cada ciclo.
 
 ## Tabela `estacao`
 
 | Coluna | Tipo | Finalidade |
 |---|---|---|
 | `id` | `BIGINT` | Identificador da estação. |
-| `nome` | `VARCHAR(100)` | Nome único da estação. |
+| `nome` | `VARCHAR(100)` | Chave técnica única, no formato `BR:UF:CIDADE_NORMALIZADA`. |
+| `cidade`, `estado`, `pais` | `VARCHAR` | Identificação da localização; `pais` é restrito a `BR`. |
 | `latitude`, `longitude` | `DOUBLE` | Posição configurada para a coleta. |
 | `fuso_horario` | `VARCHAR(50)` | Fuso usado pela estação; padrão `America/Sao_Paulo`. |
-| `ativa` | `BIT(1)` | Indica se a estação pode ser usada. |
+| `ativa` | `BIT(1)` | Indica a única estação usada pelas coletas e consultas atuais. |
 | `criada_em` | `DATETIME(6)` | Momento do cadastro. |
 
 ## Tabela `leitura_meteorologica`
