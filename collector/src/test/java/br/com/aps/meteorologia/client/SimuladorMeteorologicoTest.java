@@ -20,10 +20,10 @@ class SimuladorMeteorologicoTest {
         SimuladorMeteorologico simulador = simulador("");
         List<Integer> codigos = new ArrayList<>();
         for (int i = 0; i < CenarioSimulado.values().length; i++) {
-            codigos.add(simulador.buscarCondicoesAtuais().current().codigoClima());
+            codigos.add(simulador.obterDadosAtuais().codigoClima());
         }
 
-        assertThat(simulador.getCenarios()).containsExactly(CenarioSimulado.values());
+        assertThat(simulador.obterCenarios()).containsExactly(CenarioSimulado.values());
         assertThat(codigos).containsExactly(0, 65, 3, null);
     }
 
@@ -32,7 +32,7 @@ class SimuladorMeteorologicoTest {
         SimuladorMeteorologico simulador = simulador("vento_forte");
 
         for (int i = 0; i < 3; i++) {
-            RespostaOpenMeteo.CondicoesAtuais atuais = simulador.buscarCondicoesAtuais().current();
+            DadosMeteorologicosAtuais atuais = simulador.obterDadosAtuais();
             assertThat(atuais.velocidadeVento()).isBetween(60.0, 76.0);
             assertThat(atuais.precipitacao()).isZero();
         }
@@ -42,26 +42,25 @@ class SimuladorMeteorologicoTest {
     void variaTemperaturaParaOGraficoNaoFicarPlano() {
         SimuladorMeteorologico simulador = simulador("TEMPO_SECO");
 
-        double primeira = simulador.buscarCondicoesAtuais().current().temperatura();
-        double segunda = simulador.buscarCondicoesAtuais().current().temperatura();
+        double primeira = simulador.obterDadosAtuais().temperatura();
+        double segunda = simulador.obterDadosAtuais().temperatura();
 
         assertThat(primeira).isNotEqualTo(segunda);
         assertThat(primeira).isBetween(30.0, 32.0);
     }
 
     @Test
-    void respostaNoMesmoFormatoDaApi() {
-        RespostaOpenMeteo resposta = simulador("TEMPO_SECO").buscarCondicoesAtuais();
+    void retornaDadosNormalizados() {
+        DadosMeteorologicosAtuais resposta = simulador("TEMPO_SECO").obterDadosAtuais();
 
         assertThat(resposta.latitude()).isEqualTo(-23.5505);
         assertThat(resposta.longitude()).isEqualTo(-46.6333);
-        assertThat(resposta.current().time()).matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}");
-        assertThat(resposta.current().interval()).isEqualTo(900);
+        assertThat(resposta.dataHoraFonte()).matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}");
     }
 
     @Test
     void dadosIncompletosChegamComoAusentes() {
-        RespostaOpenMeteo.CondicoesAtuais atuais = simulador("DADOS_INCOMPLETOS").buscarCondicoesAtuais().current();
+        DadosMeteorologicosAtuais atuais = simulador("DADOS_INCOMPLETOS").obterDadosAtuais();
 
         assertThat(atuais.temperatura()).isNotNull();
         assertThat(atuais.umidadeRelativa()).isNull();
@@ -71,8 +70,8 @@ class SimuladorMeteorologicoTest {
 
     @Test
     void modoEFonte() {
-        assertThat(simulador("").modo()).isEqualTo(ModoOperacao.SIMULADO);
-        assertThat(simulador("").nomeFonte()).isEqualTo("Simulador");
+        assertThat(simulador("").obterModoOperacao()).isEqualTo(ModoOperacao.SIMULADO);
+        assertThat(simulador("").obterNomeFonte()).isEqualTo("Simulador");
     }
 
     @Test

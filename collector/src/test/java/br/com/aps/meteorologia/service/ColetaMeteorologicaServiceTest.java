@@ -1,15 +1,18 @@
 package br.com.aps.meteorologia.service;
 
-import br.com.aps.meteorologia.client.ApiMeteorologicaException;
 import br.com.aps.meteorologia.client.CenarioSimulado;
-import br.com.aps.meteorologia.client.FonteMeteorologica;
-import br.com.aps.meteorologia.client.RespostaOpenMeteo;
-import br.com.aps.meteorologia.client.RespostaOpenMeteo.CondicoesAtuais;
+import br.com.aps.meteorologia.client.DadosMeteorologicosAtuais;
+import br.com.aps.meteorologia.client.FonteMeteorologicaException;
+import br.com.aps.meteorologia.client.IFonteMeteorologica;
 import br.com.aps.meteorologia.client.SimuladorMeteorologico;
-import br.com.aps.meteorologia.dao.LeituraMeteorologicaDAO;
+import br.com.aps.meteorologia.dao.IEstacaoDAO;
+import br.com.aps.meteorologia.dao.ILeituraMeteorologicaDAO;
+import br.com.aps.meteorologia.dao.ILogColetaDAO;
 import br.com.aps.meteorologia.dao.PersistenciaException;
+import br.com.aps.meteorologia.model.Estacao;
 import br.com.aps.meteorologia.model.LeituraMeteorologica;
 import br.com.aps.meteorologia.model.ModoOperacao;
+import br.com.aps.meteorologia.model.TipoErroColeta;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -26,31 +29,43 @@ import static org.mockito.Mockito.when;
 
 class ColetaMeteorologicaServiceTest {
 
-    private static final LocalDateTime AGORA = LocalDateTime.of(2026, 10, 20, 22, 20, 5);
-    private static final CondicoesAtuais CONDICOES =
-            new CondicoesAtuais("2026-10-20T22:15", 900, 14.0, 89, 0.0, 0.0, 9.8, 3);
-    private static final RespostaOpenMeteo RESPOSTA =
-            new RespostaOpenMeteo(-23.514938, -46.610504, "America/Sao_Paulo", CONDICOES);
+    private static final LocalDateTime DATA_HORA_COLETA = LocalDateTime.of(2026, 10, 20, 22, 20, 5);
+    private static final DadosMeteorologicosAtuais DADOS_METEOROLOGICOS = new DadosMeteorologicosAtuais(
+            -23.514938, -46.610504, "2026-10-20T22:15", 14.0, 89, 0.0, 0.0, 9.8, 3,
+            13.1, 1015.2, 180, 14.0, 45);
 
-    private FonteMeteorologica fonte;
-    private LeituraMeteorologicaDAO dao;
-    private ColetaMeteorologicaService service;
+    private IFonteMeteorologica fonteMeteorologica;
+    private ILeituraMeteorologicaDAO leituraMeteorologicaDAO;
+    private IEstacaoDAO estacaoDAO;
+    private ILogColetaDAO logColetaDAO;
+    private ConversorLeituraMeteorologica conversorLeitura;
+    private ColetaMeteorologicaService servicoColeta;
 
     @BeforeEach
     void preparar() {
-        fonte = mock(FonteMeteorologica.class);
-        when(fonte.modo()).thenReturn(ModoOperacao.REAL);
-        when(fonte.nomeFonte()).thenReturn(LeituraMeteorologica.FONTE_OPEN_METEO);
-        dao = mock(LeituraMeteorologicaDAO.class);
-        when(dao.salvar(any())).thenAnswer(chamada -> chamada.getArgument(0));
-        service = new ColetaMeteorologicaService(fonte, dao, "America/Sao_Paulo");
+        fonteMeteorologica = mock(IFonteMeteorologica.class);
+        when(fonteMeteorologica.obterModoOperacao()).thenReturn(ModoOperacao.REAL);
+        when(fonteMeteorologica.obterNomeFonte()).thenReturn(LeituraMeteorologica.FONTE_OPEN_METEO);
+
+        leituraMeteorologicaDAO = mock(ILeituraMeteorologicaDAO.class);
+        when(leituraMeteorologicaDAO.salvar(any())).thenAnswer(chamada -> chamada.getArgument(0));
+
+        estacaoDAO = mock(IEstacaoDAO.class);
+        Estacao estacao = new Estacao();
+        estacao.setId(1L);
+        when(estacaoDAO.buscarOuCriar(any(), any(Double.class), any(Double.class))).thenReturn(estacao);
+
+        logColetaDAO = mock(ILogColetaDAO.class);
+        conversorLeitura = new ConversorLeituraMeteorologica();
+        servicoColeta = criarServico(fonteMeteorologica);
     }
 
     @Test
-    void converteCondicoesParaLeitura() {
-        LeituraMeteorologica leitura = service.converter(CONDICOES, AGORA);
+    void converteDadosParaLeitura() {
+        LeituraMeteorologica leitura = conversorLeitura.converterParaLeitura(
+                DADOS_METEOROLOGICOS, DATA_HORA_COLETA);
 
-        assertThat(leitura.getDataHoraColeta()).isEqualTo(AGORA);
+        assertThat(leitura.getDataHoraColeta()).isEqualTo(DATA_HORA_COLETA);
         assertThat(leitura.getDataHoraFonte()).isEqualTo(LocalDateTime.of(2026, 10, 20, 22, 15));
         assertThat(leitura.getTemperatura()).isEqualTo(14.0);
         assertThat(leitura.getUmidadeRelativa()).isEqualTo(89);
@@ -58,43 +73,51 @@ class ColetaMeteorologicaServiceTest {
         assertThat(leitura.getChuva()).isEqualTo(0.0);
         assertThat(leitura.getVelocidadeVento()).isEqualTo(9.8);
         assertThat(leitura.getCodigoClima()).isEqualTo(3);
+        assertThat(leitura.getSensacaoTermica()).isEqualTo(13.1);
+        assertThat(leitura.getPressaoSuperficie()).isEqualTo(1015.2);
+        assertThat(leitura.getDirecaoVento()).isEqualTo(180);
+        assertThat(leitura.getRajadaVento()).isEqualTo(14.0);
+        assertThat(leitura.getCoberturaNuvens()).isEqualTo(45);
         assertThat(leitura.getPresencaPrecipitacao()).isFalse();
     }
 
     @Test
     void coletaRealGravaCoordenadasModoEFonte() {
-        when(fonte.buscarCondicoesAtuais()).thenReturn(RESPOSTA);
+        when(fonteMeteorologica.obterDadosAtuais()).thenReturn(DADOS_METEOROLOGICOS);
 
-        LeituraMeteorologica leitura = service.coletar();
+        LeituraMeteorologica leitura = servicoColeta.coletarESalvarLeitura();
 
         assertThat(leitura.getLatitude()).isEqualTo(-23.514938);
         assertThat(leitura.getLongitude()).isEqualTo(-46.610504);
+        assertThat(leitura.getEstacaoId()).isEqualTo(1L);
         assertThat(leitura.getModoOperacao()).isEqualTo(ModoOperacao.REAL);
         assertThat(leitura.getFonteDados()).isEqualTo("Open-Meteo");
-        verify(dao).salvar(leitura);
+        verify(leituraMeteorologicaDAO).salvar(leitura);
     }
 
     @Test
-    void coletaSimuladaPassaPeloMesmoCaminho() {
+    void coletaSimuladaPassaPeloMesmoFluxo() {
         SimuladorMeteorologico simulador =
                 new SimuladorMeteorologico("CHUVA_FORTE", -23.5505, -46.6333, "America/Sao_Paulo");
-        ColetaMeteorologicaService coletaSimulada = new ColetaMeteorologicaService(simulador, dao, "America/Sao_Paulo");
 
-        LeituraMeteorologica leitura = coletaSimulada.coletar();
+        LeituraMeteorologica leitura = criarServico(simulador).coletarESalvarLeitura();
 
         assertThat(leitura.getModoOperacao()).isEqualTo(ModoOperacao.SIMULADO);
         assertThat(leitura.getFonteDados()).isEqualTo("Simulador");
         assertThat(leitura.getLatitude()).isEqualTo(-23.5505);
         assertThat(leitura.getPrecipitacao()).isEqualTo(CenarioSimulado.CHUVA_FORTE.precipitacao());
         assertThat(leitura.getPresencaPrecipitacao()).isTrue();
-        verify(dao).salvar(leitura);
+        verify(leituraMeteorologicaDAO).salvar(leitura);
     }
 
     @Test
-    void valoresAusentesFicamNulos() {
-        CondicoesAtuais parciais = new CondicoesAtuais(null, null, 20.5, null, null, null, null, null);
+    void valoresAusentesPermanecemNulos() {
+        DadosMeteorologicosAtuais dadosParciais = new DadosMeteorologicosAtuais(
+                null, null, null, 20.5, null, null, null, null, null,
+                null, null, null, null, null);
 
-        LeituraMeteorologica leitura = service.converter(parciais, AGORA);
+        LeituraMeteorologica leitura = conversorLeitura.converterParaLeitura(
+                dadosParciais, DATA_HORA_COLETA);
 
         assertThat(leitura.getTemperatura()).isEqualTo(20.5);
         assertThat(leitura.getDataHoraFonte()).isNull();
@@ -103,43 +126,54 @@ class ColetaMeteorologicaServiceTest {
     }
 
     @Test
-    void rejeitaRespostaSemVariaveis() {
-        CondicoesAtuais vazias = new CondicoesAtuais("2026-10-20T22:15", 900, null, null, null, null, null, null);
+    void rejeitaDadosSemVariaveisMeteorologicas() {
+        DadosMeteorologicosAtuais dadosVazios = new DadosMeteorologicosAtuais(
+                null, null, "2026-10-20T22:15", null, null, null, null, null, null,
+                null, null, null, null, null);
 
-        assertThatThrownBy(() -> service.converter(vazias, AGORA)).isInstanceOf(ApiMeteorologicaException.class);
+        assertThatThrownBy(() -> conversorLeitura.converterParaLeitura(dadosVazios, DATA_HORA_COLETA))
+                .isInstanceOf(FonteMeteorologicaException.class);
     }
 
     @Test
-    void regraDePresencaDePrecipitacao() {
-        assertThat(ColetaMeteorologicaService.calcularPresencaPrecipitacao(0.0, 0.0)).isFalse();
-        assertThat(ColetaMeteorologicaService.calcularPresencaPrecipitacao(0.4, 0.0)).isTrue();
-        assertThat(ColetaMeteorologicaService.calcularPresencaPrecipitacao(0.0, 0.2)).isTrue();
-        assertThat(ColetaMeteorologicaService.calcularPresencaPrecipitacao(null, 1.0)).isTrue();
-        assertThat(ColetaMeteorologicaService.calcularPresencaPrecipitacao(null, null)).isNull();
+    void determinaPresencaDePrecipitacao() {
+        assertThat(ConversorLeituraMeteorologica.determinarPresencaPrecipitacao(0.0, 0.0)).isFalse();
+        assertThat(ConversorLeituraMeteorologica.determinarPresencaPrecipitacao(0.4, 0.0)).isTrue();
+        assertThat(ConversorLeituraMeteorologica.determinarPresencaPrecipitacao(0.0, 0.2)).isTrue();
+        assertThat(ConversorLeituraMeteorologica.determinarPresencaPrecipitacao(null, 1.0)).isTrue();
+        assertThat(ConversorLeituraMeteorologica.determinarPresencaPrecipitacao(null, null)).isNull();
     }
 
     @Test
-    void coletaSalvaPeloDao() {
-        when(fonte.buscarCondicoesAtuais()).thenReturn(RESPOSTA);
+    void coletaAgendadaSalvaLeitura() {
+        when(fonteMeteorologica.obterDadosAtuais()).thenReturn(DADOS_METEOROLOGICOS);
 
-        service.executarColeta();
+        servicoColeta.executarColetaAgendada();
 
-        verify(dao).salvar(any(LeituraMeteorologica.class));
+        verify(leituraMeteorologicaDAO).salvar(any(LeituraMeteorologica.class));
     }
 
     @Test
-    void falhaDaApiNaoDerrubaOColetor() {
-        when(fonte.buscarCondicoesAtuais()).thenThrow(new ApiMeteorologicaException("API fora do ar"));
+    void falhaDaFonteNaoInterrompeOAgendamento() {
+        when(fonteMeteorologica.obterDadosAtuais()).thenThrow(new FonteMeteorologicaException(
+                "Fonte indisponível", TipoErroColeta.REDE));
 
-        assertThatCode(service::executarColeta).doesNotThrowAnyException();
-        verify(dao, never()).salvar(any());
+        assertThatCode(servicoColeta::executarColetaAgendada).doesNotThrowAnyException();
+        verify(leituraMeteorologicaDAO, never()).salvar(any());
     }
 
     @Test
-    void falhaDoBancoNaoDerrubaOColetor() {
-        when(fonte.buscarCondicoesAtuais()).thenReturn(RESPOSTA);
-        when(dao.salvar(any())).thenThrow(new PersistenciaException("MySQL indisponível", null));
+    void falhaDoBancoNaoInterrompeOAgendamento() {
+        when(fonteMeteorologica.obterDadosAtuais()).thenReturn(DADOS_METEOROLOGICOS);
+        when(leituraMeteorologicaDAO.salvar(any()))
+                .thenThrow(new PersistenciaException("MySQL indisponível", null));
 
-        assertThatCode(service::executarColeta).doesNotThrowAnyException();
+        assertThatCode(servicoColeta::executarColetaAgendada).doesNotThrowAnyException();
+    }
+
+    private ColetaMeteorologicaService criarServico(IFonteMeteorologica fonte) {
+        return new ColetaMeteorologicaService(
+                fonte, leituraMeteorologicaDAO, estacaoDAO, logColetaDAO, conversorLeitura,
+                "Estação Sorocaba", -23.5015, -47.4526, "America/Sao_Paulo");
     }
 }

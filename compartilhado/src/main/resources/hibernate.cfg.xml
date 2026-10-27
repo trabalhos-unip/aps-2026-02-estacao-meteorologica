@@ -13,10 +13,12 @@
         <property name="hibernate.connection.driver_class">com.mysql.cj.jdbc.Driver</property>
         <property name="hibernate.connection.pool_size">5</property>
 
-        <!-- update: cria/ajusta a tabela automaticamente. Depois de aprovado o database/schema.sql, usar "validate". -->
-        <property name="hibernate.hbm2ddl.auto">update</property>
+        <!-- validate: confere se o schema criado por database/schema.sql está compatível, sem alterá-lo. -->
+        <property name="hibernate.hbm2ddl.auto">validate</property>
         <property name="hibernate.show_sql">false</property>
 
+        <mapping class="br.com.aps.meteorologia.model.Estacao"/>
         <mapping class="br.com.aps.meteorologia.model.LeituraMeteorologica"/>
+        <mapping class="br.com.aps.meteorologia.model.LogColeta"/>
     </session-factory>
 </hibernate-configuration>

@@ -1,7 +1,7 @@
 package br.com.aps.meteorologia.controller;
 
 import br.com.aps.meteorologia.app.WebappApplication;
-import br.com.aps.meteorologia.dao.LeituraMeteorologicaDAO;
+import br.com.aps.meteorologia.dao.ILeituraMeteorologicaDAO;
 import br.com.aps.meteorologia.dao.PersistenciaException;
 import br.com.aps.meteorologia.model.LeituraMeteorologica;
 import br.com.aps.meteorologia.model.ModoOperacao;
@@ -37,7 +37,7 @@ class LeituraMeteorologicaServletTest {
     private int porta;
 
     @MockitoBean
-    private LeituraMeteorologicaDAO dao;
+    private ILeituraMeteorologicaDAO dao;
 
     private HttpResponse<String> get(String caminho) throws IOException, InterruptedException {
         URI uri = URI.create("http://localhost:" + porta + caminho);
@@ -160,7 +160,7 @@ class LeituraMeteorologicaServletTest {
 
     @Test
     void totalDeLeituras() throws Exception {
-        when(dao.contar()).thenReturn(42L);
+        when(dao.contarTodas()).thenReturn(42L);
 
         assertThat(get("/api/leituras/total").body()).isEqualTo("{\"total\":42}");
     }

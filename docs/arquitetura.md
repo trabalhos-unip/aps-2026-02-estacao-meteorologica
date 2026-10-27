@@ -22,7 +22,6 @@ aps-2026-02-estacao-meteorologica/
 ├── README.md
 ├── .gitignore
 ├── .env.exemplo                      # modelo das configurações locais (o .env real não vai para o GitHub)
-├── compose.yaml                      # MySQL via Docker
 ├── pom.xml                           # projeto Maven com os 3 módulos
 ├── docs/
 │   ├── planejamento.md
@@ -44,13 +43,22 @@ aps-2026-02-estacao-meteorologica/
 │       │   │   │   ├── HibernateUtil.java
 │       │   │   │   └── Configuracao.java          # lê o .env (usuário/senha do banco)
 │       │   │   ├── model/
+│       │   │   │   ├── Estacao.java
 │       │   │   │   ├── LeituraMeteorologica.java
-│       │   │   │   └── ModoOperacao.java              # REAL ou SIMULADO
+│       │   │   │   ├── LogColeta.java
+│       │   │   │   ├── ModoOperacao.java              # REAL ou SIMULADO
+│       │   │   │   ├── StatusColeta.java
+│       │   │   │   └── TipoErroColeta.java
 │       │   │   ├── dao/
-│       │   │   │   ├── LeituraMeteorologicaDAO.java
+│       │   │   │   ├── IEstacaoDAO.java
+│       │   │   │   ├── ILeituraMeteorologicaDAO.java
+│       │   │   │   ├── ILogColetaDAO.java
 │       │   │   │   ├── PersistenciaException.java
 │       │   │   │   └── impl/
-│       │   │   │       └── LeituraMeteorologicaDAOImpl.java
+│       │   │   │       ├── EstacaoDAOHibernate.java
+│       │   │   │       ├── LeituraMeteorologicaDAOHibernate.java
+│       │   │   │       ├── LogColetaDAOHibernate.java
+│       │   │   │       └── OperacaoHibernate.java
 │       │   │   └── util/
 │       │   │       └── CodigoClimaWMO.java        # código WMO → descrição em português
 │       │   └── resources/
@@ -64,13 +72,15 @@ aps-2026-02-estacao-meteorologica/
 │       │   │   ├── app/
 │       │   │   │   └── CollectorApplication.java
 │       │   │   ├── service/
-│       │   │   │   └── ColetaMeteorologicaService.java
+│       │   │   │   ├── ColetaMeteorologicaService.java
+│       │   │   │   └── ConversorLeituraMeteorologica.java
 │       │   │   ├── client/
-│       │   │   │   ├── FonteMeteorologica.java       # interface: de onde vêm os dados
+│       │   │   │   ├── IFonteMeteorologica.java      # interface: de onde vêm os dados
+│       │   │   │   ├── DadosMeteorologicosAtuais.java
 │       │   │   │   ├── SimuladorMeteorologico.java   # fonte SIMULADA (cenários de teste)
 │       │   │   │   ├── CenarioSimulado.java
-│       │   │   │   ├── ApiMeteorologicaClient.java   # fonte REAL (Open-Meteo)
-│       │   │   │   ├── ApiMeteorologicaException.java
+│       │   │   │   ├── ClienteOpenMeteo.java         # fonte REAL (Open-Meteo)
+│       │   │   │   ├── FonteMeteorologicaException.java
 │       │   │   │   └── RespostaOpenMeteo.java     # formato do JSON da Open-Meteo
 │       │   │   └── util/
 │       │   │       └── DataHoraUtil.java
@@ -112,13 +122,13 @@ aps-2026-02-estacao-meteorologica/
 APLICAÇÃO 1 — COLETOR (collector)
 API Open-Meteo                  (ou SimuladorMeteorologico, no modo SIMULADO)
        ↓  HTTP GET (java.net.http.HttpClient)
-ApiMeteorologicaClient          → valida status HTTP e JSON   (implementa FonteMeteorologica)
+ClienteOpenMeteo                → valida status HTTP e JSON   (implementa IFonteMeteorologica)
        ↓
 ColetaMeteorologicaService      → converte, calcula presença de precipitação  (@Scheduled a cada 10 s)
        ↓
 LeituraMeteorologica (model)
        ↓
-LeituraMeteorologicaDAO         → LeituraMeteorologicaDAOImpl
+ILeituraMeteorologicaDAO        → LeituraMeteorologicaDAOHibernate
        ↓
 Hibernate (HibernateUtil + hibernate.cfg.xml)
        ↓
@@ -137,9 +147,9 @@ Navegador → LeituraMeteorologicaServlet → ConsultaMeteorologicaService → D
 | `app/` | `CollectorApplication`, `WebappApplication` | Ponto de partida (`main`). Inicia o Spring Boot e entrega ao Spring o DAO e o Servlet. |
 | `config/` | `HibernateUtil`, `Configuracao` | Cria a `SessionFactory` única do Hibernate a partir do `hibernate.cfg.xml`, completando URL/usuário/senha com o `.env`. |
 | `model/` | `LeituraMeteorologica` | Uma leitura meteorológica como objeto Java, mapeada para a tabela `leitura_meteorologica`. |
-| `dao/` | `LeituraMeteorologicaDAO` | Contrato (interface) de acesso aos dados. |
-| `dao/impl/` | `LeituraMeteorologicaDAOImpl` | Implementação com Hibernate: abre a sessão, controla a transação, fecha a sessão. Todo acesso ao banco está aqui. |
-| `client/` | `FonteMeteorologica`, `ApiMeteorologicaClient`, `SimuladorMeteorologico` | Origem dos dados: Open-Meteo via HTTP (REAL) ou cenários de teste (SIMULADO). |
+| `dao/` | `ILeituraMeteorologicaDAO` | Contrato (interface) de acesso aos dados. |
+| `dao/impl/` | `LeituraMeteorologicaDAOHibernate` | Implementação com Hibernate; o ciclo de sessão e transação é centralizado em `OperacaoHibernate`. |
+| `client/` | `IFonteMeteorologica`, `ClienteOpenMeteo`, `SimuladorMeteorologico` | Origem dos dados: Open-Meteo via HTTP (REAL) ou cenários de teste (SIMULADO). |
 | `service/` | `ColetaMeteorologicaService`, `ConsultaMeteorologicaService` | Regras dos casos de uso: obter/converter/salvar e validar/consultar. |
 | `controller/` | `LeituraMeteorologicaServlet` | Recebe a requisição Web, chama o serviço e devolve JSON. Sem SQL nem Hibernate. |
 | `util/` | `DataHoraUtil`, `CodigoClimaWMO` | Funções auxiliares de data/hora e tradução do código do clima. |
@@ -174,8 +184,8 @@ substitui nenhum desses itens. O Hibernate e o DAO continuam explícitos no cód
 | Entregar `index.html`, `css/`, `js/` | Spring Boot | pasta `webapp/src/main/webapp` (copiada para `static` no build) |
 | Converter objetos Java em JSON | Jackson (configurado pelo Spring) | `ObjectMapper` usado pelo Servlet |
 | **Conectar ao banco** | **Hibernate (HibernateUtil)** | `config/HibernateUtil.java` + `hibernate.cfg.xml` |
-| **Abrir/fechar sessão, commit/rollback** | **DAO (código nosso)** | `dao/impl/LeituraMeteorologicaDAOImpl.java` |
-| **Consultas (HQL)** | **DAO (código nosso)** | `LeituraMeteorologicaDAOImpl` |
+| **Abrir/fechar sessão, commit/rollback** | **Infraestrutura de persistência** | `dao/impl/OperacaoHibernate.java` |
+| **Consultas (HQL)** | **DAO (código nosso)** | `LeituraMeteorologicaDAOHibernate` |
 
 Ou seja: **o Spring Boot não toca no banco**. Não usamos Spring Data JPA, `@Transactional` nem `@Repository`.
 A persistência é feita do jeito ensinado em aula (HibernateUtil + Session + Transaction).
@@ -191,7 +201,7 @@ public class CollectorApplication {
     public static void main(String[] args) { SpringApplication.run(CollectorApplication.class, args); }
 
     @Bean
-    public LeituraMeteorologicaDAO leituraMeteorologicaDAO() { return new LeituraMeteorologicaDAOImpl(); }
+    public ILeituraMeteorologicaDAO leituraMeteorologicaDAO() { return new LeituraMeteorologicaDAOHibernate(); }
 
     @PreDestroy
     public void encerrar() { HibernateUtil.fechar(); }
@@ -199,13 +209,13 @@ public class CollectorApplication {
 ```
 
 1. `@SpringBootApplication` liga a configuração automática e procura classes anotadas em
-   `br.com.aps.meteorologia` e subpacotes (`scanBasePackages`), encontrando `ApiMeteorologicaClient` (`@Component`)
+   `br.com.aps.meteorologia` e subpacotes (`scanBasePackages`), encontrando `ClienteOpenMeteo` (`@Component`)
    e `ColetaMeteorologicaService` (`@Service`).
-2. O método `@Bean` entrega ao Spring o DAO (`new LeituraMeteorologicaDAOImpl()`).
-3. O Spring cria o `ApiMeteorologicaClient` preenchendo URL, latitude, longitude e timeout com `@Value`
+2. O método `@Bean` entrega ao Spring o DAO (`new LeituraMeteorologicaDAOHibernate()`).
+3. O Spring cria o `ClienteOpenMeteo` preenchendo URL, latitude, longitude e timeout com `@Value`
    (valores do `application.properties`/`.env`).
 4. O Spring cria o `ColetaMeteorologicaService`, passando o client e o DAO no construtor (injeção de dependência).
-5. `@EnableScheduling` faz o método `executarColeta()` (anotado com `@Scheduled`) rodar logo ao iniciar e depois
+5. `@EnableScheduling` faz o método `executarColetaAgendada()` (anotado com `@Scheduled`) rodar e depois
    a cada `coleta.intervalo-ms` (10.000 ms), sempre 10 s **após o término** da coleta anterior (`fixedDelay`),
    sem execuções sobrepostas.
 6. Ao encerrar (Ctrl+C/Stop), `@PreDestroy` fecha a `SessionFactory` do Hibernate.
@@ -226,13 +236,13 @@ public class CollectorApplication {
 |---|---|---|
 | `@SpringBootApplication` | `CollectorApplication`, `WebappApplication` | Classe principal; liga configuração automática e varredura de componentes. |
 | `@EnableScheduling` | `CollectorApplication` | Ativa o agendador de tarefas. |
-| `@Scheduled` | `ColetaMeteorologicaService.executarColeta()` | Executa o método periodicamente (10 s). |
-| `@Component` | `ApiMeteorologicaClient` | "Spring, crie e gerencie este objeto." |
+| `@Scheduled` | `ColetaMeteorologicaService.executarColetaAgendada()` | Executa o método periodicamente (10 s). |
+| `@Component` | `ClienteOpenMeteo` | "Spring, crie e gerencie este objeto." |
 | `@Service` | `ColetaMeteorologicaService`, `ConsultaMeteorologicaService` | Igual ao `@Component`, indicando a camada de serviço. |
 | `@Bean` | métodos em `app/` | Cria manualmente um objeto que o Spring passa a gerenciar (DAO e Servlet). |
-| `@Value("${...}")` | construtor do `ApiMeteorologicaClient`, `ColetaMeteorologicaService` | Injeta um valor do `application.properties`/`.env`. |
+| `@Value("${...}")` | construtor do `ClienteOpenMeteo`, `ColetaMeteorologicaService` | Injeta um valor do `application.properties`/`.env`. |
 | `@PreDestroy` | `app/` | Método executado ao encerrar a aplicação (fecha o Hibernate). |
-| `@ConditionalOnProperty` | `ApiMeteorologicaClient`, `SimuladorMeteorologico` | Cria o objeto só quando `coleta.modo` tem o valor indicado (REAL é o padrão). |
+| `@ConditionalOnProperty` | `ClienteOpenMeteo`, `SimuladorMeteorologico` | Cria o objeto só quando `coleta.modo` tem o valor indicado (REAL é o padrão). |
 
 ### 4.5 Configurações (`application.properties` + `.env`)
 
@@ -241,7 +251,8 @@ da raiz do projeto. As propriedades usam `${VARIAVEL:padrão}`:
 
 | Propriedade | Variável no `.env` | Padrão |
 |---|---|---|
-| `openmeteo.latitude` / `openmeteo.longitude` | `OPENMETEO_LATITUDE` / `OPENMETEO_LONGITUDE` | São Paulo (-23.5505 / -46.6333) |
+| `estacao.nome` | `ESTACAO_NOME` | `Estação Sorocaba` |
+| `openmeteo.latitude` / `openmeteo.longitude` | `OPENMETEO_LATITUDE` / `OPENMETEO_LONGITUDE` | Sorocaba (-23.5015 / -47.4526) |
 | `coleta.intervalo-ms` | `COLETA_INTERVALO_MS` | 10000 |
 | `coleta.modo` | `COLETA_MODO` | `REAL` (ou `SIMULADO`) |
 | `coleta.cenario` | `COLETA_CENARIO` | vazio = alterna os cenários (ou `TEMPO_SECO`, `CHUVA_FORTE`, `VENTO_FORTE`, `DADOS_INCOMPLETOS`) |
@@ -268,14 +279,16 @@ classe `Configuracao` e aplicados pelo `HibernateUtil`, não pelo Spring.
 ```java
 Configuration configuration = new Configuration();
 configuration.configure();                                  // lê hibernate.cfg.xml
-configuration.setProperty("hibernate.connection.url", Configuracao.urlBanco());       // do .env
-configuration.setProperty("hibernate.connection.username", Configuracao.usuarioBanco());
-configuration.setProperty("hibernate.connection.password", Configuracao.senhaBanco());
+configuration.setProperty("hibernate.connection.url", Configuracao.obterUrlBanco());
+configuration.setProperty("hibernate.connection.username", Configuracao.obterUsuarioBanco());
+configuration.setProperty("hibernate.connection.password", Configuracao.obterSenhaBanco());
 sessionFactory = configuration.buildSessionFactory();
 ```
 
-- O `hibernate.cfg.xml` tem o driver do MySQL, `hbm2ddl.auto=update`, o tamanho do pool e o mapeamento
+- O `hibernate.cfg.xml` tem o driver do MySQL, `hbm2ddl.auto=validate`, o tamanho do pool e o mapeamento
   `<mapping class="br.com.aps.meteorologia.model.LeituraMeteorologica"/>`.
+- O schema é criado e evoluído pelo `database/schema.sql`; `validate` apenas confirma a compatibilidade ao iniciar,
+  sem alterar o banco automaticamente.
 - **A senha não fica no XML**, porque o arquivo vai para o GitHub. URL, usuário e senha vêm do `.env`.
 - A `SessionFactory` é criada uma vez, na primeira utilização. Se o MySQL estiver fora do ar, é lançada uma
   `PersistenciaException` e a próxima chamada tenta conectar de novo (o coletor não para).
@@ -318,14 +331,15 @@ de abrir/fechar sessão.
 ## 6. Orientação a objetos aplicada
 
 - **Encapsulamento:** atributos privados na entidade, acesso por getters/setters.
-- **Abstração e polimorfismo:** serviços dependem das interfaces `LeituraMeteorologicaDAO` e `FonteMeteorologica`.
-  O `ColetaMeteorologicaService` não sabe se os dados vêm da Open-Meteo (`ApiMeteorologicaClient`) ou do
+- **Abstração e polimorfismo:** serviços dependem das interfaces `ILeituraMeteorologicaDAO` e `IFonteMeteorologica`.
+  O `ColetaMeteorologicaService` não sabe se os dados vêm da Open-Meteo (`ClienteOpenMeteo`) ou do
   `SimuladorMeteorologico`; os dois seguem o mesmo caminho de validação e gravação. Nos testes, o DAO é trocado
   por um simulado sem mudar o serviço.
 - **Herança:** `LeituraMeteorologicaServlet extends HttpServlet`; exceções próprias estendem `RuntimeException`.
-- **Responsabilidade única:** cada classe tem uma função (cliente HTTP, regra de coleta, acesso a dados, Servlet).
-- **Exceções próprias:** `ApiMeteorologicaException` (falhas recuperáveis da API) e `PersistenciaException` (banco).
-- **Records** (`RespostaOpenMeteo`, `ErroResposta`) para objetos imutáveis de transporte de dados.
+- **Responsabilidade única:** cliente HTTP, normalização dos dados, conversão da leitura, persistência e resposta Web
+  permanecem em classes separadas.
+- **Exceções próprias:** `FonteMeteorologicaException` (falhas recuperáveis da fonte) e `PersistenciaException` (banco).
+- **Records** (`RespostaOpenMeteo`, `DadosMeteorologicosAtuais`, `ErroResposta`) para transporte imutável de dados.
 - **Enums** (`ModoOperacao`, `CenarioSimulado`) para valores fixos com significado.
 
 ## 7. Tratamento de erros
@@ -334,10 +348,10 @@ de abrir/fechar sessão.
 
 | Situação | Tratamento |
 |---|---|
-| Timeout (10 s) / sem rede | `ApiMeteorologicaException` → log `WARN` |
-| HTTP 429 (limite da API) | `ApiMeteorologicaException` com mensagem específica → log `WARN` |
-| HTTP 4xx/5xx | `ApiMeteorologicaException` com o status → log `WARN` |
-| JSON inválido / sem `current` / sem nenhuma variável | `ApiMeteorologicaException` → log `WARN` |
+| Timeout (10 s) / sem rede | `FonteMeteorologicaException` → log `WARN` |
+| HTTP 429 (limite da API) | `FonteMeteorologicaException` com tipo `LIMITE_API` → log `WARN` |
+| HTTP 4xx/5xx | `FonteMeteorologicaException` com o status → log `WARN` |
+| JSON inválido / sem `current` / sem nenhuma variável | `FonteMeteorologicaException` → log `WARN` |
 | MySQL fora do ar (na partida ou durante a execução) | `PersistenciaException` → log `ERROR`; reconecta na coleta seguinte |
 
 Os logs não mostram credenciais.

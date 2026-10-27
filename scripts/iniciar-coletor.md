@@ -6,9 +6,8 @@ Aplicação 1: consulta a Open-Meteo a cada 10 segundos e grava cada leitura no 
 
 1. JDK 21+ e Maven instalados (ou o Maven do IntelliJ).
 2. Arquivo `.env` na raiz do projeto, copiado de `.env.exemplo`, com as senhas definidas.
-3. MySQL rodando:
-   - Docker: `docker compose up -d` (na raiz do projeto).
-   - Ou MySQL local com o banco `estacao_meteorologica` e o usuário do `.env` (script: `database/schema.sql`).
+3. MySQL instalado e rodando localmente, com o banco `estacao_meteorologica` e o usuário do `.env`
+   (script: `database/schema.sql`).
 
 ## Pelo IntelliJ IDEA
 

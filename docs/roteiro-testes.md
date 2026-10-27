@@ -10,8 +10,8 @@ Rodam sem MySQL e sem internet. Resultado de 22/10/2026: **51 testes, 0 falhas**
 
 | Módulo | Classe de teste | O que verifica |
 |---|---|---|
-| compartilhado | `LeituraMeteorologicaDAOImplTest` (10) | DAO real com `HibernateUtil` + H2 (modo MySQL): salvar e recuperar, banco vazio, valores ausentes (`NULL`), últimas leituras em ordem cronológica, consulta por período, coordenadas e modo gravados, modo padrão REAL, **filtro por modo**, **limite na consulta por período**, validação de parâmetros |
-| collector | `ApiMeteorologicaClientTest` (7) | cliente HTTP contra servidor local que imita a Open-Meteo: resposta real convertida, URL com todas as variáveis, HTTP 429 (limite), HTTP 503 (indisponível), JSON inválido, resposta sem `current`, sem conexão |
+| compartilhado | `LeituraMeteorologicaDAOHibernateTest` (10) | DAO real com `HibernateUtil` + H2 (modo MySQL): salvar e recuperar, banco vazio, valores ausentes (`NULL`), últimas leituras em ordem cronológica, consulta por período, coordenadas e modo gravados, modo padrão REAL, **filtro por modo**, **limite na consulta por período**, validação de parâmetros |
+| collector | `ClienteOpenMeteoTest` (7) | cliente HTTP contra servidor local que imita a Open-Meteo: resposta real convertida, URL com todas as variáveis, HTTP 429 (limite), HTTP 503 (indisponível), JSON inválido, resposta sem `current`, sem conexão |
 | collector | `SimuladorMeteorologicoTest` (7) | alternância dos 4 cenários, cenário fixo, variação de valores, mesmo formato da API, dados incompletos como ausentes, modo/fonte, cenário inválido |
 | collector | `ColetaMeteorologicaServiceTest` (9) | conversão API → entidade, coordenadas/modo/fonte gravados, **coleta simulada pelo mesmo caminho da real**, valores ausentes, resposta sem variáveis rejeitada, regra de presença de precipitação, falha da fonte e falha do banco **não derrubam** o coletor |
 | collector | `DataHoraUtilTest` (4) | conversão do `current.time`, horário vazio, formato inválido |

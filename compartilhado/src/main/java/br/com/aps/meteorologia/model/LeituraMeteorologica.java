@@ -44,6 +44,9 @@ public class LeituraMeteorologica {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "estacao_id", nullable = false)
+    private Long estacaoId;
+
     /** Instante em que o coletor consultou a API e salvou a leitura. */
     @Column(name = "data_hora_coleta", nullable = false)
     private LocalDateTime dataHoraColeta;
@@ -98,6 +101,25 @@ public class LeituraMeteorologica {
     @Column(name = "fonte_dados", nullable = false, length = 50)
     private String fonteDados = FONTE_OPEN_METEO;
 
+    @Column(name = "sensacao_termica")
+    private Double sensacaoTermica;
+
+    @Column(name = "pressao_superficie")
+    private Double pressaoSuperficie;
+
+    @Column(name = "direcao_vento")
+    private Integer direcaoVento;
+
+    @Column(name = "rajada_vento")
+    private Double rajadaVento;
+
+    @Column(name = "cobertura_nuvens")
+    private Integer coberturaNuvens;
+
+    /** Indica que a fonte devolveu o mesmo horário da coleta anterior. */
+    @Column(name = "dado_repetido", nullable = false)
+    private boolean dadoRepetido;
+
     /** Construtor exigido pelo Hibernate. */
     public LeituraMeteorologica() {
     }
@@ -108,6 +130,14 @@ public class LeituraMeteorologica {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getEstacaoId() {
+        return estacaoId;
+    }
+
+    public void setEstacaoId(Long estacaoId) {
+        this.estacaoId = estacaoId;
     }
 
     public LocalDateTime getDataHoraColeta() {
@@ -220,9 +250,58 @@ public class LeituraMeteorologica {
         this.fonteDados = fonteDados;
     }
 
+    public Double getSensacaoTermica() {
+        return sensacaoTermica;
+    }
+
+    public void setSensacaoTermica(Double sensacaoTermica) {
+        this.sensacaoTermica = sensacaoTermica;
+    }
+
+    public Double getPressaoSuperficie() {
+        return pressaoSuperficie;
+    }
+
+    public void setPressaoSuperficie(Double pressaoSuperficie) {
+        this.pressaoSuperficie = pressaoSuperficie;
+    }
+
+    public Integer getDirecaoVento() {
+        return direcaoVento;
+    }
+
+    public void setDirecaoVento(Integer direcaoVento) {
+        this.direcaoVento = direcaoVento;
+    }
+
+    public Double getRajadaVento() {
+        return rajadaVento;
+    }
+
+    public void setRajadaVento(Double rajadaVento) {
+        this.rajadaVento = rajadaVento;
+    }
+
+    public Integer getCoberturaNuvens() {
+        return coberturaNuvens;
+    }
+
+    public void setCoberturaNuvens(Integer coberturaNuvens) {
+        this.coberturaNuvens = coberturaNuvens;
+    }
+
+    public boolean isDadoRepetido() {
+        return dadoRepetido;
+    }
+
+    public void setDadoRepetido(boolean dadoRepetido) {
+        this.dadoRepetido = dadoRepetido;
+    }
+
     @Override
     public String toString() {
         return "LeituraMeteorologica{id=" + id
+                + ", estacaoId=" + estacaoId
                 + ", dataHoraColeta=" + dataHoraColeta
                 + ", dataHoraFonte=" + dataHoraFonte
                 + ", temperatura=" + temperatura
@@ -234,6 +313,7 @@ public class LeituraMeteorologica {
                 + ", latitude=" + latitude
                 + ", longitude=" + longitude
                 + ", modoOperacao=" + modoOperacao
+                + ", dadoRepetido=" + dadoRepetido
                 + ", presencaPrecipitacao=" + presencaPrecipitacao + '}';
     }
 }

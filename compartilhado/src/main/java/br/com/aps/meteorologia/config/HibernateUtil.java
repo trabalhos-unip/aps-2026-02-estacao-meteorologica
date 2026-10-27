@@ -25,9 +25,9 @@ public final class HibernateUtil {
             try {
                 Configuration configuration = new Configuration();
                 configuration.configure(); // lê src/main/resources/hibernate.cfg.xml
-                configuration.setProperty("hibernate.connection.url", Configuracao.urlBanco());
-                configuration.setProperty("hibernate.connection.username", Configuracao.usuarioBanco());
-                configuration.setProperty("hibernate.connection.password", Configuracao.senhaBanco());
+                configuration.setProperty("hibernate.connection.url", Configuracao.obterUrlBanco());
+                configuration.setProperty("hibernate.connection.username", Configuracao.obterUsuarioBanco());
+                configuration.setProperty("hibernate.connection.password", Configuracao.obterSenhaBanco());
                 aplicarSobrescritas(configuration);
                 sessionFactory = configuration.buildSessionFactory();
             } catch (RuntimeException e) {

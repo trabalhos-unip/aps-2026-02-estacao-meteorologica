@@ -227,13 +227,13 @@ aps-estacao-meteorologica/
 │       │   │   ├── model/
 │       │   │   │   └── LeituraMeteorologica.java
 │       │   │   ├── dao/
-│       │   │   │   ├── LeituraMeteorologicaDAO.java
+│       │   │   │   ├── ILeituraMeteorologicaDAO.java
 │       │   │   │   └── impl/
-│       │   │   │       └── LeituraMeteorologicaDAOImpl.java
+│       │   │   │       └── LeituraMeteorologicaDAOHibernate.java
 │       │   │   ├── service/
 │       │   │   │   └── ColetaMeteorologicaService.java
 │       │   │   ├── client/
-│       │   │   │   └── ApiMeteorologicaClient.java
+│       │   │   │   └── ClienteOpenMeteo.java
 │       │   │   └── util/
 │       │   │       └── DataHoraUtil.java
 │       │   └── resources/
@@ -249,9 +249,9 @@ aps-estacao-meteorologica/
 │   │   │   │   ├── model/
 │   │   │   │   │   └── LeituraMeteorologica.java
 │   │   │   │   ├── dao/
-│   │   │   │   │   ├── LeituraMeteorologicaDAO.java
+│   │   │   │   │   ├── ILeituraMeteorologicaDAO.java
 │   │   │   │   │   └── impl/
-│   │   │   │   │       └── LeituraMeteorologicaDAOImpl.java
+│   │   │   │   │       └── LeituraMeteorologicaDAOHibernate.java
 │   │   │   │   ├── service/
 │   │   │   │   │   └── ConsultaMeteorologicaService.java
 │   │   │   │   └── controller/
@@ -295,13 +295,13 @@ aps-estacao-meteorologica/
 APLICAÇÃO 1 — COLETOR
 API meteorológica
        ↓
-ApiMeteorologicaClient
+ClienteOpenMeteo
        ↓
 ColetaMeteorologicaService
        ↓
 LeituraMeteorologica (model)
        ↓
-LeituraMeteorologicaDAO
+ILeituraMeteorologicaDAO
        ↓
 Hibernate
        ↓

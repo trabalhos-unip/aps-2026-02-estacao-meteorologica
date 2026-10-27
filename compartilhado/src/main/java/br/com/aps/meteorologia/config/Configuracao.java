@@ -27,7 +27,7 @@ public final class Configuracao {
     private Configuracao() {
     }
 
-    public static String texto(String chave, String padrao) {
+    private static String obterTexto(String chave, String valorPadrao) {
         String valor = System.getProperty(chave);
         if (valor == null) {
             valor = System.getenv(chave);
@@ -35,39 +35,22 @@ public final class Configuracao {
         if (valor == null) {
             valor = ARQUIVO_ENV.get(chave);
         }
-        return (valor == null || valor.isBlank()) ? padrao : valor.trim();
-    }
-
-    public static int inteiro(String chave, int padrao) {
-        String valor = texto(chave, null);
-        try {
-            return valor == null ? padrao : Integer.parseInt(valor);
-        } catch (NumberFormatException e) {
-            throw new IllegalStateException("Configuração " + chave + " deve ser um número inteiro: " + valor, e);
-        }
-    }
-
-    public static double decimal(String chave, double padrao) {
-        String valor = texto(chave, null);
-        try {
-            return valor == null ? padrao : Double.parseDouble(valor);
-        } catch (NumberFormatException e) {
-            throw new IllegalStateException("Configuração " + chave + " deve ser um número: " + valor, e);
-        }
+        return (valor == null || valor.isBlank()) ? valorPadrao : valor.trim();
     }
 
     /** URL JDBC do MySQL montada a partir de MYSQL_HOST, MYSQL_PORT e MYSQL_DATABASE. */
-    public static String urlBanco() {
-        return "jdbc:mysql://" + texto("MYSQL_HOST", "localhost") + ":" + texto("MYSQL_PORT", "3306")
-                + "/" + texto("MYSQL_DATABASE", "estacao_meteorologica") + "?serverTimezone=America/Sao_Paulo";
+    public static String obterUrlBanco() {
+        return "jdbc:mysql://" + obterTexto("MYSQL_HOST", "localhost") + ":" + obterTexto("MYSQL_PORT", "3306")
+                + "/" + obterTexto("MYSQL_DATABASE", "estacao_meteorologica")
+                + "?serverTimezone=America/Sao_Paulo";
     }
 
-    public static String usuarioBanco() {
-        return texto("MYSQL_USER", "aps");
+    public static String obterUsuarioBanco() {
+        return obterTexto("MYSQL_USER", "aps");
     }
 
-    public static String senhaBanco() {
-        return texto("MYSQL_PASSWORD", "");
+    public static String obterSenhaBanco() {
+        return obterTexto("MYSQL_PASSWORD", "");
     }
 
     /** Lê linhas no formato CHAVE=valor do .env, ignorando comentários (#) e linhas vazias. */
