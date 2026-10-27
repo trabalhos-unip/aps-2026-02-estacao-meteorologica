@@ -1,6 +1,33 @@
 /* Campo de localização pesquisável, mantendo a linguagem visual do Meteora. */
 .location-pill { text-decoration: none; cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease; }
 .location-pill:hover, .location-pill:focus-visible { color: #096dbb; border-color: #82c8f5; box-shadow: 0 4px 13px #168fec24; transform: translateY(-1px); }
+.secondary-button { min-height: 39px; border: 1px solid #d7e4ee; border-radius: 8px; padding: 0 14px; background: #fff; color: #315374; font-weight: 600; }
+.secondary-button:hover { background: #f2f8fc; border-color: #9bccec; }
+.location-settings-button { display: inline-flex; align-items: center; gap: 7px; margin-top: 12px; }
+.location-settings-button .icon { width: 17px; height: 17px; }
+.location-modal[hidden] { display: none; }
+.location-modal { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 18px; background: #19314a73; backdrop-filter: blur(3px); }
+.location-modal-open { overflow: hidden; }
+.location-modal-card { width: min(560px, 100%); max-height: min(650px, calc(100vh - 36px)); overflow: auto; border: 1px solid #e0eaf2; border-radius: 14px; background: #fff; box-shadow: 0 24px 55px #10294545; padding: 24px; }
+.location-modal-heading { display: flex; justify-content: space-between; gap: 18px; padding-bottom: 19px; border-bottom: 1px solid #e8eef4; }
+.location-modal-heading small { color: #168fec; font-weight: 700; font-size: .66rem; letter-spacing: .08em; }
+.location-modal-heading h2 { margin: 5px 0 4px; color: #102f56; font-size: 1.25rem; }
+.location-modal-heading p { margin: 0; color: #6f85a0; font-size: .82rem; }
+.location-modal-close { width: 29px; height: 29px; padding: 0 0 3px; flex: none; border: 1px solid #d6e2eb; border-radius: 50%; background: #fff; color: #42627e; font-size: 1.25rem; line-height: 1; }
+.location-modal-close:hover { background: #f2f8fc; color: #146fba; }
+.location-search-label { display: block; margin: 20px 0 7px; color: #315374; font-size: .78rem; font-weight: 600; }
+.location-modal .select2-container--default .select2-selection--single { height: 44px; border-color: #86c8f2; box-shadow: 0 0 0 3px #2499f51a; }
+.location-modal .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 42px; }
+.location-modal .select2-container--default .select2-selection--single .select2-selection__arrow { height: 42px; }
+.location-modal-section { margin-top: 20px; }
+.location-modal-section > span { display: block; margin-bottom: 9px; color: #7086a0; font-size: .73rem; font-weight: 600; }
+.location-shortcuts, .location-recent { display: flex; flex-wrap: wrap; gap: 8px; }
+.location-shortcuts button, .location-recent button { border: 1px solid #d9e7f0; border-radius: 18px; background: #f8fbfe; color: #315374; padding: 8px 11px; font-size: .76rem; }
+.location-shortcuts button:hover, .location-recent button:hover { border-color: #70bdf0; background: #eaf6fe; color: #0b76bd; }
+.location-modal-footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 24px; padding-top: 17px; border-top: 1px solid #e8eef4; color: #7288a1; font-size: .72rem; }
+.location-modal-footer > div { display: flex; gap: 8px; flex: none; }
+.location-modal-footer .primary-button { min-height: 39px; }
+@media (max-width: 520px) { .location-modal-card { padding: 18px; } .location-modal-footer { align-items: stretch; flex-direction: column; } .location-modal-footer > div { display: grid; grid-template-columns: 1fr 1fr; } }
 .select2-container { width: 100% !important; }
 .select2-container--default .select2-selection--single { height: 39px; border: 1px solid #d9e5ef; border-radius: 8px; background: #fff; }
 .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 37px; padding-left: 11px; color: #173d65; font-size: .83rem; }

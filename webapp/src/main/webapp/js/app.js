@@ -2,8 +2,8 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi, demoForecast } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261026-4";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261026-4";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261027-2";
-import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261027-2";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261027-3";
+import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261027-3";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
 const pages = { "/": overviewPage, "/historico": historyPage, "/simulacoes": simulationsPage, "/configuracoes": settingsPage };
@@ -56,6 +56,132 @@ async function showConfiguredLocation() {
   }
 }
 showConfiguredLocation();
+
+let locationChoice = null;
+
+function setupLocationSelector() {
+  const modal = document.querySelector("#location-modal");
+  const citySelect = document.querySelector("#location-city");
+  const confirm = document.querySelector("#location-confirm");
+  const recentSection = document.querySelector("#location-recent-section");
+  const recentContainer = document.querySelector("#location-recent");
+  const $ = window.jQuery;
+  let $city = null;
+  let openRequest = 0;
+  const locationId = (city, state) => `${city}::${state}`;
+
+  function close() {
+    openRequest += 1;
+    modal.hidden = true;
+    document.body.classList.remove("location-modal-open");
+    document.querySelector("[data-open-location-modal]")?.focus();
+  }
+
+  function selectCity(city, state, syncWidget = true) {
+    if (!city || !state) return;
+    const id = locationId(city, state);
+    let option = [...citySelect.options].find(item => item.value === id);
+    if (!option) {
+      option = new Option(`${city} — ${state}`, id, true, true);
+      citySelect.add(option);
+    }
+    citySelect.value = id;
+    locationChoice = { city, state };
+    confirm.disabled = false;
+    if (syncWidget && $city) $city.val(id).trigger("change.select2");
+  }
+
+  function recentLocations() {
+    const locations = savedPreferences().recentCities;
+    return Array.isArray(locations) ? locations.filter(item => item?.city && item?.state).slice(0, 5) : [];
+  }
+
+  function renderRecent() {
+    const locations = recentLocations();
+    recentContainer.replaceChildren();
+    recentSection.hidden = locations.length === 0;
+    locations.forEach(item => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = `${item.city}, ${item.state}`;
+      button.addEventListener("click", () => selectCity(item.city, item.state));
+      recentContainer.append(button);
+    });
+  }
+
+  if ($?.fn?.select2) {
+    $city = $(citySelect);
+    $city.select2({
+      width: "100%",
+      dropdownParent: $(modal),
+      placeholder: citySelect.dataset.placeholder,
+      minimumInputLength: 2,
+      language: {
+        inputTooShort: () => "Digite ao menos 2 letras",
+        searching: () => "Buscando cidades…",
+        noResults: () => "Nenhuma cidade brasileira encontrada"
+      },
+      ajax: {
+        delay: 200,
+        transport: (params, success, failure) => {
+          estacaoApi.sugestoes(params.data.term || "").then(success).catch(failure);
+          return { abort() {} };
+        },
+        processResults: suggestions => ({
+          results: suggestions.map(item => ({
+            id: locationId(item.cidade, item.estado),
+            text: `${item.cidade} — ${item.nomeEstado || item.estado}`,
+            cidade: item.cidade,
+            estado: item.estado
+          }))
+        })
+      }
+    });
+    $city.on("select2:select", event => selectCity(event.params.data.cidade, event.params.data.estado, false));
+  }
+
+  async function open() {
+    const request = ++openRequest;
+    locationChoice = null;
+    confirm.disabled = true;
+    renderRecent();
+    modal.hidden = false;
+    document.body.classList.add("location-modal-open");
+    try {
+      const station = await estacaoApi.ativa();
+      if (request === openRequest && !locationChoice) selectCity(station.cidade, station.estado);
+    } catch {
+      const saved = savedPreferences();
+      if (request === openRequest && !locationChoice) selectCity(saved.city, saved.state);
+    }
+    if ($city) $city.select2("open");
+  }
+
+  document.querySelectorAll("[data-open-location-modal]").forEach(button => button.addEventListener("click", open));
+  document.querySelectorAll("[data-close-location-modal]").forEach(button => button.addEventListener("click", close));
+  modal.addEventListener("click", event => { if (event.target === modal) close(); });
+  document.addEventListener("keydown", event => { if (event.key === "Escape" && !modal.hidden) close(); });
+  document.querySelectorAll("[data-location-city]").forEach(button => button.addEventListener("click", () =>
+    selectCity(button.dataset.locationCity, button.dataset.locationState)));
+  confirm.addEventListener("click", async () => {
+    if (!locationChoice) return;
+    confirm.disabled = true;
+    try {
+      const station = await estacaoApi.selecionar(locationChoice.city, locationChoice.state);
+      const preferences = savedPreferences();
+      const recentCities = [{ city: station.cidade, state: station.estado }, ...recentLocations()
+        .filter(item => !(item.city === station.cidade && item.state === station.estado))].slice(0, 5);
+      localStorage.setItem(preferencesKey, JSON.stringify({ ...preferences, city: station.cidade, state: station.estado, recentCities }));
+      showLocation({ city: station.cidade, state: station.estado });
+      close();
+      showToast("Cidade atualizada. Os dados começam a ser carregados em instantes.");
+    } catch (error) {
+      showToast(error.message || "Não foi possível atualizar a cidade.");
+      confirm.disabled = false;
+    }
+  });
+}
+setupLocationSelector();
 
 const rangeDays = { "24h": 1, "7d": 7, "30d": 30 };
 const variables = {
@@ -517,72 +643,9 @@ async function initSettings() {
     text("#settings-last-badge", minutes < 1 ? "Agora" : `Há ${minutes} min`);
   }
   const saved = savedPreferences();
-  const citySelect = document.querySelector("#settings-city");
-  const stateSelect = document.querySelector("#settings-state");
-  const chooseCity = (city, state = "") => {
-    if (!city) return;
-    const existing = [...citySelect.options].find(option => option.value === city);
-    if (!existing) citySelect.add(new Option(city, city, true, true));
-    citySelect.value = city;
-    if (state) stateSelect.value = state;
-  };
-  chooseCity(saved.city, saved.state);
-  stateSelect.value = saved.state || "";
   document.querySelector("#settings-interval").value = saved.interval || "900";
   document.querySelector("#settings-notes").value = saved.notes || "";
   document.querySelector(`input[name="settings-mode"][value="${saved.mode === "simulado" ? "simulado" : "real"}"]`).checked = true;
-  try {
-    const estacao = await estacaoApi.ativa();
-    // A estação ativa é a fonte de verdade, mesmo se outro navegador alterou a cidade.
-    chooseCity(estacao.cidade, estacao.estado);
-  } catch {
-    // A tela continua disponível para cadastrar a primeira estação.
-  }
-  const $ = window.jQuery;
-  if ($?.fn?.select2) {
-    const $state = $(stateSelect);
-    $state.select2({
-      width: "100%",
-      placeholder: "Todos os estados",
-      allowClear: true,
-      minimumResultsForSearch: 0
-    });
-    $state.val(stateSelect.value).trigger("change.select2");
-    const $city = $(citySelect);
-    $city.select2({
-      width: "100%",
-      placeholder: citySelect.dataset.placeholder,
-      minimumInputLength: 2,
-      language: {
-        inputTooShort: () => "Digite ao menos 2 letras",
-        searching: () => "Buscando cidades…",
-        noResults: () => "Nenhuma cidade brasileira encontrada"
-      },
-      ajax: {
-        delay: 200,
-        transport: (params, success, failure) => {
-          estacaoApi.sugestoes(params.data.term || "", stateSelect.value)
-            .then(success).catch(failure);
-          return { abort() {} };
-        },
-        processResults: suggestions => ({
-          results: suggestions.map(item => ({
-            id: item.cidade,
-            text: `${item.cidade} — ${item.nomeEstado || item.estado}`,
-            estado: item.estado
-          }))
-        })
-      }
-    });
-    $city.on("select2:select", event => {
-      const state = event.params.data.estado;
-      if (state) {
-        stateSelect.value = state;
-        $state.trigger("change.select2");
-      }
-    });
-    stateSelect.addEventListener("change", () => $city.val(null).trigger("change"));
-  }
   document.querySelectorAll('input[name="settings-mode"]').forEach(radio => {
     radio.addEventListener("change", async () => {
       if (!radio.checked) return;
@@ -599,18 +662,14 @@ async function initSettings() {
   });
   document.querySelector("#save-settings").addEventListener("click", async () => {
     const preferences = {
-      city: citySelect.value.trim(),
-      state: stateSelect.value,
       interval: document.querySelector("#settings-interval").value,
       mode: document.querySelector('input[name="settings-mode"]:checked').value,
       notes: document.querySelector("#settings-notes").value.trim(),
     };
     try {
-      const estacao = await estacaoApi.selecionar(preferences.city, preferences.state);
-      localStorage.setItem(preferencesKey, JSON.stringify(preferences));
+      localStorage.setItem(preferencesKey, JSON.stringify({ ...savedPreferences(), ...preferences }));
       applyMode(preferences.mode);
-      showLocation({ city: estacao.cidade, state: estacao.estado === "SP" ? "São Paulo" : estacao.estado });
-      showToast("Estação atualizada. Os dados da nova cidade começam a ser carregados em instantes.");
+      showToast("Configurações salvas neste navegador.");
     } catch (error) {
       showToast(error.message || "Não foi possível atualizar a estação.");
     }
