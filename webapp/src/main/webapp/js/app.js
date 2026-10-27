@@ -2,8 +2,8 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi, demoForecast } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261026-4";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261026-4";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261027-3";
-import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261027-3";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261027-4";
+import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261027-4";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
 const pages = { "/": overviewPage, "/historico": historyPage, "/simulacoes": simulationsPage, "/configuracoes": settingsPage };
@@ -175,6 +175,7 @@ function setupLocationSelector() {
       showLocation({ city: station.cidade, state: station.estado });
       close();
       showToast("Cidade atualizada. Os dados começam a ser carregados em instantes.");
+      refreshAfterCityChange();
     } catch (error) {
       showToast(error.message || "Não foi possível atualizar a cidade.");
       confirm.disabled = false;
@@ -196,6 +197,8 @@ let historyStart = null;
 let historyEnd = null;
 let homeChartRequest = 0;
 let historyRequest = 0;
+let homeRange = "7d";
+let pageRefreshInProgress = false;
 
 function rangeDates(range, anchor = anchorDate(latestReading)) {
   const end = new Date(anchor);
@@ -437,7 +440,7 @@ async function renderForecast() {
   }
 }
 
-async function initHome() {
+async function refreshHome() {
   await renderForecast();
   await fetchLatest();
   try {
@@ -455,10 +458,16 @@ async function initHome() {
     renderHomeReading(latestReading, []);
     fillTable("#recent-rows", [], Array.from({ length: 5 }, () => ({})), error.message);
   }
-  await loadHomeChart("7d");
+  await loadHomeChart(homeRange);
+}
+
+async function initHome() {
+  await refreshHome();
   document.querySelector("#home-range").addEventListener("click", event => {
     const button = event.target.closest("[data-range]");
-    if (button) loadHomeChart(button.dataset.range);
+    if (!button) return;
+    homeRange = button.dataset.range;
+    loadHomeChart(homeRange);
   });
 }
 
@@ -697,4 +706,39 @@ async function initSettings() {
   }
 }
 
+async function refreshCurrentPage() {
+  if (document.hidden || pageRefreshInProgress) return;
+  pageRefreshInProgress = true;
+  try {
+    if (path === "/") {
+      await refreshHome();
+    } else if (path === "/historico") {
+      await fetchLatest();
+      if (historyStart && historyEnd) await loadHistory(historyStart, historyEnd);
+    } else if (path === "/configuracoes") {
+      await fetchLatest();
+      text("#settings-last-reading", latestReading ? dateTime(latestReading.dataHoraColeta) : "—");
+      text("#settings-last-badge", latestReading ? "Agora" : "Indisponível");
+    } else {
+      await fetchLatest();
+    }
+  } finally {
+    pageRefreshInProgress = false;
+  }
+}
+
+function refreshAfterCityChange() {
+  // A primeira tentativa é imediata; as demais acompanham a coleta e a sincronização da nova cidade.
+  [0, 2_000, 5_000, 10_000].forEach(delay => window.setTimeout(() => { void refreshCurrentPage(); }, delay));
+}
+
+function startBackgroundRefresh() {
+  window.setInterval(() => { void refreshCurrentPage(); }, 10_000);
+  window.addEventListener("focus", () => { void refreshCurrentPage(); });
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) void refreshCurrentPage();
+  });
+}
+
 ({ "/": initHome, "/historico": initHistory, "/simulacoes": initSimulations, "/configuracoes": initSettings })[path]();
+startBackgroundRefresh();

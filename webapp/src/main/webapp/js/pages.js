@@ -1,4 +1,4 @@
-import { icon } from "./ui.js?v=20261027-3";
+import { icon } from "./ui.js?v=20261027-4";
 
 function tabs(id, selected = "24h") {
   return `<div class="segmented" id="${id}" role="group" aria-label="Período do gráfico">
