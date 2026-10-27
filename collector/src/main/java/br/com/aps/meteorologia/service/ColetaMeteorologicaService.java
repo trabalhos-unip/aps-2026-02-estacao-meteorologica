@@ -40,6 +40,7 @@ public class ColetaMeteorologicaService {
     private final double longitudeEstacao;
 
     private Long estacaoId;
+    private volatile Long estacaoDaUltimaColeta;
     private LocalDateTime ultimaDataHoraFonte;
 
     public ColetaMeteorologicaService(IFonteMeteorologica fonteMeteorologica,
@@ -84,6 +85,20 @@ public class ColetaMeteorologicaService {
         }
     }
 
+    /** Faz uma leitura imediata apenas quando a pessoa escolhe outra estação. */
+    @Scheduled(fixedDelayString = "${coleta.verificacao-estacao-ms:1000}",
+            initialDelayString = "${coleta.verificacao-estacao-ms:1000}")
+    public void coletarQuandoEstacaoMudar() {
+        try {
+            var ativa = estacaoDAO.buscarAtiva();
+            if (ativa.isPresent() && !ativa.get().getId().equals(estacaoDaUltimaColeta)) {
+                executarColetaAgendada();
+            }
+        } catch (RuntimeException erro) {
+            LOG.warn("Verificação da estação ativa ignorada: {}", erro.getMessage());
+        }
+    }
+
     public LeituraMeteorologica coletarESalvarLeitura() {
         var estacao = obterEstacaoAtiva();
         double latitude = estacao.getLatitude() == null ? latitudeEstacao : estacao.getLatitude();
@@ -100,6 +115,7 @@ public class ColetaMeteorologicaService {
 
         LeituraMeteorologica leituraSalva = leituraMeteorologicaDAO.salvar(leitura);
         ultimaDataHoraFonte = leituraSalva.getDataHoraFonte();
+        estacaoDaUltimaColeta = estacao.getId();
         return leituraSalva;
     }
 

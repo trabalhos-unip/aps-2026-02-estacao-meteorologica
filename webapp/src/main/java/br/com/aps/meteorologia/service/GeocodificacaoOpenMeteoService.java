@@ -12,6 +12,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
+import java.util.List;
 
 /** Resolve exclusivamente municípios brasileiros pela API de geocodificação da Open-Meteo. */
 @Service
@@ -52,7 +53,36 @@ public class GeocodificacaoOpenMeteoService {
         } catch (Exception e) { throw new IllegalArgumentException("Falha ao consultar a localização na Open-Meteo"); }
     }
 
+    /** Sugestões para o Select2, sempre limitadas a localidades brasileiras. */
+    public List<Sugestao> buscarSugestoesBrasil(String termo, String estado) {
+        if (termo == null || termo.trim().length() < 2) return List.of();
+        String uf = estado == null ? "" : estado.trim().toUpperCase();
+        String nomeEstado = uf.isEmpty() ? null : ESTADOS.get(uf);
+        if (!uf.isEmpty() && nomeEstado == null) return List.of();
+        try {
+            URI uri = URI.create("https://geocoding-api.open-meteo.com/v1/search?count=10&language=pt&name="
+                    + URLEncoder.encode(termo.trim(), StandardCharsets.UTF_8));
+            HttpResponse<String> resposta = http.send(HttpRequest.newBuilder(uri).timeout(Duration.ofSeconds(5)).GET().build(), HttpResponse.BodyHandlers.ofString());
+            if (resposta.statusCode() < 200 || resposta.statusCode() >= 300) return List.of();
+            Resultado resultado = json.readValue(resposta.body(), Resultado.class);
+            if (resultado.results == null) return List.of();
+            return resultado.results.stream()
+                    .filter(r -> "BR".equalsIgnoreCase(r.countryCode))
+                    .filter(r -> nomeEstado == null || nomeEstado.equalsIgnoreCase(r.admin1))
+                    .map(r -> new Sugestao(r.name, siglaDoEstado(r.admin1), r.admin1))
+                    .toList();
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
+
+    private static String siglaDoEstado(String nome) {
+        return ESTADOS.entrySet().stream().filter(e -> e.getValue().equalsIgnoreCase(nome))
+                .map(Map.Entry::getKey).findFirst().orElse("");
+    }
+
     public record Localizacao(String cidade, String estado, double latitude, double longitude, String fusoHorario) {}
+    public record Sugestao(String cidade, String estado, String nomeEstado) {}
     @JsonIgnoreProperties(ignoreUnknown = true) static class Resultado { public java.util.List<Item> results; }
     @JsonIgnoreProperties(ignoreUnknown = true) static class Item { public String name, admin1, timezone; @com.fasterxml.jackson.annotation.JsonProperty("country_code") public String countryCode; public double latitude, longitude; }
 }

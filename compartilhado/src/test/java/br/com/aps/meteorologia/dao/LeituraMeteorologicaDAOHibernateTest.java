@@ -201,6 +201,7 @@ class LeituraMeteorologicaDAOHibernateTest {
         assertThat(campinas.getEstado()).isEqualTo("SP");
         assertThat(campinas.getPais()).isEqualTo("BR");
         assertThat(estacoes.buscarAtiva()).map(Estacao::getId).contains(campinas.getId());
+        assertThat(estacoes.buscarPorCidadeEEstado("campinas", "sp")).map(Estacao::getId).contains(campinas.getId());
 
         Estacao sorocaba = estacoes.salvarEAtivar("Sorocaba", "SP", -23.50167, -47.45806, "America/Sao_Paulo");
 

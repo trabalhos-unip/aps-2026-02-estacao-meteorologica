@@ -26,6 +26,10 @@ export const resumosHorariosApi = {
 
 export const estacaoApi = {
   ativa: () => request("/api/estacao", ""),
+  sugestoes: (termo, estado = "") => request(
+    `/sugestoes?termo=${encodeURIComponent(termo)}&estado=${encodeURIComponent(estado)}`,
+    "/api/estacao"
+  ),
   selecionar: async (cidade, estado) => {
     const response = await fetch("/api/estacao", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ cidade, estado }) });
     const body = await response.json().catch(() => null);

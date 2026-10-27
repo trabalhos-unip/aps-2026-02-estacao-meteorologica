@@ -2,8 +2,8 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi, demoForecast } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261026-4";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261026-4";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261026-4";
-import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261026-4";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261027-2";
+import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261027-2";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
 const pages = { "/": overviewPage, "/historico": historyPage, "/simulacoes": simulationsPage, "/configuracoes": settingsPage };
@@ -517,17 +517,71 @@ async function initSettings() {
     text("#settings-last-badge", minutes < 1 ? "Agora" : `Há ${minutes} min`);
   }
   const saved = savedPreferences();
-  document.querySelector("#settings-city").value = saved.city || "";
-  document.querySelector("#settings-state").value = saved.state || "";
+  const citySelect = document.querySelector("#settings-city");
+  const stateSelect = document.querySelector("#settings-state");
+  const chooseCity = (city, state = "") => {
+    if (!city) return;
+    const existing = [...citySelect.options].find(option => option.value === city);
+    if (!existing) citySelect.add(new Option(city, city, true, true));
+    citySelect.value = city;
+    if (state) stateSelect.value = state;
+  };
+  chooseCity(saved.city, saved.state);
+  stateSelect.value = saved.state || "";
   document.querySelector("#settings-interval").value = saved.interval || "900";
   document.querySelector("#settings-notes").value = saved.notes || "";
   document.querySelector(`input[name="settings-mode"][value="${saved.mode === "simulado" ? "simulado" : "real"}"]`).checked = true;
   try {
     const estacao = await estacaoApi.ativa();
-    if (!saved.city) document.querySelector("#settings-city").value = estacao.cidade || "";
-    if (!saved.state) document.querySelector("#settings-state").value = estacao.estado || "";
+    // A estação ativa é a fonte de verdade, mesmo se outro navegador alterou a cidade.
+    chooseCity(estacao.cidade, estacao.estado);
   } catch {
     // A tela continua disponível para cadastrar a primeira estação.
+  }
+  const $ = window.jQuery;
+  if ($?.fn?.select2) {
+    const $state = $(stateSelect);
+    $state.select2({
+      width: "100%",
+      placeholder: "Todos os estados",
+      allowClear: true,
+      minimumResultsForSearch: 0
+    });
+    $state.val(stateSelect.value).trigger("change.select2");
+    const $city = $(citySelect);
+    $city.select2({
+      width: "100%",
+      placeholder: citySelect.dataset.placeholder,
+      minimumInputLength: 2,
+      language: {
+        inputTooShort: () => "Digite ao menos 2 letras",
+        searching: () => "Buscando cidades…",
+        noResults: () => "Nenhuma cidade brasileira encontrada"
+      },
+      ajax: {
+        delay: 200,
+        transport: (params, success, failure) => {
+          estacaoApi.sugestoes(params.data.term || "", stateSelect.value)
+            .then(success).catch(failure);
+          return { abort() {} };
+        },
+        processResults: suggestions => ({
+          results: suggestions.map(item => ({
+            id: item.cidade,
+            text: `${item.cidade} — ${item.nomeEstado || item.estado}`,
+            estado: item.estado
+          }))
+        })
+      }
+    });
+    $city.on("select2:select", event => {
+      const state = event.params.data.estado;
+      if (state) {
+        stateSelect.value = state;
+        $state.trigger("change.select2");
+      }
+    });
+    stateSelect.addEventListener("change", () => $city.val(null).trigger("change"));
   }
   document.querySelectorAll('input[name="settings-mode"]').forEach(radio => {
     radio.addEventListener("change", async () => {
@@ -545,8 +599,8 @@ async function initSettings() {
   });
   document.querySelector("#save-settings").addEventListener("click", async () => {
     const preferences = {
-      city: document.querySelector("#settings-city").value.trim(),
-      state: document.querySelector("#settings-state").value,
+      city: citySelect.value.trim(),
+      state: stateSelect.value,
       interval: document.querySelector("#settings-interval").value,
       mode: document.querySelector('input[name="settings-mode"]:checked').value,
       notes: document.querySelector("#settings-notes").value.trim(),
@@ -556,7 +610,7 @@ async function initSettings() {
       localStorage.setItem(preferencesKey, JSON.stringify(preferences));
       applyMode(preferences.mode);
       showLocation({ city: estacao.cidade, state: estacao.estado === "SP" ? "São Paulo" : estacao.estado });
-      showToast("Estação atualizada. O coletor buscará os dados da nova cidade no próximo ciclo.");
+      showToast("Estação atualizada. Os dados da nova cidade começam a ser carregados em instantes.");
     } catch (error) {
       showToast(error.message || "Não foi possível atualizar a estação.");
     }

@@ -69,6 +69,18 @@ public class EstacaoDAOHibernate implements IEstacaoDAO {
                         .setMaxResults(1).uniqueResult()));
     }
 
+    @Override
+    public Optional<Estacao> buscarPorCidadeEEstado(String cidade, String estado) {
+        validarNome(cidade);
+        validarNome(estado);
+        String uf = estado.trim().toUpperCase(Locale.ROOT);
+        if (!uf.matches("[A-Z]{2}")) return Optional.empty();
+        String chave = "BR:" + uf + ":" + normalizar(cidade);
+        return Optional.ofNullable(OperacaoHibernate.consultar("Erro ao buscar a estação",
+                sessao -> sessao.createQuery("from Estacao e where e.nome = :nome", Estacao.class)
+                        .setParameter("nome", chave).uniqueResult()));
+    }
+
     private static String normalizar(String valor) {
         return Normalizer.normalize(valor, Normalizer.Form.NFD).replaceAll("\\p{M}", "")
                 .replaceAll("[^A-Za-z0-9]+", "-").replaceAll("(^-|-$)", "").toUpperCase(Locale.ROOT);

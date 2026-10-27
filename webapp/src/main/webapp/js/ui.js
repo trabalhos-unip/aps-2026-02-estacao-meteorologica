@@ -72,7 +72,7 @@ export function renderShell(path, content) {
           <div class="page-heading"><h1>${title}</h1><p id="page-subtitle">${subtitle}</p></div>
           <div class="top-actions">
             <span class="mode-badge" id="mode-badge" hidden>Dados simulados</span>
-            <div class="location-pill" title="Localização exibida nesta interface">${icon("search")}<span id="location-label">Localização da estação</span>${icon("pin")}</div>
+            <a class="location-pill" href="/configuracoes#localizacao" title="Alterar localização da estação">${icon("search")}<span id="location-label">Localização da estação</span>${icon("pin")}</a>
           </div>
         </header>
         <main id="conteudo" class="page-content">${content}</main>

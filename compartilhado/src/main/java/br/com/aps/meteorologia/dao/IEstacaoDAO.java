@@ -11,5 +11,7 @@ public interface IEstacaoDAO {
 
     Estacao salvarEAtivar(String cidade, String estado, double latitude, double longitude, String fusoHorario);
 
+    Optional<Estacao> buscarPorCidadeEEstado(String cidade, String estado);
+
     Optional<Estacao> buscarAtiva();
 }
