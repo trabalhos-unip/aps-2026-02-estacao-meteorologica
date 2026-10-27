@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <parent><groupId>br.edu.unip.aps</groupId><artifactId>estacao-meteorologica</artifactId><version>0.0.1-SNAPSHOT</version></parent>
   <artifactId>coletor</artifactId>
-  <description>Aplicação 1: consulta a Open-Meteo a cada 10 segundos e grava as leituras no MySQL.</description>
+  <description>Aplicação 1: consulta a Open-Meteo a cada 15 minutos por padrão e grava as leituras no MySQL.</description>
   <dependencies>
     <dependency><groupId>br.edu.unip.aps</groupId><artifactId>compartilhado</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter</artifactId></dependency>

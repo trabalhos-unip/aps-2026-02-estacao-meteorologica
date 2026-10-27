@@ -19,10 +19,11 @@ import java.time.format.DateTimeParseException;
 
 /**
  * Caso de uso da coleta: obtém os dados da API, converte para {@link LeituraMeteorologica}
- * e salva pelo DAO. Executado a cada {@code coleta.intervalo-ms} (10 segundos, conforme o enunciado).
+ * e salva pelo DAO. Por padrão, executado a cada 15 minutos, para não consultar a fonte
+ * mais frequentemente que a janela de 900 segundos retornada no bloco {@code current}.
  *
- * <p>A Open-Meteo atualiza as condições atuais a cada 15 minutos; por isso várias coletas seguidas
- * podem ter o mesmo {@code dataHoraFonte} e os mesmos valores. Isso é esperado.
+ * <p>O campo {@code current.interval} da Open-Meteo representa a janela temporal dos dados atuais.
+ * O provedor pode manter o mesmo valor caso seu modelo ainda não tenha recebido uma nova atualização.
  */
 @Service
 public class ColetaMeteorologicaService {
@@ -45,7 +46,7 @@ public class ColetaMeteorologicaService {
      * Ciclo agendado. Nenhuma falha recuperável interrompe o coletor: o erro é registrado no log
      * e a próxima coleta acontece normalmente.
      */
-    @Scheduled(fixedDelayString = "${coleta.intervalo-ms:10000}")
+    @Scheduled(fixedDelayString = "${coleta.intervalo-ms:900000}")
     public void executarColeta() {
         try {
             LeituraMeteorologica leitura = coletar();

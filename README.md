@@ -3,14 +3,15 @@ APS 2026/2 — Sistema de estação meteorológica para coleta, armazenamento e 
 
 O sistema tem **duas aplicações** que usam o mesmo banco MySQL:
 
-- **Coletor** (`coletor/`): consulta a [Open-Meteo](https://open-meteo.com/en/docs) a cada 10 segundos e grava cada leitura no banco.
+- **Coletor** (`coletor/`): consulta a [Open-Meteo](https://open-meteo.com/en/docs) a cada 15 minutos e grava cada leitura no banco.
 - **Servidor web** (`servidor-web/`): lê as leituras do banco e as entrega ao navegador (página HTML/CSS + API JSON para o gráfico).
 
 O módulo `compartilhado/` tem a entidade Hibernate, o DAO e a configuração de banco usados pelas duas.
 Arquitetura, modelo de dados e contrato da API: [`documentacao/arquitetura/backend.md`](documentacao/arquitetura/backend.md).
 
-> A Open-Meteo fornece dados de **modelos meteorológicos** (atualizados a cada 15 min), não medições de sensores
-> físicos do grupo. Por isso cada leitura guarda o horário da coleta e o horário da fonte separadamente.
+> A Open-Meteo fornece dados de **modelos meteorológicos**, não medições de sensores físicos do grupo. A resposta
+> atual informa uma janela de 15 min (`current.interval = 900`), mas a atualização efetiva depende do modelo de
+> previsão selecionado para a localização. Por isso cada leitura guarda o horário da coleta e o horário da fonte separadamente.
 
 ## Requisitos
 
@@ -41,8 +42,8 @@ mvn -pl servidor-web spring-boot:run
 ```
 
 - Abra <http://localhost:8080> no navegador.
-- Pare o coletor com `Ctrl+C`. Uma coleta a cada 10 s soma 8.640 chamadas por dia, então rode só durante os testes
-  (veja os limites de uso da Open-Meteo).
+- Pare o coletor com `Ctrl+C`. Uma coleta a cada 15 min soma 96 chamadas por dia. Para executar o intervalo de 10 s
+  citado no enunciado apenas durante um teste controlado, defina `COLETA_INTERVALO_MS=10000` antes de iniciar o coletor.
 
 Para popular o banco sem rodar o coletor: `database/dados-teste.sql`.
 

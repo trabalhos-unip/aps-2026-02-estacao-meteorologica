@@ -5,7 +5,7 @@
 | Módulo | Papel | Pacotes |
 |---|---|---|
 | `compartilhado` | Modelo e acesso a dados usados pelas duas aplicações, e a configuração de banco (`banco.properties`) | `model`, `dao`, `dao.impl`, `util` |
-| `coletor` | **Aplicação 1:** API Open-Meteo → banco, a cada 10 s | `client`, `service` |
+| `coletor` | **Aplicação 1:** API Open-Meteo → banco, a cada 15 min por padrão | `client`, `service` |
 | `servidor-web` | **Aplicação 2:** banco → navegador (API JSON + página estática) | `controller`, `service`, `dto` |
 
 Pacote base: `br.edu.unip.aps.meteorologia`.
@@ -62,9 +62,9 @@ Navegador → LeituraMeteorologicaController → ConsultaMeteorologicaService
 
 - **Valores ausentes:** gravados como `NULL` (tipos `Double`/`Integer`, nunca zero no lugar de "sem dado").
 - **Regra de presença de precipitação:** `true` se `precipitation > 0` **ou** `rain > 0`; `null` se os dois vierem ausentes.
-- **Dois horários:** a Open-Meteo atualiza as condições atuais a cada **15 minutos** (`current.interval = 900`).
-  Coletando a cada 10 s, várias linhas seguidas têm o mesmo `data_hora_fonte` e os mesmos valores. Isso é
-  esperado: não são novas medições físicas, é o ritmo de execução pedido no enunciado para teste.
+- **Dois horários:** a resposta atual da Open-Meteo informa uma janela de **15 minutos**
+  (`current.interval = 900`). A aplicação consulta a fonte a cada 15 min por padrão; o intervalo pode ser
+  temporariamente alterado para 10 s por `COLETA_INTERVALO_MS=10000`, caso seja solicitado um teste conforme o enunciado.
 - DDL MySQL equivalente: [`database/schema.sql`](../../database/schema.sql).
 
 ## DAO — métodos
