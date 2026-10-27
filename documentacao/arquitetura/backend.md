@@ -5,7 +5,7 @@
 | Módulo | Papel | Pacotes |
 |---|---|---|
 | `compartilhado` | Modelo e acesso a dados usados pelas duas aplicações, e a configuração de banco (`banco.properties`) | `model`, `dao`, `dao.impl`, `util` |
-| `coletor` | **Aplicação 1:** API Open-Meteo → banco, a cada 15 min por padrão | `client`, `service` |
+| `coletor` | **Aplicação 1:** coleta atual + sincronização de histórico/previsão da Open-Meteo → banco | `client`, `service` |
 | `servidor-web` | **Aplicação 2:** banco → navegador (API JSON + página estática) | `controller`, `service`, `dto` |
 
 Pacote base: `br.edu.unip.aps.meteorologia`.
@@ -16,10 +16,14 @@ Pacote base: `br.edu.unip.aps.meteorologia`.
 APLICAÇÃO 1 — COLETOR
 Open-Meteo → ApiMeteorologicaClient → ColetaMeteorologicaService → LeituraMeteorologica
           → LeituraMeteorologicaDAO → LeituraMeteorologicaDAOImpl (Hibernate) → MySQL
+Open-Meteo → ApiMeteorologicaClient → SincronizacaoHistoricoPrevisaoService → ResumoDiarioMeteorologico
+          → ResumoDiarioMeteorologicoDAO → ResumoDiarioMeteorologicoDAOImpl (Hibernate) → MySQL
 
 APLICAÇÃO 2 — WEB
 Navegador → LeituraMeteorologicaController → ConsultaMeteorologicaService
           → LeituraMeteorologicaDAO → Hibernate → MySQL
+Navegador → ResumoDiarioMeteorologicoController → ConsultaResumoDiarioService
+          → ResumoDiarioMeteorologicoDAO → Hibernate → MySQL
 ```
 
 ## Tecnologias e onde aparecem
@@ -44,7 +48,7 @@ Navegador → LeituraMeteorologicaController → ConsultaMeteorologicaService
 - **Exceção própria:** `ApiMeteorologicaException` representa falhas recuperáveis da API.
 - **Records** (`RespostaOpenMeteo`, `LeituraMeteorologicaDTO`) para objetos imutáveis de transporte de dados.
 
-## Modelo de dados — `leitura_meteorologica`
+## Modelo de dados — leituras atuais
 
 | Campo Java | Coluna | Origem na Open-Meteo | Unidade |
 |---|---|---|---|
@@ -66,6 +70,17 @@ Navegador → LeituraMeteorologicaController → ConsultaMeteorologicaService
   (`current.interval = 900`). A aplicação consulta a fonte a cada 15 min por padrão; o intervalo pode ser
   temporariamente alterado para 10 s por `COLETA_INTERVALO_MS=10000`, caso seja solicitado um teste conforme o enunciado.
 - DDL MySQL equivalente: [`database/schema.sql`](../../database/schema.sql).
+
+## Histórico e previsão diária — `resumo_diario_meteorologico`
+
+Ao iniciar, o coletor faz uma consulta horária à Forecast API com `past_days=15` e `forecast_days=7`. Ela é agrupada por data e renovada a cada 6 h. Esse carregamento elimina a necessidade de deixar o computador ligado por dias, mas não transforma o histórico da API em uma medição do computador.
+
+| Tipo | Datas | Significado | Fonte mostrada na página |
+|---|---|---|---|
+| `HISTORICO` | 15 dias anteriores | Série passada reconstituída pela Open-Meteo | `Open-Meteo (histórico da API)` |
+| `PREVISAO` | hoje e 7 dias seguintes | Projeção do modelo para datas ainda não ocorridas | `Open-Meteo (previsão da API)` |
+
+Cada resumo tem temperaturas mínima/máxima/média, umidade média, precipitação total, vento máximo, código WMO e instante de atualização. A chave única `(data_referencia, tipo)` torna a sincronização idempotente: atualizar a previsão não duplica linhas.
 
 ## DAO — métodos
 
@@ -112,6 +127,8 @@ Base: `http://localhost:8080`. Datas em ISO 8601 (`2026-10-20T22:20:05`). Campos
 | `GET /api/leituras?limite=100` | últimas N leituras (1–1000, padrão 100), **já em ordem cronológica** para o gráfico; `[]` se vazio |
 | `GET /api/leituras/periodo?inicio=2026-10-20T00:00:00&fim=2026-10-20T23:59:59` | leituras do período (máx. 31 dias) |
 | `GET /api/leituras/total` | `{"total": 123}` |
+| `GET /api/resumos-diarios/historico?inicio=2026-10-01&fim=2026-10-15` | resumos `HISTORICO` em ordem de data |
+| `GET /api/resumos-diarios/previsoes?dias=5` | previsão de hoje em diante (1–16 dias) |
 
 Exemplo de leitura (resposta real do teste ponta a ponta):
 

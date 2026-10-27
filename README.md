@@ -3,8 +3,8 @@ APS 2026/2 — Sistema de estação meteorológica para coleta, armazenamento e 
 
 O sistema tem **duas aplicações** que usam o mesmo banco MySQL:
 
-- **Coletor** (`coletor/`): consulta a [Open-Meteo](https://open-meteo.com/en/docs) a cada 15 minutos e grava cada leitura no banco.
-- **Servidor web** (`servidor-web/`): lê as leituras do banco e as entrega ao navegador (página HTML/CSS + API JSON para o gráfico).
+- **Coletor** (`coletor/`): registra a condição atual, carrega os últimos 15 dias e atualiza a previsão dos próximos 7 dias na [Open-Meteo](https://open-meteo.com/en/docs).
+- **Servidor web** (`servidor-web/`): entrega leituras atuais, histórico diário e previsão ao navegador (página HTML/CSS + API JSON).
 
 O módulo `compartilhado/` tem a entidade Hibernate, o DAO e a configuração de banco usados pelas duas.
 Arquitetura, modelo de dados e contrato da API: [`documentacao/arquitetura/backend.md`](documentacao/arquitetura/backend.md).
@@ -37,13 +37,26 @@ com os mesmos nomes também funcionam. A tabela é criada pelo Hibernate na prim
 
 ```bash
 mvn install -DskipTests
+```
+
+Depois, em **dois terminais separados** (ou duas execuções do NetBeans):
+
+```bash
+# 1. Coletor: faz a carga inicial e permanece atualizando os dados
 mvn -pl coletor spring-boot:run
+```
+
+```bash
+# 2. Servidor web: deixa o dashboard disponível
 mvn -pl servidor-web spring-boot:run
 ```
 
-- Abra <http://localhost:8080> no navegador.
-- Pare o coletor com `Ctrl+C`. Uma coleta a cada 15 min soma 96 chamadas por dia. Para executar o intervalo de 10 s
-  citado no enunciado apenas durante um teste controlado, defina `COLETA_INTERVALO_MS=10000` antes de iniciar o coletor.
+- Abra <http://localhost:8080> no navegador. Ao iniciar, o coletor preenche imediatamente o histórico de 15 dias e os 7 dias seguintes; a previsão é renovada a cada 6 h.
+- Pare o coletor com `Ctrl+C`. A coleta atual usa intervalo de 15 min por padrão; para demonstração, configure `COLETA_INTERVALO_MS`.
+
+### Dados no banco
+
+`leitura_meteorologica` armazena somente coletas feitas pela estação enquanto ela está ligada. Já `resumo_diario_meteorologico` guarda duas séries separadas: `HISTORICO`, reconstituído da Open-Meteo para preencher os dias anteriores, e `PREVISAO`, que contém hoje e os próximos dias. A interface identifica as origens para não apresentar uma previsão como medição real.
 
 Para popular o banco sem rodar o coletor: `database/dados-teste.sql`.
 

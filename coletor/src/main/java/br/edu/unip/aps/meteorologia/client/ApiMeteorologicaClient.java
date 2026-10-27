@@ -28,6 +28,10 @@ public class ApiMeteorologicaClient {
 
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
+    private final String urlBase;
+    private final double latitude;
+    private final double longitude;
+    private final String timezone;
     private final URI uri;
     private final Duration timeout;
 
@@ -40,6 +44,10 @@ public class ApiMeteorologicaClient {
         this.objectMapper = objectMapper;
         this.timeout = Duration.ofSeconds(timeoutSegundos);
         this.httpClient = HttpClient.newBuilder().connectTimeout(timeout).build();
+        this.urlBase = urlBase;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.timezone = timezone;
         this.uri = URI.create(String.format(Locale.ROOT,
                 "%s?latitude=%.4f&longitude=%.4f&current=%s&timezone=%s",
                 urlBase, latitude, longitude, VARIAVEIS, URLEncoder.encode(timezone, StandardCharsets.UTF_8)));
@@ -51,7 +59,35 @@ public class ApiMeteorologicaClient {
      * @throws ApiMeteorologicaException em timeout, falha de rede, status HTTP de erro ou JSON inválido
      */
     public RespostaOpenMeteo buscarCondicoesAtuais() {
-        HttpRequest requisicao = HttpRequest.newBuilder(uri)
+        return converter(consultar(uri));
+    }
+
+    /**
+     * Busca uma série horária contínua que inclui dias passados e futuros.
+     * A Forecast API aceita até 92 dias passados e 16 dias de previsão; os
+     * limites menores desta aplicação são validados aqui para evitar consultas acidentais excessivas.
+     */
+    public RespostaSerieOpenMeteo buscarSerieHoraria(int diasPassados, int diasPrevisao) {
+        if (diasPassados < 1 || diasPassados > 92) {
+            throw new IllegalArgumentException("diasPassados deve estar entre 1 e 92");
+        }
+        if (diasPrevisao < 1 || diasPrevisao > 16) {
+            throw new IllegalArgumentException("diasPrevisao deve estar entre 1 e 16");
+        }
+        try {
+            RespostaSerieOpenMeteo resposta = objectMapper.readValue(consultar(criarUriSerie(diasPassados, diasPrevisao)),
+                    RespostaSerieOpenMeteo.class);
+            if (resposta == null || resposta.hourly() == null || resposta.hourly().time() == null) {
+                throw new ApiMeteorologicaException("Resposta da Open-Meteo sem a série horária");
+            }
+            return resposta;
+        } catch (JsonProcessingException e) {
+            throw new ApiMeteorologicaException("Resposta da Open-Meteo não é um JSON válido", e);
+        }
+    }
+
+    private String consultar(URI destino) {
+        HttpRequest requisicao = HttpRequest.newBuilder(destino)
                 .timeout(timeout)
                 .header("Accept", "application/json")
                 .GET()
@@ -75,7 +111,7 @@ public class ApiMeteorologicaClient {
         if (status < 200 || status >= 300) {
             throw new ApiMeteorologicaException("Open-Meteo respondeu com HTTP " + status + ": " + resposta.body());
         }
-        return converter(resposta.body());
+        return resposta.body();
     }
 
     /** Converte o corpo JSON da resposta, validando que o bloco {@code current} está presente. */
@@ -94,5 +130,16 @@ public class ApiMeteorologicaClient {
 
     URI getUri() {
         return uri;
+    }
+
+    URI getUriSerie(int diasPassados, int diasPrevisao) {
+        return criarUriSerie(diasPassados, diasPrevisao);
+    }
+
+    private URI criarUriSerie(int diasPassados, int diasPrevisao) {
+        return URI.create(String.format(Locale.ROOT,
+                "%s?latitude=%.4f&longitude=%.4f&hourly=%s&past_days=%d&forecast_days=%d&timezone=%s",
+                urlBase, latitude, longitude, VARIAVEIS, diasPassados, diasPrevisao,
+                URLEncoder.encode(timezone, StandardCharsets.UTF_8)));
     }
 }

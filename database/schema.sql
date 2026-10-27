@@ -26,3 +26,24 @@ CREATE TABLE IF NOT EXISTS leitura_meteorologica (
     PRIMARY KEY (id),
     INDEX idx_leitura_data_hora_coleta (data_hora_coleta)
 ) ENGINE = InnoDB;
+
+-- Resumos diários baixados pelo coletor na inicialização. Esta tabela NÃO substitui
+-- leitura_meteorologica: HISTORICO representa dias já passados e PREVISAO representa
+-- hoje e os próximos dias, para a interface não confundir previsão com medição local.
+CREATE TABLE IF NOT EXISTS resumo_diario_meteorologico (
+    id                    BIGINT       NOT NULL AUTO_INCREMENT,
+    data_referencia       DATE         NOT NULL,
+    tipo                  VARCHAR(20)  NOT NULL COMMENT 'HISTORICO ou PREVISAO',
+    temperatura_minima    DOUBLE       NULL COMMENT 'menor temperature_2m do dia (°C)',
+    temperatura_maxima    DOUBLE       NULL COMMENT 'maior temperature_2m do dia (°C)',
+    temperatura_media     DOUBLE       NULL COMMENT 'média de temperature_2m do dia (°C)',
+    umidade_media         DOUBLE       NULL COMMENT 'média de relative_humidity_2m do dia (%)',
+    precipitacao_total    DOUBLE       NULL COMMENT 'soma de precipitation do dia (mm)',
+    vento_maximo          DOUBLE       NULL COMMENT 'maior wind_speed_10m do dia (km/h)',
+    codigo_clima          INT          NULL COMMENT 'weather_code próximo ao meio-dia',
+    fonte_dados           VARCHAR(100) NOT NULL,
+    atualizado_em         DATETIME(6)  NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_resumo_diario_data_tipo (data_referencia, tipo),
+    INDEX idx_resumo_diario_data_tipo (data_referencia, tipo)
+) ENGINE = InnoDB;

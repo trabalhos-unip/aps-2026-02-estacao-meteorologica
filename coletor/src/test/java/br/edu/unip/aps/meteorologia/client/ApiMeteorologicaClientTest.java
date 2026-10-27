@@ -26,6 +26,12 @@ class ApiMeteorologicaClientTest {
                         "precipitation":0.00,"rain":0.00,"wind_speed_10m":9.8,"weather_code":3}}
             """;
 
+    static final String JSON_SERIE = """
+            {"timezone":"America/Sao_Paulo","hourly":{"time":["2026-10-20T00:00","2026-10-20T01:00"],
+            "temperature_2m":[20.0,21.0],"relative_humidity_2m":[80,76],"precipitation":[0.0,0.4],
+            "rain":[0.0,0.4],"wind_speed_10m":[5.0,7.0],"weather_code":[3,61]}}
+            """;
+
     private HttpServer servidor;
 
     private ApiMeteorologicaClient clienteRespondendo(int status, String corpo) throws IOException {
@@ -70,6 +76,18 @@ class ApiMeteorologicaClientTest {
 
         assertThat(uri).contains("latitude=-23.5505", "longitude=-46.6333",
                 "current=" + ApiMeteorologicaClient.VARIAVEIS, "timezone=America%2FSao_Paulo");
+    }
+
+    @Test
+    void buscaSerieHorariaComPassadoEPrevisao() throws IOException {
+        ApiMeteorologicaClient cliente = clienteRespondendo(200, JSON_SERIE);
+
+        RespostaSerieOpenMeteo serie = cliente.buscarSerieHoraria(15, 7);
+
+        assertThat(serie.hourly().time()).containsExactly("2026-10-20T00:00", "2026-10-20T01:00");
+        assertThat(serie.hourly().temperatura()).containsExactly(20.0, 21.0);
+        assertThat(cliente.getUriSerie(15, 7).toString()).contains("hourly=" + ApiMeteorologicaClient.VARIAVEIS,
+                "past_days=15", "forecast_days=7");
     }
 
     @Test

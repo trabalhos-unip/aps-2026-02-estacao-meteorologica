@@ -1,4 +1,4 @@
-import { leiturasApi } from "./api.js";
+import { leiturasApi, resumosDiariosApi } from "./api.js";
 import { demoApi, demoForecast } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261026-4";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261026-4";
@@ -37,7 +37,7 @@ function applyMode(mode) {
     : "Modo real ativo: as telas consultam as leituras da API e do MySQL.");
   text("#history-data-note", simulated()
     ? "Dados simulados gerados neste navegador para testar gráficos e histórico; não estão no MySQL."
-    : "Os dados exibidos vêm da Open-Meteo e são armazenados no MySQL conforme o projeto APS 2026/2.");
+    : "Histórico reconstituído e previsão vêm da Open-Meteo; leituras atuais são registradas separadamente no MySQL.");
 }
 applyMode(savedPreferences().mode);
 function showLocation(preferences) {
@@ -121,6 +121,43 @@ function readingsForPeriod(readings, start, end) {
   return isDailyPeriod(start, end) ? consolidateByDay(readings) : readings;
 }
 
+function resumoComoLeitura(resumo) {
+  const temperatura = resumo.temperaturaMedia ?? (
+    resumo.temperaturaMinima != null && resumo.temperaturaMaxima != null
+      ? (Number(resumo.temperaturaMinima) + Number(resumo.temperaturaMaxima)) / 2 : null
+  );
+  return {
+    id: resumo.id,
+    dataHoraColeta: `${resumo.data}T12:00:00`,
+    temperatura,
+    umidadeRelativa: resumo.umidadeMedia,
+    precipitacao: resumo.precipitacaoTotal,
+    velocidadeVento: resumo.ventoMaximo,
+    codigoClima: resumo.codigoClima,
+    descricaoClima: resumo.descricaoClima,
+    presencaPrecipitacao: resumo.precipitacaoTotal == null ? null : Number(resumo.precipitacaoTotal) > 0,
+    fonteDados: resumo.fonteDados,
+    diario: true,
+  };
+}
+
+async function buscarSerieDoPeriodo(start, end) {
+  if (simulated() || !isDailyPeriod(start, end)) {
+    return activeReadingsApi.buscarPorPeriodo(apiDate(start), apiDate(end));
+  }
+  const inicioHoje = new Date();
+  inicioHoje.setHours(0, 0, 0, 0);
+  const fimOntem = new Date(inicioHoje);
+  fimOntem.setMilliseconds(-1);
+  const historico = start <= fimOntem
+    ? await resumosDiariosApi.buscarHistorico(dateInput(start), dateInput(new Date(Math.min(end.getTime(), fimOntem.getTime()))))
+    : [];
+  const leiturasDeHoje = end >= inicioHoje
+    ? await activeReadingsApi.buscarPorPeriodo(apiDate(new Date(Math.max(start.getTime(), inicioHoje.getTime()))), apiDate(end))
+    : [];
+  return [...historico.map(resumoComoLeitura), ...leiturasDeHoje];
+}
+
 function readingMoment(reading) {
   return reading.diario
     ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(parseDate(reading.dataHoraColeta))
@@ -190,7 +227,7 @@ async function loadHomeChart(range) {
   const [start, end] = rangeDates(range);
   text("#home-chart-subtitle", "Carregando período…");
   try {
-    const readings = await activeReadingsApi.buscarPorPeriodo(apiDate(start), apiDate(end));
+    const readings = await buscarSerieDoPeriodo(start, end);
     if (request !== homeChartRequest) return;
     const chartReadings = readingsForPeriod(readings, start, end);
     const summary = drawTemporalChart("#home-chart-canvas", chartReadings, "temperatura", "°C", "#2498ed", { start, end, daily: isDailyPeriod(start, end) });
@@ -219,8 +256,34 @@ function renderDemoForecast() {
   }).join("");
 }
 
+async function renderForecast() {
+  if (simulated()) {
+    renderDemoForecast();
+    return;
+  }
+  const rows = document.querySelector("#forecast-rows");
+  try {
+    const previsoes = await resumosDiariosApi.buscarPrevisoes(5);
+    if (!previsoes.length) throw new Error("A previsão ainda não foi carregada pelo coletor.");
+    text("#forecast-source", "Previsão da Open-Meteo");
+    text("#forecast-note", "Atualizada pelo coletor; dias futuros não são leituras da estação.");
+    rows.setAttribute("aria-label", "Previsão para os próximos cinco dias");
+    rows.innerHTML = previsoes.map((item, index) => {
+      const day = parseDate(`${item.data}T12:00:00`);
+      const label = index === 0 ? "Hoje" : new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(day).replace(".", "");
+      const date = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(day);
+      const rainy = Number(item.precipitacaoTotal || 0) > 0 || [51, 53, 55, 61, 63, 65, 80, 81, 82, 95, 96, 99].includes(item.codigoClima);
+      return `<div class="forecast-row"><span><strong>${label}</strong><small>${date}</small></span><span class="forecast-weather">${icon(rainy ? "rain" : "sun")}</span><span>${number(item.temperaturaMaxima, 0)}°</span><span>${number(item.temperaturaMinima, 0)}°</span><span>${number(item.precipitacaoTotal)} mm</span>${icon("chevron")}</div>`;
+    }).join("");
+  } catch (error) {
+    text("#forecast-source", "Previsão ainda indisponível");
+    text("#forecast-note", "Inicie o coletor para carregar os próximos dias.");
+    rows.innerHTML = `<div class="forecast-row"><span><strong>—</strong><small>sem dados</small></span><span>—</span><span>—</span><span>—</span><span>—</span></div>`;
+  }
+}
+
 async function initHome() {
-  renderDemoForecast();
+  await renderForecast();
   await fetchLatest();
   try {
     const recent = await activeReadingsApi.buscarUltimas(5);
@@ -237,7 +300,7 @@ async function initHome() {
     renderHomeReading(latestReading, []);
     fillTable("#recent-rows", [], Array.from({ length: 5 }, () => ({})), error.message);
   }
-  await loadHomeChart("24h");
+  await loadHomeChart("7d");
   document.querySelector("#home-range").addEventListener("click", event => {
     const button = event.target.closest("[data-range]");
     if (button) loadHomeChart(button.dataset.range);
@@ -314,7 +377,7 @@ async function loadHistory(start, end) {
   historyStart = start;
   historyEnd = end;
   try {
-    const readings = await activeReadingsApi.buscarPorPeriodo(apiDate(start), apiDate(end));
+    const readings = await buscarSerieDoPeriodo(start, end);
     if (request !== historyRequest) return;
     historyReadings = readingsForPeriod(readings, start, end);
     renderHistoryDetails();
@@ -337,7 +400,7 @@ function setHistoryPreset(range) {
 
 async function initHistory() {
   await fetchLatest();
-  setHistoryPreset("24h");
+  setHistoryPreset("7d");
   for (const id of ["history-range", "chart-range"]) {
     document.querySelector(`#${id}`).addEventListener("click", event => {
       const button = event.target.closest("[data-range]");
