@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Webapp (servidor web)" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="br.com.aps.meteorologia.app.WebappApplication" />
+    <module name="webapp" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

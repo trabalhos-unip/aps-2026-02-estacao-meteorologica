@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>br.com.aps</groupId><artifactId>estacao-meteorologica</artifactId><version>0.0.1-SNAPSHOT</version></parent>
+  <artifactId>webapp</artifactId>
+  <description>Aplicação 2 (web): consulta as leituras no MySQL e as entrega ao navegador (Servlet + HTML/CSS/JS).</description>
+  <dependencies>
+    <dependency><groupId>br.com.aps</groupId><artifactId>compartilhado</artifactId><version>${project.version}</version></dependency>
+    <!-- Spring Boot Web: servidor Tomcat embutido, registro do Servlet, arquivos estáticos e Jackson (JSON) -->
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-web</artifactId></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
+  </dependencies>
+  <build>
+    <resources>
+      <resource><directory>src/main/resources</directory></resource>
+      <!-- A página (src/main/webapp) é copiada para "static", pasta que o Spring Boot entrega ao navegador -->
+      <resource>
+        <directory>src/main/webapp</directory>
+        <targetPath>static</targetPath>
+        <excludes><exclude>WEB-INF/**</exclude></excludes>
+      </resource>
+    </resources>
+    <plugins>
+      <!-- mvn -pl webapp spring-boot:run -->
+      <plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId></plugin>
+    </plugins>
+  </build>
+</project>

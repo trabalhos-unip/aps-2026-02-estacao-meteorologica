@@ -1,17 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>br.edu.unip.aps</groupId>
+  <groupId>br.com.aps</groupId>
   <artifactId>estacao-meteorologica</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
+  <description>Estação meteorológica — APS 2026/2: Java + Spring Boot + Hibernate (HibernateUtil) + DAO + MySQL.</description>
   <modules>
-    <module>compartilhado</module>
-    <module>coletor</module>
-    <module>servidor-web</module>
+    <module>compartilhado</module> <!-- model, DAO e HibernateUtil usados pelas duas aplicações -->
+    <module>collector</module>     <!-- Aplicação 1: API → banco -->
+    <module>webapp</module>        <!-- Aplicação 2: banco → navegador -->
   </modules>
   <properties><java.version>21</java.version><maven.compiler.release>21</maven.compiler.release><project.build.sourceEncoding>UTF-8</project.build.sourceEncoding><spring-boot.version>3.5.6</spring-boot.version></properties>
   <dependencyManagement><dependencies>
+    <!-- Versões de Spring Boot, Hibernate, driver MySQL, Jackson e bibliotecas de teste -->
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-dependencies</artifactId><version>${spring-boot.version}</version><type>pom</type><scope>import</scope></dependency>
   </dependencies></dependencyManagement>
   <build>
@@ -21,7 +23,7 @@
       <plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId><version>${spring-boot.version}</version></plugin>
     </plugins></pluginManagement>
     <plugins>
-      <!-- parameters=true: o Spring lê os nomes dos parâmetros (ex.: @RequestParam) sem precisar repeti-los -->
+      <!-- parameters=true: o Spring lê os nomes dos parâmetros dos construtores e de @Value sem precisar repeti-los -->
       <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><configuration><parameters>true</parameters></configuration></plugin>
     </plugins>
   </build>

@@ -1,80 +1,274 @@
-# aps-2026-02-estacao-meteorologica
-APS 2026/2 — Sistema de estação meteorológica para coleta, armazenamento e visualização web de dados ambientais utilizando Java, Hibernate e MySQL.
+# Estação Meteorológica — APS 2026/2
 
-O sistema tem **duas aplicações** que usam o mesmo banco MySQL:
+Sistema acadêmico para coletar, armazenar e visualizar dados meteorológicos. O projeto consulta a
+[Open-Meteo](https://open-meteo.com/en/docs), grava as leituras em um banco MySQL e disponibiliza uma interface Web
+com dados e gráficos.
 
-- **Coletor** (`coletor/`): registra a condição atual, carrega os últimos 15 dias e atualiza a previsão dos próximos 7 dias na [Open-Meteo](https://open-meteo.com/en/docs).
-- **Servidor web** (`servidor-web/`): entrega leituras atuais, histórico diário e previsão ao navegador (página HTML/CSS + API JSON).
+> A Open-Meteo fornece dados de modelos meteorológicos, e não medições de sensores físicos instalados pelo grupo.
+> Por isso, cada leitura mantém separadamente o horário da coleta e o horário informado pela fonte.
 
-O módulo `compartilhado/` tem a entidade Hibernate, o DAO e a configuração de banco usados pelas duas.
-Arquitetura, modelo de dados e contrato da API: [`documentacao/arquitetura/backend.md`](documentacao/arquitetura/backend.md).
+## Componentes do projeto
 
-> A Open-Meteo fornece dados de **modelos meteorológicos**, não medições de sensores físicos do grupo. A resposta
-> atual informa uma janela de 15 min (`current.interval = 900`), mas a atualização efetiva depende do modelo de
-> previsão selecionado para a localização. Por isso cada leitura guarda o horário da coleta e o horário da fonte separadamente.
+O projeto Maven possui três módulos:
+
+- **`collector`**: obtém dados meteorológicos reais ou simulados, grava as leituras no MySQL e registra o resultado de
+  cada tentativa em `log_coleta`;
+- **`webapp`**: consulta as leituras no banco e as apresenta no navegador por meio de uma página HTML/CSS/JavaScript e
+  de uma API JSON;
+- **`compartilhado`**: contém as entidades, DAOs, regras de configuração e conexão Hibernate utilizadas pelas duas
+  aplicações.
+
+O banco possui cinco tabelas principais:
+
+- `estacao`: cadastro da estação monitorada;
+- `leitura_meteorologica`: dados meteorológicos coletados;
+- `log_coleta`: histórico de sucessos e falhas do coletor.
+- `resumo_diario_meteorologico`: histórico diário reconstituído e previsão diária, separados por tipo.
+- `resumo_horario_meteorologico`: série horária que preenche lacunas quando o coletor ficou desligado.
+
+A configuração atual utiliza uma estação em **Sorocaba/SP**, nas coordenadas `-23.5015, -47.4526`. Cada leitura e
+cada resumo pertencem a uma estação; assim trocar a localização não mistura os dados de cidades diferentes. Nesta
+versão, a cidade ativa é configurada no `.env` e o coletor deve ser reiniciado.
+
+## Organização e princípios SOLID
+
+- interfaces começam com `I`, como `IFonteMeteorologica` e `ILeituraMeteorologicaDAO`;
+- serviços dependem de interfaces, e não das implementações Hibernate ou Open-Meteo;
+- `ClienteOpenMeteo` e `SimuladorMeteorologico` implementam o mesmo contrato e entregam
+  `DadosMeteorologicosAtuais` em um formato independente da fonte;
+- `ConversorLeituraMeteorologica` possui somente a responsabilidade de transformar os dados recebidos em entidade;
+- implementações de persistência possuem nomes explícitos, como `LeituraMeteorologicaDAOHibernate`;
+- `OperacaoHibernate` centraliza abertura de sessão, transação, commit, rollback e conversão de erros.
+
+## Tecnologias
+
+- Java 21;
+- Spring Boot 3.5.6;
+- Hibernate ORM e padrão DAO;
+- MySQL 8;
+- Maven;
+- HTML, CSS e JavaScript;
+- Tomcat embutido no Spring Boot.
 
 ## Requisitos
 
-- JDK 21 ou superior
-- Maven 3.9+ (ou o Maven embutido do IntelliJ)
-- MySQL 8 — pelo Docker (`compose.yaml`) ou instalado localmente
+- JDK 21 ou superior;
+- Maven 3.9 ou o Maven integrado ao IntelliJ IDEA;
+- MySQL 8 instalado e em execução;
+- acesso à internet somente para coletas no modo `REAL`.
 
-## Configuração
+Não é necessário instalar um servidor Tomcat separadamente.
 
-1. Copie `.env.exemplo` para `.env` na raiz do projeto e defina as senhas. O `.env` **não** vai para o GitHub.
-2. Suba o MySQL:
-   - **Docker:** `docker compose up -d` (cria o banco `estacao_meteorologica` e o usuário do `.env`).
-   - **MySQL local:** rode `database/schema.sql` e crie um usuário com acesso ao banco, usando os mesmos dados do `.env`.
+## Configuração do ambiente
 
-As duas aplicações leem o `.env` automaticamente (na pasta atual ou na pasta acima). Variáveis de ambiente
-com os mesmos nomes também funcionam. A tabela é criada pelo Hibernate na primeira execução se ainda não existir.
+### 1. Criar o arquivo `.env`
 
-## Executar
+Na raiz do projeto, copie `.env.exemplo` para `.env`.
 
-**IntelliJ IDEA:** use as configurações de execução **Coletor** e **Servidor Web** (já vêm no projeto, pasta `.run/`).
+No PowerShell:
 
-**Terminal** (na raiz do projeto):
+```powershell
+Copy-Item .env.exemplo .env
+```
 
-```bash
+Preencha no `.env` os dados correspondentes ao MySQL da sua máquina:
+
+```dotenv
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_DATABASE=estacao_meteorologica
+MYSQL_USER=aps
+MYSQL_PASSWORD=
+```
+
+Preencha `MYSQL_PASSWORD` depois do sinal `=` com a senha definida para o usuário `aps` na sua máquina. Esse é o
+usuário da aplicação e deve possuir acesso ao banco `estacao_meteorologica`. Não é recomendado executar a aplicação
+utilizando o usuário administrativo `root`.
+
+O projeto procura as configurações nesta ordem:
+
+1. propriedades Java informadas com `-D`;
+2. variáveis de ambiente do sistema;
+3. arquivo `.env`;
+4. valores padrão definidos no código.
+
+### 2. Preparar o banco de dados
+
+Para uma instalação nova, conecte-se ao MySQL com um usuário administrativo e execute
+[`database/schema.sql`](database/schema.sql). O script:
+
+- cria o banco `estacao_meteorologica`;
+- cria as tabelas `estacao`, `leitura_meteorologica`, `log_coleta`, `resumo_diario_meteorologico` e `resumo_horario_meteorologico`;
+- adiciona índices, relacionamentos e validações;
+- cadastra a estação inicial de Sorocaba.
+
+O usuário e a senha definidos no `.env` devem existir no MySQL e possuir acesso a esse banco.
+
+O Hibernate utiliza `hibernate.hbm2ddl.auto=validate`: ele apenas verifica se o banco é compatível com as entidades
+Java. Portanto, **o Hibernate não cria nem atualiza as tabelas automaticamente**.
+
+Para atualizar uma instalação antiga, faça um backup e execute primeiro
+[`database/migrations/V2__estacao_log_e_variaveis_extras.sql`](database/migrations/V2__estacao_log_e_variaveis_extras.sql),
+e depois [`database/migrations/V3__resumos_por_estacao.sql`](database/migrations/V3__resumos_por_estacao.sql).
+Não execute as migrações depois do `schema.sql` atual, pois uma instalação nova já nasce completa.
+
+O arquivo [`database/dados-teste.sql`](database/dados-teste.sql) é opcional e insere leituras reais e simuladas para
+testes da interface.
+
+## Compilar o projeto
+
+Na primeira execução, ou depois de alterações no módulo `compartilhado`, execute na raiz do projeto:
+
+```powershell
 mvn install -DskipTests
 ```
 
-Depois, em **dois terminais separados** (ou duas execuções do NetBeans):
+## Executar as aplicações
 
-```bash
-# 1. Coletor: faz a carga inicial e permanece atualizando os dados
-mvn -pl coletor spring-boot:run
+O MySQL deve estar funcionando antes de iniciar as aplicações.
+
+### Pelo IntelliJ IDEA
+
+O projeto possui configurações prontas na pasta `.run`:
+
+1. execute **Collector (coletor)**;
+2. execute **Webapp (servidor web)**;
+3. abra <http://localhost:8080>.
+
+As duas configurações podem permanecer em execução ao mesmo tempo.
+
+### Pelo terminal
+
+Abra dois terminais na raiz do projeto.
+
+No primeiro terminal, inicie o collector:
+
+```powershell
+mvn -pl collector spring-boot:run
 ```
 
-```bash
-# 2. Servidor web: deixa o dashboard disponível
-mvn -pl servidor-web spring-boot:run
+No segundo terminal, inicie o webapp:
+
+```powershell
+mvn -pl webapp spring-boot:run
 ```
 
-- Abra <http://localhost:8080> no navegador. Ao iniciar, o coletor preenche imediatamente o histórico de 15 dias e os 7 dias seguintes; a previsão é renovada a cada 6 h.
-- Pare o coletor com `Ctrl+C`. A coleta atual usa intervalo de 15 min por padrão; para demonstração, configure `COLETA_INTERVALO_MS`.
+Para interromper uma aplicação iniciada pelo terminal, pressione `Ctrl+C`.
 
-### Dados no banco
+### Trocar de cidade
 
-`leitura_meteorologica` armazena somente coletas feitas pela estação enquanto ela está ligada. Já `resumo_diario_meteorologico` guarda duas séries separadas: `HISTORICO`, reconstituído da Open-Meteo para preencher os dias anteriores, e `PREVISAO`, que contém hoje e os próximos dias. `resumo_horario_meteorologico` completa as horas sem coleta local; quando há os dois dados para a mesma hora, a página prioriza a leitura local. A interface identifica as origens para não apresentar uma previsão como medição real.
+Edite no `.env` `ESTACAO_NOME` (use somente letras ASCII, por exemplo `Estacao Campinas`),
+`ESTACAO_CIDADE`, `OPENMETEO_LATITUDE`, `OPENMETEO_LONGITUDE` e, se necessário, `OPENMETEO_TIMEZONE`.
+Reinicie **collector** e **webapp**. A nova configuração cria ou reutiliza uma estação própria e mantém os dados da
+cidade anterior separados no banco.
 
-Para popular o banco sem rodar o coletor: `database/dados-teste.sql`.
+## Modos de coleta
+
+### REAL
+
+É o modo padrão. O collector consulta a Open-Meteo e salva as leituras com:
+
+- `modo_operacao = REAL`;
+- `fonte_dados = Open-Meteo`.
+
+Se `COLETA_MODO` não estiver definido no `.env`, o modo `REAL` será utilizado automaticamente.
+
+### SIMULADO
+
+Gera dados de teste sem consultar a internet. Para ativá-lo, adicione ao `.env`:
+
+```dotenv
+COLETA_MODO=SIMULADO
+```
+
+Sem `COLETA_CENARIO`, o sistema alterna entre `TEMPO_SECO`, `CHUVA_FORTE`, `VENTO_FORTE` e
+`DADOS_INCOMPLETOS`. Para manter um único cenário, configure, por exemplo:
+
+```dotenv
+COLETA_CENARIO=CHUVA_FORTE
+```
+
+As leituras simuladas são salvas com `modo_operacao = SIMULADO` e `fonte_dados = Simulador`. Reinicie o collector
+sempre que alterar o modo ou o cenário.
+
+## Configurações disponíveis
+
+| Variável | Padrão | Finalidade |
+|---|---|---|
+| `MYSQL_HOST` | `localhost` | Endereço do MySQL |
+| `MYSQL_PORT` | `3306` | Porta do MySQL |
+| `MYSQL_DATABASE` | `estacao_meteorologica` | Nome do banco |
+| `MYSQL_USER` | `aps` | Usuário da aplicação |
+| `MYSQL_PASSWORD` | vazio | Senha local do usuário da aplicação |
+| `ESTACAO_NOME` | `Estação Sorocaba` | Nome da estação utilizada pelo collector |
+| `OPENMETEO_LATITUDE` | `-23.5015` | Latitude consultada ou simulada |
+| `OPENMETEO_LONGITUDE` | `-47.4526` | Longitude consultada ou simulada |
+| `COLETA_INTERVALO_MS` | `10000` | Intervalo entre coletas em milissegundos |
+| `COLETA_MODO` | `REAL` | Origem da coleta: `REAL` ou `SIMULADO` |
+| `COLETA_CENARIO` | vazio | Cenário fixo no modo simulado; vazio alterna os cenários |
+| `SERVIDOR_PORTA` | `8080` | Porta HTTP do webapp |
+
+Uma coleta a cada 10 segundos pode gerar até 8.640 chamadas por dia. Utilize o modo `REAL` apenas durante os períodos
+necessários de teste e demonstração, respeitando os limites da Open-Meteo.
+
+## Endereços do webapp
+
+| Endereço | Resultado |
+|---|---|
+| <http://localhost:8080> | Página principal com a leitura mais recente e o gráfico |
+| <http://localhost:8080/api/leituras/ultima> | Leitura mais recente em JSON |
+| <http://localhost:8080/api/leituras?limite=20> | Últimas 20 leituras em ordem cronológica |
+| <http://localhost:8080/api/leituras?modo=REAL> | Somente leituras reais |
+| <http://localhost:8080/api/leituras?modo=SIMULADO> | Somente leituras simuladas |
+| <http://localhost:8080/api/leituras/total> | Quantidade total de leituras |
+
+A consulta por período também está disponível:
+
+```text
+http://localhost:8080/api/leituras/periodo?inicio=2026-10-20T00:00:00&fim=2026-10-20T23:59:59
+```
+
+O período máximo é de 31 dias e o limite máximo é de 1.000 registros. Os parâmetros `modo` e `limite` são opcionais.
 
 ## Testes
 
-```bash
+Execute todos os testes na raiz do projeto:
+
+```powershell
 mvn test
 ```
 
-Os testes não precisam de MySQL nem de internet: o DAO é testado com H2 em memória (modo MySQL) e o cliente
-da API usa um servidor HTTP local que imita a Open-Meteo, incluindo cenários de erro (HTTP 429/503, JSON inválido, sem conexão).
+Os testes automatizados não dependem do MySQL local nem de acesso à internet. O módulo compartilhado usa H2 em memória
+no modo de compatibilidade com MySQL, e o cliente da API é testado com um servidor HTTP local.
 
-## Estrutura
+## Segurança e arquivos locais
 
+- nunca envie o `.env`, senhas reais ou credenciais para o Git;
+- não versione dumps do banco contendo dados ou credenciais locais;
+- mantenha somente exemplos sem segredos no `.env.exemplo`;
+- confirme os arquivos modificados com `git status` antes de criar um commit.
+
+## Estrutura de pastas
+
+```text
+compartilhado/  Entidades, interfaces de persistência, DAOs Hibernate e configurações compartilhadas
+collector/      Fontes meteorológicas, normalização dos dados, conversor e serviço de coleta
+webapp/         Servlet, serviço de consulta e interface HTML/CSS/JavaScript
+database/       Schema atual, migração da estrutura antiga e dados de teste
+docs/           Arquitetura, modelo de dados, planejamento, testes e evidências
+scripts/        Guias detalhados para executar o collector e o webapp
+.run/           Configurações de execução do IntelliJ IDEA
 ```
-compartilhado/   model/ (LeituraMeteorologica), dao/ + dao/impl/ (Hibernate), banco.properties
-coletor/         client/ (ApiMeteorologicaClient), service/ (ColetaMeteorologicaService)
-servidor-web/    controller/, service/ (ConsultaMeteorologicaService), dto/, resources/static/ (front-end)
-database/        schema.sql, dados-teste.sql
-documentacao/    arquitetura/, evidencias-testes/, monografia/
-```
+
+Pacote Java principal: `br.com.aps.meteorologia`.
+
+## Documentação complementar
+
+| Documento | Conteúdo |
+|---|---|
+| [`docs/planejamento.md`](docs/planejamento.md) | Escopo, cronograma e divisão de tarefas |
+| [`docs/arquitetura.md`](docs/arquitetura.md) | Fluxo, camadas, Spring Boot, Hibernate, DAO e contrato JSON |
+| [`docs/modelo-dados.md`](docs/modelo-dados.md) | Tabelas, relacionamentos, campos e regras do banco |
+| [`docs/roteiro-testes.md`](docs/roteiro-testes.md) | Testes automatizados e roteiro de testes manuais |
+| [`scripts/iniciar-coletor.md`](scripts/iniciar-coletor.md) | Instruções detalhadas do collector |
+| [`scripts/executar-web.md`](scripts/executar-web.md) | Instruções detalhadas do webapp |
