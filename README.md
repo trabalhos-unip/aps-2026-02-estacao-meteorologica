@@ -162,7 +162,8 @@ Para interromper uma aplicação iniciada pelo terminal, pressione `Ctrl+C`.
 Com o **webapp** e o **collector** em execução, abra **Configurações**, informe a cidade e selecione a UF. O país é
 fixado em Brasil. Ao salvar, o webapp obtém as coordenadas na Open-Meteo, cria ou atualiza a estação no banco e a
 ativa. A próxima coleta já usa a nova posição. Os dados históricos da cidade anterior continuam guardados, mas não
-são exibidos enquanto outra estação estiver ativa.
+são exibidos enquanto outra estação estiver ativa. Em até 10 segundos, o collector também carrega os 15 dias
+históricos e os 7 dias de previsão da nova cidade.
 
 ## Modos de coleta
 
@@ -206,6 +207,7 @@ sempre que alterar o modo ou o cenário.
 | `OPENMETEO_LATITUDE` | `-23.5015` | Coordenada alternativa antes do primeiro cadastro ou no modo simulado |
 | `OPENMETEO_LONGITUDE` | `-47.4526` | Coordenada alternativa antes do primeiro cadastro ou no modo simulado |
 | `COLETA_INTERVALO_MS` | `10000` | Intervalo entre coletas em milissegundos |
+| `SINCRONIZACAO_VERIFICACAO_ESTACAO_MS` | `10000` | Verificação de troca de cidade para recarregar histórico e previsão |
 | `COLETA_MODO` | `REAL` | Origem da coleta: `REAL` ou `SIMULADO` |
 | `COLETA_CENARIO` | vazio | Cenário fixo no modo simulado; vazio alterna os cenários |
 | `SERVIDOR_PORTA` | `8080` | Porta HTTP do webapp |

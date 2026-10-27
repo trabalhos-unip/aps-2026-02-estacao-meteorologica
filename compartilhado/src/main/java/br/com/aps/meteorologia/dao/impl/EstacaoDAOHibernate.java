@@ -46,11 +46,18 @@ public class EstacaoDAOHibernate implements IEstacaoDAO {
             sessao.createMutationQuery("update Estacao e set e.ativa = false where e.ativa = true").executeUpdate();
             Estacao estacao = sessao.createQuery("from Estacao e where e.nome = :nome", Estacao.class)
                     .setParameter("nome", chave).uniqueResult();
-            if (estacao == null) { estacao = new Estacao(); estacao.setNome(chave); sessao.persist(estacao); }
+            boolean nova = estacao == null;
+            if (nova) {
+                estacao = new Estacao();
+                estacao.setNome(chave);
+            }
             estacao.setCidade(cidade.trim()); estacao.setEstado(uf); estacao.setPais("BR");
             estacao.setLatitude(latitude); estacao.setLongitude(longitude);
             estacao.setFusoHorario(fusoHorario == null || fusoHorario.isBlank() ? "America/Sao_Paulo" : fusoHorario);
             estacao.setAtiva(true);
+            // Todos os campos NOT NULL são preenchidos antes do persist, pois a geração
+            // de ID pode fazer o Hibernate validar a entidade imediatamente.
+            if (nova) sessao.persist(estacao);
             return estacao;
         });
     }

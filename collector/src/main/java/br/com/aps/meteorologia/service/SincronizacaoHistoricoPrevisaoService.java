@@ -51,6 +51,8 @@ public class SincronizacaoHistoricoPrevisaoService {
     private final ZoneId zona;
     private final int diasHistorico;
     private final int diasPrevisao;
+    /** Última estação para a qual os resumos foram atualizados com sucesso. */
+    private volatile Long estacaoSincronizada;
 
     public SincronizacaoHistoricoPrevisaoService(ClienteOpenMeteo client,
                                                   ResumoDiarioMeteorologicoDAO dao,
@@ -86,6 +88,24 @@ public class SincronizacaoHistoricoPrevisaoService {
         sincronizar();
     }
 
+    /**
+     * Não espera a rotina de seis horas quando a pessoa troca a cidade na tela.
+     * A próxima verificação encontra a nova estação ativa e carrega o histórico
+     * e a previsão dela sem misturar dados com a estação anterior.
+     */
+    @Scheduled(fixedDelayString = "${sincronizacao.verificacao-estacao-ms:10000}",
+            initialDelayString = "${sincronizacao.verificacao-estacao-ms:10000}")
+    public void sincronizarQuandoEstacaoMudar() {
+        try {
+            var ativa = estacaoDAO.buscarAtiva();
+            if (ativa.isPresent() && !ativa.get().getId().equals(estacaoSincronizada)) {
+                sincronizar();
+            }
+        } catch (RuntimeException e) {
+            log.warn("Verificação da estação ativa ignorada: {}", e.getMessage());
+        }
+    }
+
     public synchronized void sincronizar() {
         try {
             LocalDate hoje = LocalDate.now(zona);
@@ -113,6 +133,7 @@ public class SincronizacaoHistoricoPrevisaoService {
                 daoHorario.salvarOuAtualizar(horario);
             }
             daoHorario.removerPrevisoesAnterioresA(estacaoId, agora.truncatedTo(ChronoUnit.HOURS));
+            estacaoSincronizada = estacaoId;
             log.info("Histórico e previsão sincronizados: {} dias históricos, {} dias previstos e {} pontos horários", historicos, previsoes, horarios.size());
         } catch (FonteMeteorologicaException e) {
             log.warn("Sincronização de histórico/previsão ignorada — falha na API: {}", e.getMessage());
