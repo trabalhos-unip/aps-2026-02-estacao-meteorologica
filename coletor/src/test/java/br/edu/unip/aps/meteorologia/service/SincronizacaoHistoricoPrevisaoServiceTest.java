@@ -3,6 +3,7 @@ package br.edu.unip.aps.meteorologia.service;
 import br.edu.unip.aps.meteorologia.client.ApiMeteorologicaClient;
 import br.edu.unip.aps.meteorologia.client.RespostaSerieOpenMeteo;
 import br.edu.unip.aps.meteorologia.dao.ResumoDiarioMeteorologicoDAO;
+import br.edu.unip.aps.meteorologia.dao.ResumoHorarioMeteorologicoDAO;
 import br.edu.unip.aps.meteorologia.model.ResumoDiarioMeteorologico;
 import br.edu.unip.aps.meteorologia.model.TipoResumoDiario;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,7 @@ class SincronizacaoHistoricoPrevisaoServiceTest {
     void separaDiasPassadosDePrevisoesECalculaResumo() {
         ApiMeteorologicaClient client = mock(ApiMeteorologicaClient.class);
         ResumoDiarioMeteorologicoDAO dao = mock(ResumoDiarioMeteorologicoDAO.class);
+        ResumoHorarioMeteorologicoDAO daoHorario = mock(ResumoHorarioMeteorologicoDAO.class);
         ZoneId zona = ZoneId.of("America/Sao_Paulo");
         LocalDate ontem = LocalDate.now(zona).minusDays(1);
         LocalDate hoje = LocalDate.now(zona);
@@ -33,7 +35,7 @@ class SincronizacaoHistoricoPrevisaoServiceTest {
                 List.of(20.0, 24.0, 22.0), List.of(80, 60, 70), List.of(0.0, 1.2, 0.4),
                 List.of(0.0, 1.2, 0.4), List.of(8.0, 14.0, 10.0), List.of(3, 61, 2));
         when(client.buscarSerieHoraria(15, 7)).thenReturn(new RespostaSerieOpenMeteo("America/Sao_Paulo", horas));
-        SincronizacaoHistoricoPrevisaoService service = new SincronizacaoHistoricoPrevisaoService(client, dao,
+        SincronizacaoHistoricoPrevisaoService service = new SincronizacaoHistoricoPrevisaoService(client, dao, daoHorario,
                 "America/Sao_Paulo", 15, 7);
 
         service.sincronizar();

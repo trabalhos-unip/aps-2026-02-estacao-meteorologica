@@ -56,7 +56,7 @@ mvn -pl servidor-web spring-boot:run
 
 ### Dados no banco
 
-`leitura_meteorologica` armazena somente coletas feitas pela estação enquanto ela está ligada. Já `resumo_diario_meteorologico` guarda duas séries separadas: `HISTORICO`, reconstituído da Open-Meteo para preencher os dias anteriores, e `PREVISAO`, que contém hoje e os próximos dias. A interface identifica as origens para não apresentar uma previsão como medição real.
+`leitura_meteorologica` armazena somente coletas feitas pela estação enquanto ela está ligada. Já `resumo_diario_meteorologico` guarda duas séries separadas: `HISTORICO`, reconstituído da Open-Meteo para preencher os dias anteriores, e `PREVISAO`, que contém hoje e os próximos dias. `resumo_horario_meteorologico` completa as horas sem coleta local; quando há os dois dados para a mesma hora, a página prioriza a leitura local. A interface identifica as origens para não apresentar uma previsão como medição real.
 
 Para popular o banco sem rodar o coletor: `database/dados-teste.sql`.
 

@@ -47,3 +47,22 @@ CREATE TABLE IF NOT EXISTS resumo_diario_meteorologico (
     UNIQUE KEY uk_resumo_diario_data_tipo (data_referencia, tipo),
     INDEX idx_resumo_diario_data_tipo (data_referencia, tipo)
 ) ENGINE = InnoDB;
+
+-- Série horária complementar. Preenche as horas anteriores quando a estação local
+-- não estava em execução; a página dá prioridade à leitura local se ambas existirem.
+CREATE TABLE IF NOT EXISTS resumo_horario_meteorologico (
+    id                    BIGINT       NOT NULL AUTO_INCREMENT,
+    data_hora_referencia  DATETIME(6)  NOT NULL,
+    tipo                  VARCHAR(20)  NOT NULL COMMENT 'HISTORICO ou PREVISAO',
+    temperatura           DOUBLE       NULL,
+    umidade_relativa      INT          NULL,
+    precipitacao          DOUBLE       NULL,
+    chuva                 DOUBLE       NULL,
+    velocidade_vento      DOUBLE       NULL,
+    codigo_clima          INT          NULL,
+    fonte_dados           VARCHAR(100) NOT NULL,
+    atualizado_em         DATETIME(6)  NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_resumo_horario_momento_tipo (data_hora_referencia, tipo),
+    INDEX idx_resumo_horario_momento_tipo (data_hora_referencia, tipo)
+) ENGINE = InnoDB;

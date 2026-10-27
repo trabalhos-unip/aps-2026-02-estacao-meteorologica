@@ -4,7 +4,9 @@ import br.edu.unip.aps.meteorologia.client.ApiMeteorologicaClient;
 import br.edu.unip.aps.meteorologia.client.ApiMeteorologicaException;
 import br.edu.unip.aps.meteorologia.client.RespostaSerieOpenMeteo;
 import br.edu.unip.aps.meteorologia.dao.ResumoDiarioMeteorologicoDAO;
+import br.edu.unip.aps.meteorologia.dao.ResumoHorarioMeteorologicoDAO;
 import br.edu.unip.aps.meteorologia.model.ResumoDiarioMeteorologico;
+import br.edu.unip.aps.meteorologia.model.ResumoHorarioMeteorologico;
 import br.edu.unip.aps.meteorologia.model.TipoResumoDiario;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -37,17 +40,20 @@ public class SincronizacaoHistoricoPrevisaoService {
 
     private final ApiMeteorologicaClient client;
     private final ResumoDiarioMeteorologicoDAO dao;
+    private final ResumoHorarioMeteorologicoDAO daoHorario;
     private final ZoneId zona;
     private final int diasHistorico;
     private final int diasPrevisao;
 
     public SincronizacaoHistoricoPrevisaoService(ApiMeteorologicaClient client,
                                                   ResumoDiarioMeteorologicoDAO dao,
+                                                  ResumoHorarioMeteorologicoDAO daoHorario,
                                                   @Value("${openmeteo.timezone}") String timezone,
                                                   @Value("${sincronizacao.historico-dias:15}") int diasHistorico,
                                                   @Value("${sincronizacao.previsao-dias:7}") int diasPrevisao) {
         this.client = client;
         this.dao = dao;
+        this.daoHorario = daoHorario;
         this.zona = ZoneId.of(timezone);
         this.diasHistorico = diasHistorico;
         this.diasPrevisao = diasPrevisao;
@@ -71,6 +77,7 @@ public class SincronizacaoHistoricoPrevisaoService {
             RespostaSerieOpenMeteo serie = client.buscarSerieHoraria(diasHistorico, diasPrevisao);
             Map<LocalDate, AcumuladoDiario> porDia = agrupar(serie.hourly());
             LocalDateTime agora = LocalDateTime.now(zona);
+            List<ResumoHorarioMeteorologico> horarios = criarResumosHorarios(serie.hourly(), agora);
             int historicos = 0;
             int previsoes = 0;
             for (AcumuladoDiario acumulado : porDia.values()) {
@@ -79,7 +86,11 @@ public class SincronizacaoHistoricoPrevisaoService {
                 if (tipo == TipoResumoDiario.HISTORICO) historicos++; else previsoes++;
             }
             dao.removerPrevisoesAnterioresA(hoje);
-            log.info("Histórico e previsão sincronizados: {} dias históricos e {} dias previstos", historicos, previsoes);
+            for (ResumoHorarioMeteorologico horario : horarios) {
+                daoHorario.salvarOuAtualizar(horario);
+            }
+            daoHorario.removerPrevisoesAnterioresA(agora.truncatedTo(ChronoUnit.HOURS));
+            log.info("Histórico e previsão sincronizados: {} dias históricos, {} dias previstos e {} pontos horários", historicos, previsoes, horarios.size());
         } catch (ApiMeteorologicaException e) {
             log.warn("Sincronização de histórico/previsão ignorada — falha na API: {}", e.getMessage());
         } catch (RuntimeException e) {
@@ -101,6 +112,32 @@ public class SincronizacaoHistoricoPrevisaoService {
             }
         }
         return porDia;
+    }
+
+    private List<ResumoHorarioMeteorologico> criarResumosHorarios(RespostaSerieOpenMeteo.DadosHorarios horas, LocalDateTime agora) {
+        List<ResumoHorarioMeteorologico> resumos = new ArrayList<>();
+        LocalDateTime inicioDaHoraAtual = agora.truncatedTo(ChronoUnit.HOURS);
+        for (int indice = 0; indice < horas.time().size(); indice++) {
+            try {
+                LocalDateTime momento = LocalDateTime.parse(horas.time().get(indice));
+                TipoResumoDiario tipo = momento.isBefore(inicioDaHoraAtual) ? TipoResumoDiario.HISTORICO : TipoResumoDiario.PREVISAO;
+                ResumoHorarioMeteorologico resumo = new ResumoHorarioMeteorologico();
+                resumo.setDataHora(momento);
+                resumo.setTipo(tipo);
+                resumo.setTemperatura(valor(horas.temperatura(), indice));
+                resumo.setUmidadeRelativa(valor(horas.umidadeRelativa(), indice));
+                resumo.setPrecipitacao(valor(horas.precipitation(), indice));
+                resumo.setChuva(valor(horas.rain(), indice));
+                resumo.setVelocidadeVento(valor(horas.velocidadeVento(), indice));
+                resumo.setCodigoClima(valor(horas.codigoClima(), indice));
+                resumo.setFonteDados(tipo == TipoResumoDiario.HISTORICO ? FONTE_HISTORICO : FONTE_PREVISAO);
+                resumo.setAtualizadoEm(agora);
+                resumos.add(resumo);
+            } catch (DateTimeParseException e) {
+                log.warn("Horário inesperado ignorado na série da Open-Meteo: {}", horas.time().get(indice));
+            }
+        }
+        return resumos;
     }
 
     private static <T> T valor(List<T> valores, int indice) {

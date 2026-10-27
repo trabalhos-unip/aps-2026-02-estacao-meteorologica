@@ -19,3 +19,7 @@ export const resumosDiariosApi = {
   buscarHistorico: (inicio, fim) => request(`/historico?inicio=${encodeURIComponent(inicio)}&fim=${encodeURIComponent(fim)}`, "/api/resumos-diarios"),
   buscarPrevisoes: (dias = 5) => request(`/previsoes?dias=${encodeURIComponent(dias)}`, "/api/resumos-diarios"),
 };
+
+export const resumosHorariosApi = {
+  buscarHistorico: (inicio, fim) => request(`/historico?inicio=${encodeURIComponent(inicio)}&fim=${encodeURIComponent(fim)}`, "/api/resumos-horarios"),
+};

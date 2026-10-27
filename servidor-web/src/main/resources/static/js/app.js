@@ -1,4 +1,4 @@
-import { leiturasApi, resumosDiariosApi } from "./api.js";
+import { leiturasApi, resumosDiariosApi, resumosHorariosApi } from "./api.js";
 import { demoApi, demoForecast } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261026-4";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261026-4";
@@ -141,9 +141,38 @@ function resumoComoLeitura(resumo) {
   };
 }
 
+function resumoHorarioComoLeitura(resumo) {
+  return {
+    id: resumo.id,
+    dataHoraColeta: resumo.dataHora,
+    temperatura: resumo.temperatura,
+    umidadeRelativa: resumo.umidadeRelativa,
+    precipitacao: resumo.precipitacao,
+    chuva: resumo.chuva,
+    velocidadeVento: resumo.velocidadeVento,
+    codigoClima: resumo.codigoClima,
+    descricaoClima: resumo.descricaoClima,
+    presencaPrecipitacao: resumo.precipitacao == null && resumo.chuva == null ? null : Number(resumo.precipitacao || 0) > 0 || Number(resumo.chuva || 0) > 0,
+    fonteDados: resumo.fonteDados,
+  };
+}
+
+function chaveDaHora(reading) {
+  return String(reading.dataHoraColeta || "").slice(0, 13);
+}
+
 async function buscarSerieDoPeriodo(start, end) {
-  if (simulated() || !isDailyPeriod(start, end)) {
+  if (simulated()) {
     return activeReadingsApi.buscarPorPeriodo(apiDate(start), apiDate(end));
+  }
+  if (!isDailyPeriod(start, end)) {
+    const [resumos, leiturasLocais] = await Promise.all([
+      resumosHorariosApi.buscarHistorico(apiDate(start), apiDate(end)),
+      activeReadingsApi.buscarPorPeriodo(apiDate(start), apiDate(end)),
+    ]);
+    // A leitura local tem prioridade na mesma hora, pois é a observação mais próxima da estação.
+    const horasLocais = new Set(leiturasLocais.map(chaveDaHora));
+    return [...resumos.map(resumoHorarioComoLeitura).filter(reading => !horasLocais.has(chaveDaHora(reading))), ...leiturasLocais];
   }
   const inicioHoje = new Date();
   inicioHoje.setHours(0, 0, 0, 0);
