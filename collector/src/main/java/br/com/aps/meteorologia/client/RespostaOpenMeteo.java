@@ -26,6 +26,11 @@ public record RespostaOpenMeteo(Double latitude, Double longitude, String timezo
             @JsonProperty("precipitation") Double precipitacao,
             @JsonProperty("rain") Double chuva,
             @JsonProperty("wind_speed_10m") Double velocidadeVento,
-            @JsonProperty("weather_code") Integer codigoClima) {
+            @JsonProperty("weather_code") Integer codigoClima,
+            @JsonProperty("apparent_temperature") Double sensacaoTermica,
+            @JsonProperty("surface_pressure") Double pressaoSuperficie,
+            @JsonProperty("wind_direction_10m") Integer direcaoVento,
+            @JsonProperty("wind_gusts_10m") Double rajadaVento,
+            @JsonProperty("cloud_cover") Integer coberturaNuvens) {
     }
 }

@@ -1,12 +1,16 @@
 package br.com.aps.meteorologia.service;
 
-import br.com.aps.meteorologia.client.ApiMeteorologicaException;
-import br.com.aps.meteorologia.client.FonteMeteorologica;
-import br.com.aps.meteorologia.client.RespostaOpenMeteo;
-import br.com.aps.meteorologia.client.RespostaOpenMeteo.CondicoesAtuais;
-import br.com.aps.meteorologia.dao.LeituraMeteorologicaDAO;
+import br.com.aps.meteorologia.client.DadosMeteorologicosAtuais;
+import br.com.aps.meteorologia.client.FonteMeteorologicaException;
+import br.com.aps.meteorologia.client.IFonteMeteorologica;
+import br.com.aps.meteorologia.dao.IEstacaoDAO;
+import br.com.aps.meteorologia.dao.ILeituraMeteorologicaDAO;
+import br.com.aps.meteorologia.dao.ILogColetaDAO;
 import br.com.aps.meteorologia.dao.PersistenciaException;
 import br.com.aps.meteorologia.model.LeituraMeteorologica;
+import br.com.aps.meteorologia.model.LogColeta;
+import br.com.aps.meteorologia.model.StatusColeta;
+import br.com.aps.meteorologia.model.TipoErroColeta;
 import br.com.aps.meteorologia.util.DataHoraUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,100 +21,133 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
-/**
- * Caso de uso da coleta: obtém os dados da fonte (API real ou simulador), converte para
- * {@link LeituraMeteorologica} e salva pelo DAO. Executado a cada {@code coleta.intervalo-ms} (10 segundos, conforme o enunciado).
- *
- * <p>A Open-Meteo atualiza as condições atuais a cada 15 minutos; por isso várias coletas seguidas
- * podem ter o mesmo {@code dataHoraFonte} e os mesmos valores. Isso é esperado.
- */
+/** Orquestra a obtenção, conversão e persistência de cada leitura meteorológica. */
 @Service
 public class ColetaMeteorologicaService {
 
-    private static final Logger log = LoggerFactory.getLogger(ColetaMeteorologicaService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ColetaMeteorologicaService.class);
+    private static final int TAMANHO_MAXIMO_MENSAGEM_LOG = 500;
 
-    private final FonteMeteorologica fonte;
-    private final LeituraMeteorologicaDAO dao;
-    private final ZoneId zona;
+    private final IFonteMeteorologica fonteMeteorologica;
+    private final ILeituraMeteorologicaDAO leituraMeteorologicaDAO;
+    private final IEstacaoDAO estacaoDAO;
+    private final ILogColetaDAO logColetaDAO;
+    private final ConversorLeituraMeteorologica conversorLeitura;
+    private final ZoneId fusoHorario;
+    private final String nomeEstacao;
+    private final double latitudeEstacao;
+    private final double longitudeEstacao;
 
-    public ColetaMeteorologicaService(FonteMeteorologica fonte,
-                                      LeituraMeteorologicaDAO dao,
-                                      @Value("${openmeteo.timezone}") String timezone) {
-        this.fonte = fonte;
-        this.dao = dao;
-        this.zona = ZoneId.of(timezone);
+    private Long estacaoId;
+    private LocalDateTime ultimaDataHoraFonte;
+
+    public ColetaMeteorologicaService(IFonteMeteorologica fonteMeteorologica,
+                                      ILeituraMeteorologicaDAO leituraMeteorologicaDAO,
+                                      IEstacaoDAO estacaoDAO,
+                                      ILogColetaDAO logColetaDAO,
+                                      ConversorLeituraMeteorologica conversorLeitura,
+                                      @Value("${estacao.nome}") String nomeEstacao,
+                                      @Value("${openmeteo.latitude}") double latitudeEstacao,
+                                      @Value("${openmeteo.longitude}") double longitudeEstacao,
+                                      @Value("${openmeteo.timezone}") String fusoHorario) {
+        this.fonteMeteorologica = fonteMeteorologica;
+        this.leituraMeteorologicaDAO = leituraMeteorologicaDAO;
+        this.estacaoDAO = estacaoDAO;
+        this.logColetaDAO = logColetaDAO;
+        this.conversorLeitura = conversorLeitura;
+        this.nomeEstacao = nomeEstacao;
+        this.latitudeEstacao = latitudeEstacao;
+        this.longitudeEstacao = longitudeEstacao;
+        this.fusoHorario = ZoneId.of(fusoHorario);
     }
 
-    /**
-     * Ciclo agendado. Nenhuma falha recuperável interrompe o coletor: o erro é registrado no log
-     * e a próxima coleta acontece normalmente.
-     */
     @Scheduled(fixedDelayString = "${coleta.intervalo-ms:10000}")
-    public void executarColeta() {
+    public void executarColetaAgendada() {
+        long inicioColeta = System.nanoTime();
         try {
-            LeituraMeteorologica leitura = coletar();
-            log.info("Leitura #{} salva [{}] | coleta={} fonte={} | {} °C, {} %, precip. {} mm, chuva {} mm, vento {} km/h, código WMO {}",
-                    leitura.getId(), leitura.getModoOperacao(), leitura.getDataHoraColeta(), leitura.getDataHoraFonte(),
-                    leitura.getTemperatura(), leitura.getUmidadeRelativa(), leitura.getPrecipitacao(),
-                    leitura.getChuva(), leitura.getVelocidadeVento(), leitura.getCodigoClima());
-        } catch (ApiMeteorologicaException e) {
-            log.warn("Coleta ignorada — falha na fonte de dados ({}): {}", fonte.nomeFonte(), e.getMessage());
-        } catch (PersistenciaException e) {
-            log.error("Coleta ignorada — falha no banco de dados: {}", e.getMessage());
-        } catch (RuntimeException e) {
-            log.error("Coleta ignorada — erro inesperado", e);
+            LeituraMeteorologica leitura = coletarESalvarLeitura();
+            registrarColetaComSucesso(leitura, calcularDuracaoEmMilissegundos(inicioColeta));
+            LOG.info("Leitura #{} salva [{}]", leitura.getId(), leitura.getModoOperacao());
+        } catch (FonteMeteorologicaException erro) {
+            registrarFalhaNaColeta(erro, erro.getTipoErro(), erro.getCodigoHttp(),
+                    calcularDuracaoEmMilissegundos(inicioColeta));
+            LOG.warn("Coleta ignorada: {}", erro.getMessage());
+        } catch (PersistenciaException erro) {
+            registrarFalhaNaColeta(erro, TipoErroColeta.BANCO, null,
+                    calcularDuracaoEmMilissegundos(inicioColeta));
+            LOG.error("Coleta ignorada: {}", erro.getMessage());
+        } catch (RuntimeException erro) {
+            registrarFalhaNaColeta(erro, TipoErroColeta.OUTRO, null,
+                    calcularDuracaoEmMilissegundos(inicioColeta));
+            LOG.error("Coleta ignorada", erro);
         }
     }
 
-    /** Executa uma coleta completa (fonte → conversão → banco) e devolve a leitura gravada. */
-    public LeituraMeteorologica coletar() {
-        RespostaOpenMeteo resposta = fonte.buscarCondicoesAtuais();
-        LeituraMeteorologica leitura = converter(resposta.current(), DataHoraUtil.agora(zona));
-        leitura.setLatitude(resposta.latitude());
-        leitura.setLongitude(resposta.longitude());
-        leitura.setModoOperacao(fonte.modo());
-        leitura.setFonteDados(fonte.nomeFonte());
-        return dao.salvar(leitura);
+    public LeituraMeteorologica coletarESalvarLeitura() {
+        DadosMeteorologicosAtuais dadosAtuais = fonteMeteorologica.obterDadosAtuais();
+        LeituraMeteorologica leitura = conversorLeitura.converterParaLeitura(
+                dadosAtuais, DataHoraUtil.agora(fusoHorario));
+        leitura.setEstacaoId(obterEstacaoId());
+        leitura.setModoOperacao(fonteMeteorologica.obterModoOperacao());
+        leitura.setFonteDados(fonteMeteorologica.obterNomeFonte());
+        leitura.setDadoRepetido(leitura.getDataHoraFonte() != null
+                && leitura.getDataHoraFonte().equals(ultimaDataHoraFonte));
+
+        LeituraMeteorologica leituraSalva = leituraMeteorologicaDAO.salvar(leitura);
+        ultimaDataHoraFonte = leituraSalva.getDataHoraFonte();
+        return leituraSalva;
     }
 
-    /** Converte as condições da API para o modelo interno. Valores ausentes ficam {@code null}. */
-    LeituraMeteorologica converter(CondicoesAtuais atuais, LocalDateTime dataHoraColeta) {
-        if (atuais.temperatura() == null && atuais.umidadeRelativa() == null
-                && atuais.precipitacao() == null && atuais.velocidadeVento() == null) {
-            throw new ApiMeteorologicaException("Resposta da Open-Meteo sem nenhuma variável meteorológica");
+    private synchronized Long obterEstacaoId() {
+        if (estacaoId == null) {
+            estacaoId = estacaoDAO.buscarOuCriar(nomeEstacao, latitudeEstacao, longitudeEstacao).getId();
         }
-        LeituraMeteorologica leitura = new LeituraMeteorologica();
-        leitura.setDataHoraColeta(dataHoraColeta);
-        leitura.setDataHoraFonte(converterDataHora(atuais.time()));
-        leitura.setTemperatura(atuais.temperatura());
-        leitura.setUmidadeRelativa(atuais.umidadeRelativa());
-        leitura.setPrecipitacao(atuais.precipitacao());
-        leitura.setChuva(atuais.chuva());
-        leitura.setVelocidadeVento(atuais.velocidadeVento());
-        leitura.setCodigoClima(atuais.codigoClima());
-        leitura.setPresencaPrecipitacao(calcularPresencaPrecipitacao(atuais.precipitacao(), atuais.chuva()));
-        leitura.setFonteDados(LeituraMeteorologica.FONTE_OPEN_METEO);
-        return leitura;
+        return estacaoId;
     }
 
-    /**
-     * Regra do grupo para "presença de precipitação": há precipitação quando o valor de
-     * {@code precipitation} ou de {@code rain} é maior que zero. Sem nenhum dos dois, fica {@code null}.
-     */
-    static Boolean calcularPresencaPrecipitacao(Double precipitacao, Double chuva) {
-        if (precipitacao == null && chuva == null) {
+    private void registrarColetaComSucesso(LeituraMeteorologica leitura, int duracaoMilissegundos) {
+        try {
+            LogColeta logColeta = criarLogColeta(StatusColeta.SUCESSO, duracaoMilissegundos);
+            logColeta.setLeituraId(leitura.getId());
+            logColetaDAO.salvar(logColeta);
+        } catch (RuntimeException erro) {
+            LOG.warn("Não foi possível registrar o log da coleta: {}", erro.getMessage());
+        }
+    }
+
+    private void registrarFalhaNaColeta(RuntimeException erro, TipoErroColeta tipoErro,
+                                        Integer codigoHttp, int duracaoMilissegundos) {
+        try {
+            LogColeta logColeta = criarLogColeta(StatusColeta.ERRO, duracaoMilissegundos);
+            logColeta.setTipoErro(tipoErro);
+            logColeta.setHttpStatus(codigoHttp);
+            logColeta.setMensagem(resumirMensagem(erro.getMessage()));
+            logColetaDAO.salvar(logColeta);
+        } catch (RuntimeException falhaAoRegistrarLog) {
+            LOG.warn("Não foi possível registrar o log da coleta: {}", falhaAoRegistrarLog.getMessage());
+        }
+    }
+
+    private LogColeta criarLogColeta(StatusColeta status, int duracaoMilissegundos) {
+        LogColeta logColeta = new LogColeta();
+        logColeta.setEstacaoId(obterEstacaoId());
+        logColeta.setDataHora(DataHoraUtil.agora(fusoHorario));
+        logColeta.setModoOperacao(fonteMeteorologica.obterModoOperacao());
+        logColeta.setStatus(status);
+        logColeta.setDuracaoMs(duracaoMilissegundos);
+        return logColeta;
+    }
+
+    private static int calcularDuracaoEmMilissegundos(long inicioEmNanossegundos) {
+        return (int) ((System.nanoTime() - inicioEmNanossegundos) / 1_000_000);
+    }
+
+    private static String resumirMensagem(String mensagem) {
+        if (mensagem == null) {
             return null;
         }
-        return (precipitacao != null && precipitacao > 0) || (chuva != null && chuva > 0);
-    }
-
-    /** {@code current.time} da API; um formato inesperado é registrado no log e o horário fica vazio. */
-    private LocalDateTime converterDataHora(String time) {
-        try {
-            return DataHoraUtil.converterHorarioFonte(time);
-        } catch (IllegalArgumentException e) {
-            log.warn(e.getMessage());
-            return null;
-        }
+        return mensagem.length() <= TAMANHO_MAXIMO_MENSAGEM_LOG
+                ? mensagem
+                : mensagem.substring(0, TAMANHO_MAXIMO_MENSAGEM_LOG);
     }
 }

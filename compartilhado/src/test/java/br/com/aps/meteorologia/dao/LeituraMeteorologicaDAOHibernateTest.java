@@ -1,7 +1,7 @@
 package br.com.aps.meteorologia.dao;
 
 import br.com.aps.meteorologia.config.HibernateUtil;
-import br.com.aps.meteorologia.dao.impl.LeituraMeteorologicaDAOImpl;
+import br.com.aps.meteorologia.dao.impl.LeituraMeteorologicaDAOHibernate;
 import br.com.aps.meteorologia.model.LeituraMeteorologica;
 import br.com.aps.meteorologia.model.ModoOperacao;
 import org.hibernate.Session;
@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Testa o DAO real (HibernateUtil + hibernate.cfg.xml) trocando o MySQL por H2 em memória. */
-class LeituraMeteorologicaDAOImplTest {
+class LeituraMeteorologicaDAOHibernateTest {
 
     private static final LocalDateTime BASE = LocalDateTime.of(2026, 10, 20, 14, 0, 0);
     private static final Map<String, String> BANCO_DE_TESTE = Map.of(
@@ -28,7 +28,7 @@ class LeituraMeteorologicaDAOImplTest {
             "hibernate.connection.password", "",
             "hibernate.hbm2ddl.auto", "create-drop");
 
-    private final LeituraMeteorologicaDAO dao = new LeituraMeteorologicaDAOImpl();
+    private final ILeituraMeteorologicaDAO dao = new LeituraMeteorologicaDAOHibernate();
 
     @BeforeAll
     static void usarBancoDeTeste() {
@@ -52,6 +52,7 @@ class LeituraMeteorologicaDAOImplTest {
 
     private LeituraMeteorologica leitura(LocalDateTime coleta, Double temperatura) {
         LeituraMeteorologica l = new LeituraMeteorologica();
+        l.setEstacaoId(1L);
         l.setDataHoraColeta(coleta);
         l.setDataHoraFonte(coleta.withMinute(0));
         l.setTemperatura(temperatura);
@@ -75,7 +76,7 @@ class LeituraMeteorologicaDAOImplTest {
         LeituraMeteorologica salva = dao.salvar(leitura(BASE, 22.4));
 
         assertThat(salva.getId()).isNotNull();
-        assertThat(dao.contar()).isEqualTo(1);
+        assertThat(dao.contarTodas()).isEqualTo(1);
         assertThat(dao.buscarUltima()).get()
                 .extracting(LeituraMeteorologica::getTemperatura, LeituraMeteorologica::getFonteDados)
                 .containsExactly(22.4, "Open-Meteo");
@@ -85,12 +86,13 @@ class LeituraMeteorologicaDAOImplTest {
     void bancoVazioNaoQuebra() {
         assertThat(dao.buscarUltima()).isEmpty();
         assertThat(dao.buscarUltimas(10)).isEmpty();
-        assertThat(dao.contar()).isZero();
+        assertThat(dao.contarTodas()).isZero();
     }
 
     @Test
     void aceitaValoresAusentes() {
         LeituraMeteorologica semValores = new LeituraMeteorologica();
+        semValores.setEstacaoId(1L);
         semValores.setDataHoraColeta(BASE);
 
         dao.salvar(semValores);

@@ -24,7 +24,7 @@ import java.util.List;
  */
 @Component
 @ConditionalOnProperty(name = "coleta.modo", havingValue = "SIMULADO")
-public class SimuladorMeteorologico implements FonteMeteorologica {
+public class SimuladorMeteorologico implements IFonteMeteorologica {
 
     /** Variação aplicada a cada coleta (repete a cada 5 coletas): -0.4, -0.2, 0, +0.2, +0.4. */
     private static final double[] VARIACAO = {-0.4, -0.2, 0.0, 0.2, 0.4};
@@ -32,55 +32,54 @@ public class SimuladorMeteorologico implements FonteMeteorologica {
     private final List<CenarioSimulado> cenarios;
     private final double latitude;
     private final double longitude;
-    private final String timezone;
+    private final String fusoHorario;
     private int contador;
 
     public SimuladorMeteorologico(@Value("${coleta.cenario:}") String cenario,
                                   @Value("${openmeteo.latitude}") double latitude,
                                   @Value("${openmeteo.longitude}") double longitude,
-                                  @Value("${openmeteo.timezone}") String timezone) {
+                                  @Value("${openmeteo.timezone}") String fusoHorario) {
         this.cenarios = cenario == null || cenario.isBlank()
                 ? List.of(CenarioSimulado.values())
                 : List.of(converterCenario(cenario));
         this.latitude = latitude;
         this.longitude = longitude;
-        this.timezone = timezone;
+        this.fusoHorario = fusoHorario;
     }
 
     @Override
-    public synchronized RespostaOpenMeteo buscarCondicoesAtuais() {
+    public synchronized DadosMeteorologicosAtuais obterDadosAtuais() {
         CenarioSimulado cenario = cenarios.get(contador % cenarios.size());
         double variacao = VARIACAO[contador % VARIACAO.length];
         contador++;
 
-        String horario = DataHoraUtil.agora(ZoneId.of(timezone)).truncatedTo(ChronoUnit.MINUTES).toString();
-        RespostaOpenMeteo.CondicoesAtuais atuais = new RespostaOpenMeteo.CondicoesAtuais(
-                horario, 900,
-                somar(cenario.temperatura(), variacao),
+        String horario = DataHoraUtil.agora(ZoneId.of(fusoHorario)).truncatedTo(ChronoUnit.MINUTES).toString();
+        return new DadosMeteorologicosAtuais(
+                latitude, longitude, horario,
+                aplicarVariacao(cenario.temperatura(), variacao),
                 cenario.umidadeRelativa(),
                 cenario.precipitacao(),
                 cenario.chuva(),
-                somar(cenario.velocidadeVento(), variacao * 5),
-                cenario.codigoClima());
-        return new RespostaOpenMeteo(latitude, longitude, timezone, atuais);
+                aplicarVariacao(cenario.velocidadeVento(), variacao * 5),
+                cenario.codigoClima(), null, null, null, null, null);
     }
 
     @Override
-    public ModoOperacao modo() {
+    public ModoOperacao obterModoOperacao() {
         return ModoOperacao.SIMULADO;
     }
 
     @Override
-    public String nomeFonte() {
+    public String obterNomeFonte() {
         return LeituraMeteorologica.FONTE_SIMULADOR;
     }
 
     /** Cenários usados por este simulador, na ordem em que são gerados. */
-    public List<CenarioSimulado> getCenarios() {
+    public List<CenarioSimulado> obterCenarios() {
         return cenarios;
     }
 
-    private static Double somar(Double valor, double variacao) {
+    private static Double aplicarVariacao(Double valor, double variacao) {
         return valor == null ? null : Math.round((valor + variacao) * 10) / 10.0;
     }
 

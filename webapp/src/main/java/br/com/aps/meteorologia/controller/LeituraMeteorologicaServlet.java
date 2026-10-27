@@ -31,14 +31,15 @@ import java.util.Map;
  */
 public class LeituraMeteorologicaServlet extends HttpServlet {
 
-    private static final Logger log = LoggerFactory.getLogger(LeituraMeteorologicaServlet.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LeituraMeteorologicaServlet.class);
 
-    private final transient ConsultaMeteorologicaService service;
-    private final transient ObjectMapper json;
+    private final transient ConsultaMeteorologicaService consultaMeteorologicaService;
+    private final transient ObjectMapper conversorJson;
 
-    public LeituraMeteorologicaServlet(ConsultaMeteorologicaService service, ObjectMapper json) {
-        this.service = service;
-        this.json = json;
+    public LeituraMeteorologicaServlet(ConsultaMeteorologicaService consultaMeteorologicaService,
+                                       ObjectMapper conversorJson) {
+        this.consultaMeteorologicaService = consultaMeteorologicaService;
+        this.conversorJson = conversorJson;
     }
 
     /** Corpo JSON das respostas de erro, para a página exibir uma mensagem adequada. */
@@ -50,37 +51,46 @@ public class LeituraMeteorologicaServlet extends HttpServlet {
         String rota = requisicao.getPathInfo() == null ? "/" : requisicao.getPathInfo();
         try {
             switch (rota) {
-                case "/" -> responder(resposta, 200,
-                        service.buscarUltimas(inteiro(requisicao, "limite", 100), modo(requisicao)));
+                case "/" -> enviarRespostaJson(resposta, 200,
+                        consultaMeteorologicaService.buscarUltimas(
+                                obterParametroInteiro(requisicao, "limite", 100),
+                                obterParametroModoOperacao(requisicao)));
                 case "/ultima" -> {
-                    var ultima = service.buscarUltima(modo(requisicao));
+                    var ultima = consultaMeteorologicaService.buscarUltima(
+                            obterParametroModoOperacao(requisicao));
                     if (ultima.isPresent()) {
-                        responder(resposta, 200, ultima.get());
+                        enviarRespostaJson(resposta, 200, ultima.get());
                     } else {
-                        erro(resposta, 404, "Nenhuma leitura registrada ainda");
+                        enviarRespostaErro(resposta, 404, "Nenhuma leitura registrada ainda");
                     }
                 }
-                case "/periodo" -> responder(resposta, 200, service.buscarPorPeriodo(
-                        dataHora(requisicao, "inicio"), dataHora(requisicao, "fim"), modo(requisicao),
-                        inteiro(requisicao, "limite", ConsultaMeteorologicaService.LIMITE_MAXIMO)));
-                case "/total" -> responder(resposta, 200, Map.of("total", service.contar()));
-                default -> erro(resposta, 404, "Endereço não encontrado: /api/leituras" + rota);
+                case "/periodo" -> enviarRespostaJson(resposta, 200,
+                        consultaMeteorologicaService.buscarPorPeriodo(
+                                obterParametroDataHora(requisicao, "inicio"),
+                                obterParametroDataHora(requisicao, "fim"),
+                                obterParametroModoOperacao(requisicao),
+                                obterParametroInteiro(
+                                        requisicao, "limite", ConsultaMeteorologicaService.LIMITE_MAXIMO)));
+                case "/total" -> enviarRespostaJson(resposta, 200,
+                        Map.of("total", consultaMeteorologicaService.contarTodas()));
+                default -> enviarRespostaErro(resposta, 404,
+                        "Endereço não encontrado: /api/leituras" + rota);
             }
         } catch (IllegalArgumentException e) {
-            erro(resposta, 400, e.getMessage());
+            enviarRespostaErro(resposta, 400, e.getMessage());
         } catch (PersistenciaException e) {
-            log.error("Falha ao consultar o banco de dados: {}", e.getMessage());
-            erro(resposta, 503, "Banco de dados indisponível no momento");
+            LOG.error("Falha ao consultar o banco de dados: {}", e.getMessage());
+            enviarRespostaErro(resposta, 503, "Banco de dados indisponível no momento");
         } catch (RuntimeException e) {
-            log.error("Erro inesperado em {}", requisicao.getRequestURI(), e);
-            erro(resposta, 500, "Erro interno no servidor");
+            LOG.error("Erro inesperado em {}", requisicao.getRequestURI(), e);
+            enviarRespostaErro(resposta, 500, "Erro interno no servidor");
         }
     }
 
-    private int inteiro(HttpServletRequest requisicao, String nome, int padrao) {
+    private int obterParametroInteiro(HttpServletRequest requisicao, String nome, int valorPadrao) {
         String valor = requisicao.getParameter(nome);
         if (valor == null || valor.isBlank()) {
-            return padrao;
+            return valorPadrao;
         }
         try {
             return Integer.parseInt(valor.trim());
@@ -90,11 +100,11 @@ public class LeituraMeteorologicaServlet extends HttpServlet {
     }
 
     /** Parâmetro opcional "modo": REAL, SIMULADO ou ausente (todos). Valor inválido gera HTTP 400. */
-    private ModoOperacao modo(HttpServletRequest requisicao) {
+    private ModoOperacao obterParametroModoOperacao(HttpServletRequest requisicao) {
         return ModoOperacao.deTexto(requisicao.getParameter("modo"));
     }
 
-    private LocalDateTime dataHora(HttpServletRequest requisicao, String nome) {
+    private LocalDateTime obterParametroDataHora(HttpServletRequest requisicao, String nome) {
         String valor = requisicao.getParameter(nome);
         if (valor == null || valor.isBlank()) {
             throw new IllegalArgumentException("Parâmetro obrigatório ausente: " + nome);
@@ -107,15 +117,15 @@ public class LeituraMeteorologicaServlet extends HttpServlet {
         }
     }
 
-    private void erro(HttpServletResponse resposta, int status, String mensagem) throws IOException {
-        responder(resposta, status, new ErroResposta(status, mensagem, LocalDateTime.now()));
+    private void enviarRespostaErro(HttpServletResponse resposta, int status, String mensagem) throws IOException {
+        enviarRespostaJson(resposta, status, new ErroResposta(status, mensagem, LocalDateTime.now()));
     }
 
-    private void responder(HttpServletResponse resposta, int status, Object corpo) throws IOException {
+    private void enviarRespostaJson(HttpServletResponse resposta, int status, Object corpo) throws IOException {
         resposta.setStatus(status);
         resposta.setContentType("application/json");
         resposta.setCharacterEncoding("UTF-8");
         resposta.setHeader("Cache-Control", "no-store");
-        json.writeValue(resposta.getOutputStream(), corpo);
+        conversorJson.writeValue(resposta.getOutputStream(), corpo);
     }
 }

@@ -1,9 +1,9 @@
 package br.com.aps.meteorologia.app;
 
-import br.com.aps.meteorologia.client.ApiMeteorologicaClient;
-import br.com.aps.meteorologia.client.FonteMeteorologica;
+import br.com.aps.meteorologia.client.ClienteOpenMeteo;
+import br.com.aps.meteorologia.client.IFonteMeteorologica;
 import br.com.aps.meteorologia.client.SimuladorMeteorologico;
-import br.com.aps.meteorologia.dao.LeituraMeteorologicaDAO;
+import br.com.aps.meteorologia.dao.ILeituraMeteorologicaDAO;
 import br.com.aps.meteorologia.service.ColetaMeteorologicaService;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -22,10 +22,13 @@ class CollectorApplicationTest {
     class ModoReal {
 
         @MockitoBean
-        private ApiMeteorologicaClient client;
+        private ColetaMeteorologicaService coletaMeteorologicaService;
 
         @MockitoBean
-        private LeituraMeteorologicaDAO dao;
+        private ClienteOpenMeteo clienteOpenMeteo;
+
+        @MockitoBean
+        private ILeituraMeteorologicaDAO dao;
 
         @Autowired
         private ApplicationContext contexto;
@@ -33,8 +36,8 @@ class CollectorApplicationTest {
         @Test
         void usaAApiPorPadrao() {
             assertThat(contexto.getBean(ColetaMeteorologicaService.class)).isNotNull();
-            assertThat(contexto.getBean(LeituraMeteorologicaDAO.class)).isSameAs(dao);
-            assertThat(contexto.getBeansOfType(FonteMeteorologica.class)).hasSize(1);
+            assertThat(contexto.getBean(ILeituraMeteorologicaDAO.class)).isSameAs(dao);
+            assertThat(contexto.getBeansOfType(IFonteMeteorologica.class)).hasSize(1);
             assertThat(contexto.getBeansOfType(SimuladorMeteorologico.class)).isEmpty();
         }
     }
@@ -45,15 +48,18 @@ class CollectorApplicationTest {
     class ModoSimulado {
 
         @MockitoBean
-        private LeituraMeteorologicaDAO dao;
+        private ColetaMeteorologicaService coletaMeteorologicaService;
+
+        @MockitoBean
+        private ILeituraMeteorologicaDAO dao;
 
         @Autowired
         private ApplicationContext contexto;
 
         @Test
         void usaOSimulador() {
-            assertThat(contexto.getBean(FonteMeteorologica.class)).isInstanceOf(SimuladorMeteorologico.class);
-            assertThat(contexto.getBeansOfType(ApiMeteorologicaClient.class)).isEmpty();
+            assertThat(contexto.getBean(IFonteMeteorologica.class)).isInstanceOf(SimuladorMeteorologico.class);
+            assertThat(contexto.getBeansOfType(ClienteOpenMeteo.class)).isEmpty();
         }
     }
 }
