@@ -351,7 +351,20 @@ async function fetchLatest() {
   }
 }
 
+const rainCodes = [51, 53, 55, 61, 63, 65, 80, 81, 82, 95, 96, 99];
+
+// Fundo do card "Condições atuais": chuva vem da leitura; dia/noite vem do horário atual.
+function updateHeroScene(reading) {
+  const hero = document.querySelector(".weather-hero");
+  if (!hero) return;
+  const hour = new Date().getHours();
+  const night = hour < 6 || hour >= 18;
+  const rainy = Boolean(reading) && (reading.presencaPrecipitacao === true || rainCodes.includes(Number(reading.codigoClima)));
+  hero.dataset.scene = `${rainy ? "chuva" : "limpo"}-${night ? "noite" : "dia"}`;
+}
+
 function renderHomeReading(reading, recent) {
+  updateHeroScene(reading);
   if (!reading) {
     text("#hero-description", "Ainda não há leituras disponíveis");
     text("#current-date", "Inicie o coletor para registrar dados");
@@ -430,7 +443,7 @@ async function renderForecast() {
       const day = parseDate(`${item.data}T12:00:00`);
       const label = index === 0 ? "Hoje" : new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(day).replace(".", "");
       const date = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(day);
-      const rainy = Number(item.precipitacaoTotal || 0) > 0 || [51, 53, 55, 61, 63, 65, 80, 81, 82, 95, 96, 99].includes(item.codigoClima);
+      const rainy = Number(item.precipitacaoTotal || 0) > 0 || rainCodes.includes(item.codigoClima);
       return `<div class="forecast-row"><span><strong>${label}</strong><small>${date}</small></span><span class="forecast-weather">${icon(rainy ? "rain" : "sun")}</span><span>${number(item.temperaturaMaxima, 0)}°</span><span>${number(item.temperaturaMinima, 0)}°</span><span>${number(item.precipitacaoTotal)} mm</span>${icon("chevron")}</div>`;
     }).join("");
   } catch (error) {
