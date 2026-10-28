@@ -1,4 +1,4 @@
-import { number, parseDate, time } from "./ui.js?v=20261026-4";
+import { number, parseDate, time } from "./ui.js?v=20261028-1";
 
 function sampled(readings, field) {
   const valid = readings

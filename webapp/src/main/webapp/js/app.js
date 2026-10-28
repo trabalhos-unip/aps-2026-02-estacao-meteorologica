@@ -1,9 +1,9 @@
 import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js";
 import { demoApi, demoForecast } from "./demo-data.js?v=20261026-4";
-import { drawScenarioComparison } from "./charts.js?v=20261026-4";
-import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261026-4";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261027-4";
-import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261027-4";
+import { drawScenarioComparison } from "./charts.js?v=20261028-1";
+import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261028-1";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261028-1";
+import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-1";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
 const pages = { "/": overviewPage, "/historico": historyPage, "/simulacoes": simulationsPage, "/configuracoes": settingsPage };
@@ -40,6 +40,39 @@ function applyMode(mode) {
     : "Histórico reconstituído e previsão vêm da Open-Meteo; leituras atuais são registradas separadamente no MySQL.");
 }
 applyMode(savedPreferences().mode);
+// Tema: "auto" segue o sistema; "claro"/"escuro" ficam fixos. O index.html já aplica antes da pintura.
+const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
+function themeChoice() {
+  const theme = savedPreferences().theme;
+  return theme === "claro" || theme === "escuro" ? theme : "auto";
+}
+function applyTheme(choice = themeChoice()) {
+  const dark = choice === "escuro" || (choice === "auto" && systemDark.matches);
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#0a1322" : "#f6fbff");
+  const toggle = document.querySelector("#theme-toggle");
+  if (toggle) {
+    const label = dark ? "Ativar tema claro" : "Ativar tema escuro";
+    toggle.setAttribute("aria-label", label);
+    toggle.title = label;
+    toggle.innerHTML = icon(dark ? "sun" : "moon");
+  }
+  const radio = document.querySelector(`input[name="settings-theme"][value="${choice}"]`);
+  if (radio) radio.checked = true;
+}
+function saveTheme(choice) {
+  try {
+    localStorage.setItem(preferencesKey, JSON.stringify({ ...savedPreferences(), theme: choice }));
+  } catch {
+    showToast("Não foi possível guardar o tema neste navegador.");
+  }
+  applyTheme(choice);
+}
+applyTheme();
+systemDark.addEventListener("change", () => { if (themeChoice() === "auto") applyTheme(); });
+document.querySelector("#theme-toggle").addEventListener("click", () => {
+  saveTheme(document.documentElement.dataset.theme === "dark" ? "claro" : "escuro");
+});
 function showLocation(preferences) {
   const city = String(preferences.city || "").trim();
   const state = String(preferences.state || "").trim();
@@ -681,6 +714,10 @@ async function initSettings() {
         showToast("Não foi possível guardar o modo neste navegador.");
       }
     });
+  });
+  applyTheme();
+  document.querySelectorAll('input[name="settings-theme"]').forEach(radio => {
+    radio.addEventListener("change", () => { if (radio.checked) saveTheme(radio.value); });
   });
   document.querySelector("#save-settings").addEventListener("click", async () => {
     const preferences = {

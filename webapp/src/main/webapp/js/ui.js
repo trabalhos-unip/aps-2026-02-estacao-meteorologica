@@ -16,6 +16,8 @@ export const iconSprite = `
   <symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol>
   <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M5 18a4 4 0 0 1 0-8 6 6 0 0 1 11-2 5 5 0 1 1 2 10H5Z"/></symbol>
   <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3M4.2 4.2l2.1 2.1m11.4 11.4 2.1 2.1m0-15.6-2.1 2.1M6.3 17.7l-2.1 2.1"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 13a9 9 0 1 1-10-10 7 7 0 0 0 10 10Z"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8m-4-4v4"/></symbol>
   <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V9m6 11V4m6 16v-8m4 8v-5M2 20h20"/></symbol>
   <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 11v6m0-10h.01"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 4 12 8-12 8z"/></symbol>
@@ -72,6 +74,7 @@ export function renderShell(path, content) {
           <div class="page-heading"><h1>${title}</h1><p id="page-subtitle">${subtitle}</p></div>
           <div class="top-actions">
             <span class="mode-badge" id="mode-badge" hidden>Dados simulados</span>
+            <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Ativar tema escuro" title="Ativar tema escuro">${icon("moon")}</button>
             <button class="location-pill" type="button" data-open-location-modal title="Alterar cidade da estação">${icon("search")}<span id="location-label">Localização da estação</span>${icon("pin")}</button>
           </div>
         </header>

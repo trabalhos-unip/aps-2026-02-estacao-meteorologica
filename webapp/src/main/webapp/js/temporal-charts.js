@@ -1,4 +1,4 @@
-import { number, parseDate } from "./ui.js?v=20261026-4";
+import { number, parseDate } from "./ui.js?v=20261028-1";
 
 const rendered = new Map();
 let resizeFrame = 0;
