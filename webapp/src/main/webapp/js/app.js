@@ -2,7 +2,7 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi, demoForecast } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261028-1";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261028-1";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261028-2";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-1";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -49,7 +49,7 @@ function themeChoice() {
 function applyTheme(choice = themeChoice()) {
   const dark = choice === "escuro" || (choice === "auto" && systemDark.matches);
   document.documentElement.dataset.theme = dark ? "dark" : "light";
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#0a1322" : "#f6fbff");
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#000000" : "#f6fbff");
   const toggle = document.querySelector("#theme-toggle");
   if (toggle) {
     const label = dark ? "Ativar tema claro" : "Ativar tema escuro";

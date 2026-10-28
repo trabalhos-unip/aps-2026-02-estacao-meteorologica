@@ -10,47 +10,47 @@
 .theme-options{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media(max-width:760px){.theme-options{grid-template-columns:1fr}}
 
-/* Paleta: azul-marinho das ilustrações noturnas; destaques mais claros para manter contraste. */
+/* Paleta: fundo preto (#000) e cartões em cinza quase preto; o azul fica só nos destaques. */
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --bg:#0a1322;--surface:#101d33;--surface-2:#15253f;--surface-3:#1a2e4b;
-  --line:#1f3150;--line-soft:#192a44;
-  --text:#e8f0fb;--text-2:#bccbdf;--muted:#8a9eb8;--faint:#6b809c;
-  --accent:#4db5ff;--accent-soft:#13304f;--accent-line:#2f6b9a;
+  --bg:#000;--surface:#101010;--surface-2:#181818;--surface-3:#222;
+  --line:#262626;--line-soft:#1b1b1b;
+  --text:#f5f5f5;--text-2:#c8c8c8;--muted:#929292;--faint:#6e6e6e;
+  --accent:#4db5ff;--accent-soft:#4db5ff1f;--accent-line:#4db5ff66;
   --teal:#35d4b4;--amber:#ffc44f;--red:#ff7d8a;--purple:#a2aeff;--green:#43d891;
-  --info-bg:#0f2a45;--info-text:#a9d5f6;
+  --info-bg:#101010;--info-text:#c8c8c8;
   color:var(--text);background:var(--bg);
 }
 :where([data-theme="dark"]) body{background:var(--bg)}
 
 /* Estrutura */
-:where([data-theme="dark"]) .sidebar{background:var(--surface);border-right-color:var(--line);box-shadow:3px 0 18px #0000002e}
+:where([data-theme="dark"]) .sidebar{background:var(--bg);border-right-color:var(--line);box-shadow:none}
 :where([data-theme="dark"]) .brand{color:var(--text)}
 :where([data-theme="dark"]) .brand span:not(.brand-mark):not(.brand-sun):not(.brand-cloud){color:var(--muted)}
 :where([data-theme="dark"]) .brand small{color:var(--faint)}
-:where([data-theme="dark"]) .brand-sun{box-shadow:0 0 0 3px #10203a99}
+:where([data-theme="dark"]) .brand-sun{box-shadow:0 0 0 3px #00000099}
 :where([data-theme="dark"]) .nav-link{color:var(--text-2)}
 :where([data-theme="dark"]) .nav-link:hover{background:var(--surface-2);color:var(--accent)}
 :where([data-theme="dark"]) .nav-link.active{background:var(--accent-soft);color:var(--accent)}
 :where([data-theme="dark"]) .sidebar-foot>small{color:var(--faint)}
-:where([data-theme="dark"]) .collector-card{background:#0d1a2e;border-color:var(--line);color:var(--text-2)}
+:where([data-theme="dark"]) .collector-card{background:var(--surface);border-color:var(--line);color:var(--text-2)}
 :where([data-theme="dark"]) .collector-card strong{color:var(--text)}
 :where([data-theme="dark"]) .collector-card>span:not(.status-dot){color:var(--muted)}
 :where([data-theme="dark"]) .status-dot{box-shadow:0 0 0 3px var(--surface)}
 :where([data-theme="dark"]) .status-dot.success{background:var(--green);box-shadow:0 0 0 3px var(--surface),0 0 10px #43d89166}
-:where([data-theme="dark"]) .workspace{background:radial-gradient(circle at 40% 0%,#13233d 0,#0c182b 45%,var(--bg) 100%)}
+:where([data-theme="dark"]) .workspace{background:var(--bg)}
 :where([data-theme="dark"]) .page-heading h1{color:var(--text)}
 :where([data-theme="dark"]) .page-heading p{color:var(--muted)}
 :where([data-theme="dark"]) .top-actions{color:var(--muted)}
 :where([data-theme="dark"]) .location-pill,
-:where([data-theme="dark"]) .theme-toggle{background:var(--surface);border-color:var(--line);color:var(--text-2);box-shadow:0 2px 8px #00000033}
+:where([data-theme="dark"]) .theme-toggle{background:var(--surface);border-color:var(--line);color:var(--text-2);box-shadow:none}
 :where([data-theme="dark"]) .location-pill:hover,:where([data-theme="dark"]) .location-pill:focus-visible,
 :where([data-theme="dark"]) .theme-toggle:hover,:where([data-theme="dark"]) .theme-toggle:focus-visible{color:var(--accent);border-color:var(--accent-line);box-shadow:0 4px 13px #4db5ff1f}
 :where([data-theme="dark"]) .theme-toggle{color:var(--amber)}
 :where([data-theme="dark"]) .top-action-divider{background:var(--line)}
 
 /* Cartões e elementos comuns */
-:where([data-theme="dark"]) .card{background:var(--surface);border-color:var(--line);box-shadow:0 6px 24px #00000038}
+:where([data-theme="dark"]) .card{background:var(--surface);border-color:var(--line);box-shadow:none}
 :where([data-theme="dark"]) .card-title>.icon,:where([data-theme="dark"]) .title-with-icon>.icon{color:var(--accent)}
 :where([data-theme="dark"]) .card-title small,:where([data-theme="dark"]) .title-with-icon small{color:var(--muted)}
 :where([data-theme="dark"]) .blue-text{color:var(--accent)}
@@ -58,40 +58,40 @@
 :where([data-theme="dark"]) .teal-text{color:var(--teal)}
 :where([data-theme="dark"]) .muted{color:var(--muted)}
 :where([data-theme="dark"]) .icon-disc{background:var(--accent-soft);color:var(--accent)}
-:where([data-theme="dark"]) .icon-disc.red{background:#3b1c2a;color:var(--red)}
-:where([data-theme="dark"]) .icon-disc.blue{background:#12304f;color:var(--accent)}
-:where([data-theme="dark"]) .icon-disc.purple{background:#232a54;color:var(--purple)}
-:where([data-theme="dark"]) .icon-disc.teal{background:#0f3530;color:var(--teal)}
-:where([data-theme="dark"]) .icon-disc.amber{background:#3a2d12;color:var(--amber)}
-:where([data-theme="dark"]) .icon-disc.pale{background:#142b45;color:var(--accent)}
+:where([data-theme="dark"]) .icon-disc.red{background:#ff7d8a1f;color:var(--red)}
+:where([data-theme="dark"]) .icon-disc.blue{background:var(--accent-soft);color:var(--accent)}
+:where([data-theme="dark"]) .icon-disc.purple{background:#a2aeff1f;color:var(--purple)}
+:where([data-theme="dark"]) .icon-disc.teal{background:#35d4b41f;color:var(--teal)}
+:where([data-theme="dark"]) .icon-disc.amber{background:#ffc44f1f;color:var(--amber)}
+:where([data-theme="dark"]) .icon-disc.pale{background:var(--accent-soft);color:var(--accent)}
 :where([data-theme="dark"]) .text-link{color:var(--accent)}
 :where([data-theme="dark"]) .primary-button{box-shadow:0 3px 12px #1e8fe640}
 :where([data-theme="dark"]) .segmented{background:var(--surface-2);border-color:var(--line)}
 :where([data-theme="dark"]) .segment{color:var(--text-2)}
 :where([data-theme="dark"]) .segment+.segment{border-left-color:var(--line)}
-:where([data-theme="dark"]) .toast{background:#1f3d63;border:1px solid #2f5a8a;box-shadow:0 12px 30px #00000066}
-:where([data-theme="dark"]) .info-strip{background:var(--info-bg);color:var(--info-text)}
+:where([data-theme="dark"]) .toast{background:#1c1c1c;border:1px solid #333;box-shadow:0 12px 30px #00000066}
+:where([data-theme="dark"]) .info-strip{background:var(--info-bg);border:1px solid var(--line);color:var(--info-text)}
 :where([data-theme="dark"]) .info-strip .icon,:where([data-theme="dark"]) .info-strip a{color:var(--accent)}
-:where([data-theme="dark"]) .mode-badge,
-:where([data-theme="dark"]) .simulated-mode .source-chip{background:#3a2a10;color:#ffc96e}
+:where([data-theme="dark"]) .mode-badge{background:#ffc44f24;color:#ffc96e}
+:where([data-theme="dark"]) .simulated-mode .source-chip{background:#1f1a0c;border-color:#ffc44f40;color:#ffc96e}
 
 /* Card "Condições atuais": os fundos de dia ficam um pouco mais suaves para não ofuscar,
    mas continuam mostrando o tempo real; o texto acompanha a cena, não o tema. */
-:where([data-theme="dark"]) .weather-hero{border-color:var(--line);box-shadow:0 6px 24px #0000004d}
+:where([data-theme="dark"]) .weather-hero{border-color:var(--line);box-shadow:none}
 :where([data-theme="dark"]) .weather-hero:not([data-scene$="-noite"]){color:#0b2a55}
 :where([data-theme="dark"]) .weather-hero:not([data-scene]),
-:where([data-theme="dark"]) .weather-hero[data-scene="limpo-dia"]{background:linear-gradient(#0a132224,#0a132224),linear-gradient(90deg,#f5fbf277 0%,#ffffff00 60%),url("/img/weather-hero-v2.png") center 58%/cover}
-:where([data-theme="dark"]) .weather-hero[data-scene="chuva-dia"]{background:linear-gradient(#0a132224,#0a132224),linear-gradient(90deg,#eef4f899 0%,#ffffff00 60%),url("/img/weather-hero-rain.png") center 58%/cover}
-:where([data-theme="dark"]) .weather-hero[data-scene$="-noite"]{border-color:#26406a}
+:where([data-theme="dark"]) .weather-hero[data-scene="limpo-dia"]{background:linear-gradient(#00000024,#00000024),linear-gradient(90deg,#f5fbf277 0%,#ffffff00 60%),url("/img/weather-hero-v2.png") center 58%/cover}
+:where([data-theme="dark"]) .weather-hero[data-scene="chuva-dia"]{background:linear-gradient(#00000024,#00000024),linear-gradient(90deg,#eef4f899 0%,#ffffff00 60%),url("/img/weather-hero-rain.png") center 58%/cover}
+:where([data-theme="dark"]) .weather-hero[data-scene$="-noite"]{border-color:var(--line)}
 
 /* Ilustrações decorativas usam a versão noturna no tema escuro. */
-:where([data-theme="dark"]) .scenario-hero{background:linear-gradient(90deg,#0b1d42d9,#0b1d4200 63%),url("/img/weather-hero-night.png") center 58%/cover;color:var(--text)}
+:where([data-theme="dark"]) .scenario-hero{background:linear-gradient(90deg,#000000cc,#00000000 63%),url("/img/weather-hero-night.png") center 58%/cover;color:var(--text)}
 :where([data-theme="dark"]) .scenario-hero p{color:#b8c9e4}
 :where([data-theme="dark"]) .scenario-hero .source-chip{background:#ffffff1f;border-color:#ffffff38;color:#eef5ff}
 :where([data-theme="dark"]) .attribution-card{background:url("/img/weather-hero-night.png") 72% 68%/cover}
-:where([data-theme="dark"]) .attribution-card>div{background:#0d1a2ee0;color:var(--text-2)}
+:where([data-theme="dark"]) .attribution-card>div{background:#101010e6;color:var(--text-2)}
 :where([data-theme="dark"]) .attribution-card .icon{color:var(--accent)}
-:where([data-theme="dark"]) .about-card{background:linear-gradient(90deg,var(--surface) 0%,var(--surface) 62%,#101d33b8 82%,#101d3366 100%),url("/img/weather-hero-night.png") right bottom/220px auto no-repeat var(--surface)}
+:where([data-theme="dark"]) .about-card{background:linear-gradient(90deg,var(--surface) 0%,var(--surface) 62%,#101010b8 82%,#10101066 100%),url("/img/weather-hero-night.png") right bottom/220px auto no-repeat var(--surface)}
 :where([data-theme="dark"]) .about-card p{color:var(--muted)}
 
 /* Visão geral */
@@ -101,7 +101,7 @@
 :where([data-theme="dark"]) .forecast-row{border-bottom-color:var(--line-soft);color:var(--muted)}
 :where([data-theme="dark"]) .forecast-row strong{color:var(--text)}
 :where([data-theme="dark"]) .forecast-row small{color:var(--faint)}
-:where([data-theme="dark"]) .forecast-weather .icon{color:#7cc8f7}
+:where([data-theme="dark"]) .forecast-weather .icon{color:#8fd0ff}
 :where([data-theme="dark"]) .forecast-row>.icon{color:var(--faint)}
 :where([data-theme="dark"]) .forecast-note{color:var(--muted)}
 :where([data-theme="dark"]) .metric-reading{color:#fff}
@@ -111,7 +111,7 @@
 
 /* Gráficos (as cores das séries vêm do JS e já funcionam no escuro) */
 :where([data-theme="dark"]) .grid-line,
-:where([data-theme="dark"]) .primary-history-chart .grid-line,:where([data-theme="dark"]) .mini-chart-card .grid-line{stroke:#1d304d}
+:where([data-theme="dark"]) .primary-history-chart .grid-line,:where([data-theme="dark"]) .mini-chart-card .grid-line{stroke:#232323}
 :where([data-theme="dark"]) .axis-label,
 :where([data-theme="dark"]) .primary-history-chart .axis-label,:where([data-theme="dark"]) .mini-chart-card .axis-label{fill:var(--muted)}
 :where([data-theme="dark"]) .chart-marker,:where([data-theme="dark"]) .temporal-selected,
@@ -120,7 +120,7 @@
 :where([data-theme="dark"]) .chart-tooltip,
 :where([data-theme="dark"]) .primary-history-chart .chart-tooltip,
 :where([data-theme="dark"]) .temporal-tooltip,
-:where([data-theme="dark"]) .scenario-chart-tip{background:var(--surface-3);border:1px solid #2a4266;color:var(--text);box-shadow:0 6px 18px #00000059}
+:where([data-theme="dark"]) .scenario-chart-tip{background:var(--surface-3);border:1px solid #333;color:var(--text);box-shadow:0 6px 18px #000000b3}
 :where([data-theme="dark"]) .chart-tooltip small,:where([data-theme="dark"]) .primary-history-chart .chart-tooltip small,
 :where([data-theme="dark"]) .temporal-tooltip small,:where([data-theme="dark"]) .scenario-chart-tip{color:var(--text-2)}
 :where([data-theme="dark"]) .scenario-chart-tip strong{color:var(--text)}
@@ -151,9 +151,9 @@
 :where([data-theme="dark"]) .primary-history-chart .title-with-icon small{color:var(--muted)}
 
 /* Simulações */
-:where([data-theme="dark"]) .scenario-card.amber{background:linear-gradient(165deg,#2a2413,var(--surface) 48%)}
-:where([data-theme="dark"]) .scenario-card.blue{background:linear-gradient(165deg,#102a46,var(--surface) 48%)}
-:where([data-theme="dark"]) .scenario-card.teal{background:linear-gradient(165deg,#0f2f2d,var(--surface) 48%)}
+:where([data-theme="dark"]) .scenario-card.amber{background:linear-gradient(165deg,#1f1a0c,var(--surface) 48%)}
+:where([data-theme="dark"]) .scenario-card.blue{background:linear-gradient(165deg,#0c1824,var(--surface) 48%)}
+:where([data-theme="dark"]) .scenario-card.teal{background:linear-gradient(165deg,#0b1d1a,var(--surface) 48%)}
 :where([data-theme="dark"]) .scenario-head{border-bottom-color:var(--line)}
 :where([data-theme="dark"]) .scenario-head p{color:var(--muted)}
 :where([data-theme="dark"]) .scenario-card.amber .scenario-icon{color:var(--amber)}
@@ -167,32 +167,32 @@
 :where([data-theme="dark"]) .simulation-result-head small{color:var(--muted)}
 :where([data-theme="dark"]) .simulation-result dl>div{color:var(--muted)}
 :where([data-theme="dark"]) .simulation-result dd{color:var(--text)}
-:where([data-theme="dark"]) .simulation-result-note{background:var(--info-bg);color:var(--info-text)}
+:where([data-theme="dark"]) .simulation-result-note{background:var(--surface-2);color:var(--info-text)}
 
 /* Configurações */
 :where([data-theme="dark"]) .settings-title,:where([data-theme="dark"]) .settings-section{border-bottom-color:var(--line)}
 :where([data-theme="dark"]) .settings-title p,:where([data-theme="dark"]) .settings-section p{color:var(--muted)}
 :where([data-theme="dark"]) .settings-fields input:disabled,:where([data-theme="dark"]) .settings-fields select:disabled,
-:where([data-theme="dark"]) .settings-section textarea:disabled{background:#0e1a2d;color:var(--muted)}
+:where([data-theme="dark"]) .settings-section textarea:disabled{background:#0a0a0a;color:var(--muted)}
 :where([data-theme="dark"]) .settings-note{color:var(--muted)}
 :where([data-theme="dark"]) .mode-option{border-color:var(--line)}
 :where([data-theme="dark"]) .mode-option small{color:var(--muted)}
-:where([data-theme="dark"]) .mode-option:has(input:checked){border-color:#3aa6f0;background:#10294a;box-shadow:0 0 0 1px #3aa6f040}
-:where([data-theme="dark"]) .mode-option input{border-color:#3a5577}
+:where([data-theme="dark"]) .mode-option:has(input:checked){border-color:var(--accent);background:#4db5ff12;box-shadow:0 0 0 1px #4db5ff40}
+:where([data-theme="dark"]) .mode-option input{border-color:#4a4a4a}
 :where([data-theme="dark"]) .mode-option input:checked{border-color:var(--accent)}
 :where([data-theme="dark"]) .mode-option .icon,:where([data-theme="dark"]) .mode-option>.icon{color:var(--accent)}
 :where([data-theme="dark"]) .tech-row{border-bottom-color:var(--line-soft)}
 :where([data-theme="dark"]) .tech-row small{color:var(--muted)}
 :where([data-theme="dark"]) .pill,:where([data-theme="dark"]) .neutral-pill{background:var(--surface-3);color:var(--text-2)}
-:where([data-theme="dark"]) .blue-pill{background:#12324f;color:#7ccbff}
-:where([data-theme="dark"]) .purple-pill{background:#262c56;color:#b9c1ff}
-:where([data-theme="dark"]) .green-pill{background:#0f3a2b;color:#5be4a6}
+:where([data-theme="dark"]) .blue-pill{background:var(--accent-soft);color:#7ccbff}
+:where([data-theme="dark"]) .purple-pill{background:#a2aeff1f;color:#b9c1ff}
+:where([data-theme="dark"]) .green-pill{background:#43d8911f;color:#5be4a6}
 
 /* Seletor de cidade (location-select.css e Select2) */
 :where([data-theme="dark"]) .secondary-button{background:var(--surface-2);border-color:var(--line);color:var(--text-2)}
 :where([data-theme="dark"]) .secondary-button:hover{background:var(--surface-3);border-color:var(--accent-line)}
-:where([data-theme="dark"]) .location-modal{background:#02070fb3}
-:where([data-theme="dark"]) .location-modal-card{background:var(--surface);border-color:var(--line);box-shadow:0 24px 55px #00000080}
+:where([data-theme="dark"]) .location-modal{background:#000000b8}
+:where([data-theme="dark"]) .location-modal-card{background:var(--surface);border-color:var(--line);box-shadow:0 24px 55px #000000cc}
 :where([data-theme="dark"]) .location-modal-heading,:where([data-theme="dark"]) .location-modal-footer{border-color:var(--line)}
 :where([data-theme="dark"]) .location-modal-heading small{color:var(--accent)}
 :where([data-theme="dark"]) .location-modal-heading h2{color:var(--text)}
@@ -207,7 +207,7 @@
 :where([data-theme="dark"]) .location-modal .select2-container--default .select2-selection--single{border-color:var(--accent-line)}
 :where([data-theme="dark"]) .select2-container--default .select2-selection--single .select2-selection__rendered{color:var(--text)}
 :where([data-theme="dark"]) .select2-container--default .select2-selection--single .select2-selection__placeholder{color:var(--faint)}
-:where([data-theme="dark"]) .select2-dropdown{background:var(--surface-2);border-color:var(--line);box-shadow:0 8px 20px #00000059}
+:where([data-theme="dark"]) .select2-dropdown{background:var(--surface-2);border-color:var(--line);box-shadow:0 8px 20px #000000b3}
 :where([data-theme="dark"]) .select2-container--default .select2-search--dropdown .select2-search__field{background:var(--bg);border-color:var(--line);color:var(--text)}
 :where([data-theme="dark"]) .select2-results__option{color:var(--text-2)}
 :where([data-theme="dark"]) .select2-container--default .select2-results__option[aria-selected=true]{background:var(--surface-3)}
