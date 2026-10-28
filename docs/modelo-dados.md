@@ -1,9 +1,11 @@
 # Modelo de dados
 
-O banco MySQL do projeto se chama `estacao_meteorologica` e possui três tabelas: `estacao`, `leitura_meteorologica` e `log_coleta`.
+O banco MySQL do projeto se chama `estacao_meteorologica` e possui cinco tabelas: `estacao`, `leitura_meteorologica`, `log_coleta`, `resumo_diario_meteorologico` e `resumo_horario_meteorologico`.
 
 - [schema.sql](../database/schema.sql) cria uma instalação nova.
 - [V2__estacao_log_e_variaveis_extras.sql](../database/migrations/V2__estacao_log_e_variaveis_extras.sql) atualiza a estrutura antiga sem apagar leituras.
+- [V3__resumos_por_estacao.sql](../database/migrations/V3__resumos_por_estacao.sql) vincula os resumos já existentes à estação correta.
+- [V4__estacao_brasileira_ativa.sql](../database/migrations/V4__estacao_brasileira_ativa.sql) identifica cidade, UF e país, além de definir a estação ativa.
 - [dados-teste.sql](../database/dados-teste.sql) insere leituras de exemplo depois de a estação existir.
 
 ## Relacionamentos
@@ -14,17 +16,22 @@ O banco MySQL do projeto se chama `estacao_meteorologica` e possui três tabelas
 
 `leitura_meteorologica` 1 --- N `log_coleta` (somente para coletas bem-sucedidas)
 
-O sistema começa com uma única estação: **Estação Sorocaba**, nas coordenadas `-23.5015, -47.4526`. A tabela permite cadastrar novas estações futuramente, mas a interface de seleção ainda não faz parte do projeto.
+`estacao` 1 --- N `resumo_diario_meteorologico`
+
+`estacao` 1 --- N `resumo_horario_meteorologico`
+
+O sistema começa com **Sorocaba/SP**, nas coordenadas `-23.5015, -47.4526`. Pela tela de configurações o usuário informa cidade e UF brasileiras; o webapp resolve a localização na Geocoding API da Open-Meteo e persiste a estação. Só uma estação permanece `ativa` por vez. Leituras e resumos não são compartilhados entre cidades, e o collector lê a estação ativa em cada ciclo.
 
 ## Tabela `estacao`
 
 | Coluna | Tipo | Finalidade |
 |---|---|---|
 | `id` | `BIGINT` | Identificador da estação. |
-| `nome` | `VARCHAR(100)` | Nome único da estação. |
+| `nome` | `VARCHAR(100)` | Chave técnica única, no formato `BR:UF:CIDADE_NORMALIZADA`. |
+| `cidade`, `estado`, `pais` | `VARCHAR` | Identificação da localização; `pais` é restrito a `BR`. |
 | `latitude`, `longitude` | `DOUBLE` | Posição configurada para a coleta. |
 | `fuso_horario` | `VARCHAR(50)` | Fuso usado pela estação; padrão `America/Sao_Paulo`. |
-| `ativa` | `BIT(1)` | Indica se a estação pode ser usada. |
+| `ativa` | `BIT(1)` | Indica a única estação usada pelas coletas e consultas atuais. |
 | `criada_em` | `DATETIME(6)` | Momento do cadastro. |
 
 ## Tabela `leitura_meteorologica`
@@ -55,6 +62,13 @@ Valores ausentes são gravados como `NULL`; não são substituídos por zero. A 
 Registra o resultado de cada tentativa do coletor. Uma tentativa bem-sucedida informa `leitura_id`; uma falha informa `tipo_erro`, mensagem resumida e, quando aplicável, o código HTTP.
 
 Os status são `SUCESSO` e `ERRO`. Os tipos de erro são `TIMEOUT`, `REDE`, `LIMITE_API`, `HTTP`, `RESPOSTA_INVALIDA`, `BANCO` e `OUTRO`. Se o próprio banco estiver indisponível, o coletor registra a falha no console e continua a executar os próximos ciclos.
+
+## Resumos diário e horário
+
+Os dois resumos recebem `estacao_id`, `tipo` (`HISTORICO` ou `PREVISAO`), a origem e o instante de atualização.
+O diário consolida mínima, máxima, média, umidade, precipitação, vento e código WMO por data. O horário mantém a
+série individual por hora. O coletor busca 15 dias anteriores e 7 dias futuros na Open-Meteo ao iniciar, a cada seis
+horas e até 10 segundos após uma troca de estação; leituras locais continuam sendo o registro das condições atuais.
 
 ## Regras e validações
 

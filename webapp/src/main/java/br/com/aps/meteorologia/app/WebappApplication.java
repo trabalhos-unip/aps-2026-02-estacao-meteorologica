@@ -3,7 +3,13 @@ package br.com.aps.meteorologia.app;
 import br.com.aps.meteorologia.config.HibernateUtil;
 import br.com.aps.meteorologia.controller.LeituraMeteorologicaServlet;
 import br.com.aps.meteorologia.dao.ILeituraMeteorologicaDAO;
+import br.com.aps.meteorologia.dao.IEstacaoDAO;
+import br.com.aps.meteorologia.dao.ResumoDiarioMeteorologicoDAO;
+import br.com.aps.meteorologia.dao.ResumoHorarioMeteorologicoDAO;
+import br.com.aps.meteorologia.dao.impl.EstacaoDAOHibernate;
 import br.com.aps.meteorologia.dao.impl.LeituraMeteorologicaDAOHibernate;
+import br.com.aps.meteorologia.dao.impl.ResumoDiarioMeteorologicoDAOHibernate;
+import br.com.aps.meteorologia.dao.impl.ResumoHorarioMeteorologicoDAOHibernate;
 import br.com.aps.meteorologia.service.ConsultaMeteorologicaService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PreDestroy;
@@ -33,6 +39,10 @@ public class WebappApplication {
     public ILeituraMeteorologicaDAO leituraMeteorologicaDAO() {
         return new LeituraMeteorologicaDAOHibernate();
     }
+
+    @Bean public IEstacaoDAO estacaoDAO() { return new EstacaoDAOHibernate(); }
+    @Bean public ResumoDiarioMeteorologicoDAO resumoDiarioMeteorologicoDAO() { return new ResumoDiarioMeteorologicoDAOHibernate(); }
+    @Bean public ResumoHorarioMeteorologicoDAO resumoHorarioMeteorologicoDAO() { return new ResumoHorarioMeteorologicoDAOHibernate(); }
 
     /** Registra o Servlet (o mesmo papel do mapeamento no web.xml). */
     @Bean

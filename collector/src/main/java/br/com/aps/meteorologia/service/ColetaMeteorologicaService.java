@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Optional;
 
 /** Orquestra a obtenção, conversão e persistência de cada leitura meteorológica. */
 @Service
@@ -39,6 +40,7 @@ public class ColetaMeteorologicaService {
     private final double longitudeEstacao;
 
     private Long estacaoId;
+    private volatile Long estacaoDaUltimaColeta;
     private LocalDateTime ultimaDataHoraFonte;
 
     public ColetaMeteorologicaService(IFonteMeteorologica fonteMeteorologica,
@@ -83,11 +85,29 @@ public class ColetaMeteorologicaService {
         }
     }
 
+    /** Faz uma leitura imediata apenas quando a pessoa escolhe outra estação. */
+    @Scheduled(fixedDelayString = "${coleta.verificacao-estacao-ms:1000}",
+            initialDelayString = "${coleta.verificacao-estacao-ms:1000}")
+    public void coletarQuandoEstacaoMudar() {
+        try {
+            var ativa = estacaoDAO.buscarAtiva();
+            if (ativa.isPresent() && !ativa.get().getId().equals(estacaoDaUltimaColeta)) {
+                executarColetaAgendada();
+            }
+        } catch (RuntimeException erro) {
+            LOG.warn("Verificação da estação ativa ignorada: {}", erro.getMessage());
+        }
+    }
+
     public LeituraMeteorologica coletarESalvarLeitura() {
-        DadosMeteorologicosAtuais dadosAtuais = fonteMeteorologica.obterDadosAtuais();
+        var estacao = obterEstacaoAtiva();
+        double latitude = estacao.getLatitude() == null ? latitudeEstacao : estacao.getLatitude();
+        double longitude = estacao.getLongitude() == null ? longitudeEstacao : estacao.getLongitude();
+        String fuso = estacao.getFusoHorario() == null ? fusoHorario.getId() : estacao.getFusoHorario();
+        DadosMeteorologicosAtuais dadosAtuais = fonteMeteorologica.obterDadosAtuais(latitude, longitude, fuso);
         LeituraMeteorologica leitura = conversorLeitura.converterParaLeitura(
                 dadosAtuais, DataHoraUtil.agora(fusoHorario));
-        leitura.setEstacaoId(obterEstacaoId());
+        leitura.setEstacaoId(estacao.getId());
         leitura.setModoOperacao(fonteMeteorologica.obterModoOperacao());
         leitura.setFonteDados(fonteMeteorologica.obterNomeFonte());
         leitura.setDadoRepetido(leitura.getDataHoraFonte() != null
@@ -95,6 +115,7 @@ public class ColetaMeteorologicaService {
 
         LeituraMeteorologica leituraSalva = leituraMeteorologicaDAO.salvar(leitura);
         ultimaDataHoraFonte = leituraSalva.getDataHoraFonte();
+        estacaoDaUltimaColeta = estacao.getId();
         return leituraSalva;
     }
 
@@ -103,6 +124,15 @@ public class ColetaMeteorologicaService {
             estacaoId = estacaoDAO.buscarOuCriar(nomeEstacao, latitudeEstacao, longitudeEstacao).getId();
         }
         return estacaoId;
+    }
+
+    private synchronized br.com.aps.meteorologia.model.Estacao obterEstacaoAtiva() {
+        // Alguns adaptadores legados (e mocks de integrações) podem devolver null
+        // em vez de Optional.empty(); trate ambos como "nenhuma estação ativa".
+        var ativa = Optional.ofNullable(estacaoDAO.buscarAtiva()).orElse(Optional.empty());
+        if (ativa.isPresent()) return ativa.get();
+        estacaoId = obterEstacaoId();
+        return estacaoDAO.buscarOuCriar(nomeEstacao, latitudeEstacao, longitudeEstacao);
     }
 
     private void registrarColetaComSucesso(LeituraMeteorologica leitura, int duracaoMilissegundos) {
@@ -130,7 +160,7 @@ public class ColetaMeteorologicaService {
 
     private LogColeta criarLogColeta(StatusColeta status, int duracaoMilissegundos) {
         LogColeta logColeta = new LogColeta();
-        logColeta.setEstacaoId(obterEstacaoId());
+        logColeta.setEstacaoId(obterEstacaoAtiva().getId());
         logColeta.setDataHora(DataHoraUtil.agora(fusoHorario));
         logColeta.setModoOperacao(fonteMeteorologica.obterModoOperacao());
         logColeta.setStatus(status);

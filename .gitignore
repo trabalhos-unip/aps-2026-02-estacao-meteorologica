@@ -17,3 +17,6 @@ target/
 # Sistema operacional
 .DS_Store
 Thumbs.db
+
+# Backups locais gerados antes de migrações; podem conter dados reais.
+database/backups/

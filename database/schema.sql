@@ -6,6 +6,9 @@ USE estacao_meteorologica;
 CREATE TABLE IF NOT EXISTS estacao (
     id           BIGINT       NOT NULL AUTO_INCREMENT,
     nome         VARCHAR(100) NOT NULL,
+    cidade       VARCHAR(100) NOT NULL,
+    estado       VARCHAR(2)   NOT NULL,
+    pais         VARCHAR(2)   NOT NULL DEFAULT 'BR',
     latitude     DOUBLE       NOT NULL,
     longitude    DOUBLE       NOT NULL,
     fuso_horario VARCHAR(50)  NOT NULL DEFAULT 'America/Sao_Paulo',
@@ -90,6 +93,49 @@ CREATE TABLE IF NOT EXISTS log_coleta (
     INDEX idx_log_status_data (status, data_hora)
 ) ENGINE=InnoDB;
 
-INSERT INTO estacao (nome, latitude, longitude)
-VALUES ('Estação Sorocaba', -23.5015, -47.4526)
+CREATE TABLE IF NOT EXISTS resumo_diario_meteorologico (
+    id                  BIGINT       NOT NULL AUTO_INCREMENT,
+    estacao_id          BIGINT       NOT NULL,
+    data_referencia     DATE         NOT NULL,
+    tipo                VARCHAR(20)  NOT NULL,
+    temperatura_minima  DOUBLE       NULL,
+    temperatura_maxima  DOUBLE       NULL,
+    temperatura_media   DOUBLE       NULL,
+    umidade_media       DOUBLE       NULL,
+    precipitacao_total  DOUBLE       NULL,
+    vento_maximo        DOUBLE       NULL,
+    codigo_clima        INT          NULL,
+    fonte_dados         VARCHAR(100) NOT NULL,
+    atualizado_em       DATETIME(6)  NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_resumo_diario_estacao FOREIGN KEY (estacao_id) REFERENCES estacao (id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT uq_resumo_diario_estacao_data_tipo UNIQUE (estacao_id, data_referencia, tipo),
+    CONSTRAINT ck_resumo_diario_tipo CHECK (tipo IN ('HISTORICO', 'PREVISAO')),
+    INDEX idx_resumo_diario_estacao_data_tipo (estacao_id, data_referencia, tipo)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS resumo_horario_meteorologico (
+    id                    BIGINT       NOT NULL AUTO_INCREMENT,
+    estacao_id            BIGINT       NOT NULL,
+    data_hora_referencia  DATETIME(6)  NOT NULL,
+    tipo                  VARCHAR(20)  NOT NULL,
+    temperatura           DOUBLE       NULL,
+    umidade_relativa      INT          NULL,
+    precipitacao          DOUBLE       NULL,
+    chuva                 DOUBLE       NULL,
+    velocidade_vento      DOUBLE       NULL,
+    codigo_clima          INT          NULL,
+    fonte_dados           VARCHAR(100) NOT NULL,
+    atualizado_em         DATETIME(6)  NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_resumo_horario_estacao FOREIGN KEY (estacao_id) REFERENCES estacao (id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT uq_resumo_horario_estacao_momento_tipo UNIQUE (estacao_id, data_hora_referencia, tipo),
+    CONSTRAINT ck_resumo_horario_tipo CHECK (tipo IN ('HISTORICO', 'PREVISAO')),
+    INDEX idx_resumo_horario_estacao_momento_tipo (estacao_id, data_hora_referencia, tipo)
+) ENGINE=InnoDB;
+
+INSERT INTO estacao (nome, cidade, estado, pais, latitude, longitude)
+VALUES ('BR:SP:SOROCABA', 'Sorocaba', 'SP', 'BR', -23.5015, -47.4526)
 ON DUPLICATE KEY UPDATE nome = VALUES(nome);

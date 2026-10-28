@@ -20,5 +20,7 @@
         <mapping class="br.com.aps.meteorologia.model.Estacao"/>
         <mapping class="br.com.aps.meteorologia.model.LeituraMeteorologica"/>
         <mapping class="br.com.aps.meteorologia.model.LogColeta"/>
+        <mapping class="br.com.aps.meteorologia.model.ResumoDiarioMeteorologico"/>
+        <mapping class="br.com.aps.meteorologia.model.ResumoHorarioMeteorologico"/>
     </session-factory>
 </hibernate-configuration>

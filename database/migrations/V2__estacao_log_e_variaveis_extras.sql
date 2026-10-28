@@ -1,6 +1,6 @@
 USE estacao_meteorologica;
 
-CREATE TABLE estacao (
+CREATE TABLE IF NOT EXISTS estacao (
     id           BIGINT       NOT NULL AUTO_INCREMENT,
     nome         VARCHAR(100) NOT NULL,
     latitude     DOUBLE       NOT NULL,
@@ -15,12 +15,16 @@ CREATE TABLE estacao (
 ) ENGINE=InnoDB;
 
 INSERT INTO estacao (nome, latitude, longitude)
-VALUES ('Estação Sorocaba', -23.5015, -47.4526);
+VALUES ('Estacao Sorocaba', -23.5015, -47.4526)
+ON DUPLICATE KEY UPDATE nome = VALUES(nome);
 
-SET @estacao_id = (SELECT id FROM estacao WHERE nome = 'Estação Sorocaba');
+SET @estacao_id = (SELECT id FROM estacao WHERE nome = 'Estacao Sorocaba');
 
 ALTER TABLE leitura_meteorologica
     ADD COLUMN estacao_id BIGINT NULL AFTER id,
+    ADD COLUMN latitude DOUBLE NULL AFTER codigo_clima,
+    ADD COLUMN longitude DOUBLE NULL AFTER latitude,
+    ADD COLUMN modo_operacao VARCHAR(10) NOT NULL DEFAULT 'REAL' AFTER longitude,
     ADD COLUMN sensacao_termica DOUBLE NULL AFTER fonte_dados,
     ADD COLUMN pressao_superficie DOUBLE NULL AFTER sensacao_termica,
     ADD COLUMN direcao_vento INT NULL AFTER pressao_superficie,

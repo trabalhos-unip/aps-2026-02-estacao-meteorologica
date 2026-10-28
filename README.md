@@ -18,14 +18,18 @@ O projeto Maven possui três módulos:
 - **`compartilhado`**: contém as entidades, DAOs, regras de configuração e conexão Hibernate utilizadas pelas duas
   aplicações.
 
-O banco possui três tabelas principais:
+O banco possui cinco tabelas principais:
 
 - `estacao`: cadastro da estação monitorada;
 - `leitura_meteorologica`: dados meteorológicos coletados;
 - `log_coleta`: histórico de sucessos e falhas do coletor.
+- `resumo_diario_meteorologico`: histórico diário reconstituído e previsão diária, separados por tipo.
+- `resumo_horario_meteorologico`: série horária que preenche lacunas quando o coletor ficou desligado.
 
-A configuração atual utiliza uma estação em **Sorocaba/SP**, nas coordenadas `-23.5015, -47.4526`. O banco permite o
-cadastro de outras estações no futuro, mas a interface ainda trabalha com uma única estação.
+A instalação inicial utiliza **Sorocaba/SP**. Pela tela de configurações, é possível escolher qualquer cidade do
+Brasil informando cidade e UF. A aplicação consulta a Geocoding API da Open-Meteo, persiste cidade, UF, coordenadas e
+fuso no MySQL e marca essa estação como ativa. Leituras e resumos são isolados por estação; o collector usa as
+coordenadas da estação ativa no próximo ciclo, sem precisar ser reiniciado.
 
 ## Organização e princípios SOLID
 
@@ -95,7 +99,7 @@ Para uma instalação nova, conecte-se ao MySQL com um usuário administrativo e
 [`database/schema.sql`](database/schema.sql). O script:
 
 - cria o banco `estacao_meteorologica`;
-- cria as tabelas `estacao`, `leitura_meteorologica` e `log_coleta`;
+- cria as tabelas `estacao`, `leitura_meteorologica`, `log_coleta`, `resumo_diario_meteorologico` e `resumo_horario_meteorologico`;
 - adiciona índices, relacionamentos e validações;
 - cadastra a estação inicial de Sorocaba.
 
@@ -104,9 +108,11 @@ O usuário e a senha definidos no `.env` devem existir no MySQL e possuir acesso
 O Hibernate utiliza `hibernate.hbm2ddl.auto=validate`: ele apenas verifica se o banco é compatível com as entidades
 Java. Portanto, **o Hibernate não cria nem atualiza as tabelas automaticamente**.
 
-Para atualizar somente uma instalação antiga do projeto, utilize
-[`database/migrations/V2__estacao_log_e_variaveis_extras.sql`](database/migrations/V2__estacao_log_e_variaveis_extras.sql).
-Essa migração não deve ser executada depois do `schema.sql` atual, pois a estrutura nova já estará criada.
+Para atualizar uma instalação antiga, faça um backup e execute primeiro
+[`database/migrations/V2__estacao_log_e_variaveis_extras.sql`](database/migrations/V2__estacao_log_e_variaveis_extras.sql),
+depois [`database/migrations/V3__resumos_por_estacao.sql`](database/migrations/V3__resumos_por_estacao.sql) e por fim
+[`database/migrations/V4__estacao_brasileira_ativa.sql`](database/migrations/V4__estacao_brasileira_ativa.sql).
+Não execute as migrações depois do `schema.sql` atual, pois uma instalação nova já nasce completa.
 
 O arquivo [`database/dados-teste.sql`](database/dados-teste.sql) é opcional e insere leituras reais e simuladas para
 testes da interface.
@@ -151,6 +157,14 @@ mvn -pl webapp spring-boot:run
 
 Para interromper uma aplicação iniciada pelo terminal, pressione `Ctrl+C`.
 
+### Trocar de cidade
+
+Com o **webapp** e o **collector** em execução, abra **Configurações**, informe a cidade e selecione a UF. O país é
+fixado em Brasil. Ao salvar, o webapp obtém as coordenadas na Open-Meteo, cria ou atualiza a estação no banco e a
+ativa. A próxima coleta já usa a nova posição. Os dados históricos da cidade anterior continuam guardados, mas não
+são exibidos enquanto outra estação estiver ativa. Em instantes, o collector também carrega os 15 dias
+históricos e os 7 dias de previsão da nova cidade.
+
 ## Modos de coleta
 
 ### REAL
@@ -189,10 +203,12 @@ sempre que alterar o modo ou o cenário.
 | `MYSQL_DATABASE` | `estacao_meteorologica` | Nome do banco |
 | `MYSQL_USER` | `aps` | Usuário da aplicação |
 | `MYSQL_PASSWORD` | vazio | Senha local do usuário da aplicação |
-| `ESTACAO_NOME` | `Estação Sorocaba` | Nome da estação utilizada pelo collector |
-| `OPENMETEO_LATITUDE` | `-23.5015` | Latitude consultada ou simulada |
-| `OPENMETEO_LONGITUDE` | `-47.4526` | Longitude consultada ou simulada |
+| `ESTACAO_NOME` | `Estação Sorocaba` | Alternativa usada somente antes do primeiro cadastro no banco |
+| `OPENMETEO_LATITUDE` | `-23.5015` | Coordenada alternativa antes do primeiro cadastro ou no modo simulado |
+| `OPENMETEO_LONGITUDE` | `-47.4526` | Coordenada alternativa antes do primeiro cadastro ou no modo simulado |
 | `COLETA_INTERVALO_MS` | `10000` | Intervalo entre coletas em milissegundos |
+| `COLETA_VERIFICACAO_ESTACAO_MS` | `1000` | Verificação leve de troca de estação; consulta a API somente quando há mudança |
+| `SINCRONIZACAO_VERIFICACAO_ESTACAO_MS` | `10000` | Verificação de troca de cidade para recarregar histórico e previsão |
 | `COLETA_MODO` | `REAL` | Origem da coleta: `REAL` ou `SIMULADO` |
 | `COLETA_CENARIO` | vazio | Cenário fixo no modo simulado; vazio alterna os cenários |
 | `SERVIDOR_PORTA` | `8080` | Porta HTTP do webapp |
@@ -210,6 +226,7 @@ necessários de teste e demonstração, respeitando os limites da Open-Meteo.
 | <http://localhost:8080/api/leituras?modo=REAL> | Somente leituras reais |
 | <http://localhost:8080/api/leituras?modo=SIMULADO> | Somente leituras simuladas |
 | <http://localhost:8080/api/leituras/total> | Quantidade total de leituras |
+| <http://localhost:8080/api/estacao> | Estação brasileira ativa |
 
 A consulta por período também está disponível:
 

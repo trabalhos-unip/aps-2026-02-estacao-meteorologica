@@ -1,40 +1,20 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Estação Meteorológica — APS</title>
-  <!-- Página PROVISÓRIA do back-end, só para conferir a integração.
-       O front-end (painel + gráfico) substitui este arquivo, css/style.css e js/. -->
-  <link rel="stylesheet" href="css/style.css">
+  <meta name="theme-color" content="#f6fbff">
+  <meta name="description" content="Meteora: painel da estação meteorológica da APS 2026/2.">
+  <title>Meteora — Estação Meteorológica</title>
+  <link rel="stylesheet" href="/css/app.css?v=20261027-4">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+  <link rel="stylesheet" href="/css/location-select.css?v=20261027-4">
 </head>
 <body>
-  <h1>Estação Meteorológica</h1>
-
-  <section>
-    <h2>Última leitura</h2>
-    <pre id="ultima">Carregando...</pre>
-  </section>
-
-  <section>
-    <h2>Gráfico</h2>
-    <div id="grafico" class="aviso">Gráfico temporal: a ser implementado em js/grafico.js.</div>
-  </section>
-
-  <section>
-    <h2>Endpoints do back-end</h2>
-    <ul>
-      <li><code>GET /api/leituras/ultima?modo=REAL</code> — leitura mais recente</li>
-      <li><code>GET /api/leituras?limite=100&amp;modo=REAL</code> — últimas leituras (ordem cronológica)</li>
-      <li><code>GET /api/leituras/periodo?inicio=2026-10-20T00:00:00&amp;fim=2026-10-20T23:59:59&amp;modo=SIMULADO&amp;limite=1000</code> — máx. 31 dias e 1000 registros</li>
-      <li><code>GET /api/leituras/total</code> — quantidade de leituras</li>
-      <li><code>modo</code> é opcional: <code>REAL</code>, <code>SIMULADO</code> ou ausente (os dois)</li>
-    </ul>
-  </section>
-
-  <p class="fonte">Dados meteorológicos: <a href="https://open-meteo.com/">Open-Meteo.com</a></p>
-
-  <script src="js/grafico.js"></script>
-  <script src="js/dashboard.js"></script>
+  <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+  <div id="app"></div>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script type="module" src="/js/app.js?v=20261027-4"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 USE estacao_meteorologica;
 
-SET @estacao_id = (SELECT id FROM estacao WHERE nome = 'Estação Sorocaba');
+SET @estacao_id = (SELECT id FROM estacao WHERE nome = 'BR:SP:SOROCABA');
 
 INSERT INTO leitura_meteorologica
     (estacao_id, data_hora_coleta, data_hora_fonte, temperatura, umidade_relativa,

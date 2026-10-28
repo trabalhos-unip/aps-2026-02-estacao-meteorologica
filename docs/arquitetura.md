@@ -176,7 +176,7 @@ substitui nenhum desses itens. O Hibernate e o DAO continuam explícitos no cód
 |---|---|---|
 | Iniciar a aplicação | Spring Boot | `SpringApplication.run(...)` nos `main` de `app/` |
 | Criar os objetos e ligá-los (client → service → DAO) | Spring Boot (injeção de dependência) | `@Service`, `@Component`, `@Bean`, construtores |
-| Ler configurações (coordenadas, intervalo, porta) | Spring Boot | `application.properties` + `.env`, `@Value` |
+| Ler configurações (intervalo, porta e coordenadas de contingência) | Spring Boot | `application.properties` + `.env`, `@Value` |
 | Executar a coleta a cada 10 segundos | Spring Boot (agendador) | `@EnableScheduling` + `@Scheduled(fixedDelayString = "${coleta.intervalo-ms}")` |
 | Escolher a fonte (API real ou simulador) | Spring Boot | `@ConditionalOnProperty(name = "coleta.modo", ...)` |
 | Servidor web (Tomcat embutido) | Spring Boot | `spring-boot-starter-web` |
@@ -251,8 +251,8 @@ da raiz do projeto. As propriedades usam `${VARIAVEL:padrão}`:
 
 | Propriedade | Variável no `.env` | Padrão |
 |---|---|---|
-| `estacao.nome` | `ESTACAO_NOME` | `Estação Sorocaba` |
-| `openmeteo.latitude` / `openmeteo.longitude` | `OPENMETEO_LATITUDE` / `OPENMETEO_LONGITUDE` | Sorocaba (-23.5015 / -47.4526) |
+| `estacao.nome` | `ESTACAO_NOME` | alternativa inicial antes de existir estação no banco |
+| `openmeteo.latitude` / `openmeteo.longitude` | `OPENMETEO_LATITUDE` / `OPENMETEO_LONGITUDE` | alternativas de contingência; a estação ativa no MySQL prevalece |
 | `coleta.intervalo-ms` | `COLETA_INTERVALO_MS` | 10000 |
 | `coleta.modo` | `COLETA_MODO` | `REAL` (ou `SIMULADO`) |
 | `coleta.cenario` | `COLETA_CENARIO` | vazio = alterna os cenários (ou `TEMPO_SECO`, `CHUVA_FORTE`, `VENTO_FORTE`, `DADOS_INCOMPLETOS`) |
@@ -260,6 +260,10 @@ da raiz do projeto. As propriedades usam `${VARIAVEL:padrão}`:
 
 Os dados do banco (`MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`) são lidos pela
 classe `Configuracao` e aplicados pelo `HibernateUtil`, não pelo Spring.
+
+A localização efetiva não vem do `.env` depois do primeiro cadastro: `POST /api/estacao` recebe cidade e UF, valida
+o resultado brasileiro da Geocoding API da Open-Meteo e ativa a estação no MySQL. O collector e as consultas de
+leituras/resumos consultam essa estação ativa, mantendo as séries de cada cidade separadas.
 
 ### 4.6 Por que usar Spring Boot aqui
 

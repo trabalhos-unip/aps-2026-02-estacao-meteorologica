@@ -2,6 +2,8 @@ package br.com.aps.meteorologia.dao;
 
 import br.com.aps.meteorologia.config.HibernateUtil;
 import br.com.aps.meteorologia.dao.impl.LeituraMeteorologicaDAOHibernate;
+import br.com.aps.meteorologia.dao.impl.EstacaoDAOHibernate;
+import br.com.aps.meteorologia.model.Estacao;
 import br.com.aps.meteorologia.model.LeituraMeteorologica;
 import br.com.aps.meteorologia.model.ModoOperacao;
 import org.hibernate.Session;
@@ -29,6 +31,7 @@ class LeituraMeteorologicaDAOHibernateTest {
             "hibernate.hbm2ddl.auto", "create-drop");
 
     private final ILeituraMeteorologicaDAO dao = new LeituraMeteorologicaDAOHibernate();
+    private final IEstacaoDAO estacoes = new EstacaoDAOHibernate();
 
     @BeforeAll
     static void usarBancoDeTeste() {
@@ -46,6 +49,7 @@ class LeituraMeteorologicaDAOHibernateTest {
         try (Session sessao = HibernateUtil.getSessionFactory().openSession()) {
             sessao.beginTransaction();
             sessao.createMutationQuery("delete from LeituraMeteorologica").executeUpdate();
+            sessao.createMutationQuery("delete from Estacao").executeUpdate();
             sessao.getTransaction().commit();
         }
     }
@@ -186,5 +190,22 @@ class LeituraMeteorologicaDAOHibernateTest {
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> dao.buscarPorPeriodo(BASE, BASE.plusDays(1), null, 0))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void criaEstacaoDaCidadeEAtivaSomenteANova() {
+        Estacao campinas = estacoes.salvarEAtivar("Campinas", "SP", -22.90556, -47.06083, "America/Sao_Paulo");
+
+        assertThat(campinas.getId()).isNotNull();
+        assertThat(campinas.getCidade()).isEqualTo("Campinas");
+        assertThat(campinas.getEstado()).isEqualTo("SP");
+        assertThat(campinas.getPais()).isEqualTo("BR");
+        assertThat(estacoes.buscarAtiva()).map(Estacao::getId).contains(campinas.getId());
+        assertThat(estacoes.buscarPorCidadeEEstado("campinas", "sp")).map(Estacao::getId).contains(campinas.getId());
+
+        Estacao sorocaba = estacoes.salvarEAtivar("Sorocaba", "SP", -23.50167, -47.45806, "America/Sao_Paulo");
+
+        assertThat(sorocaba.getId()).isNotEqualTo(campinas.getId());
+        assertThat(estacoes.buscarAtiva()).map(Estacao::getId).contains(sorocaba.getId());
     }
 }

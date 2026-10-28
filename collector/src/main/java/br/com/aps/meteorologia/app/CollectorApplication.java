@@ -4,9 +4,13 @@ import br.com.aps.meteorologia.config.HibernateUtil;
 import br.com.aps.meteorologia.dao.IEstacaoDAO;
 import br.com.aps.meteorologia.dao.ILeituraMeteorologicaDAO;
 import br.com.aps.meteorologia.dao.ILogColetaDAO;
+import br.com.aps.meteorologia.dao.ResumoDiarioMeteorologicoDAO;
+import br.com.aps.meteorologia.dao.ResumoHorarioMeteorologicoDAO;
 import br.com.aps.meteorologia.dao.impl.EstacaoDAOHibernate;
 import br.com.aps.meteorologia.dao.impl.LeituraMeteorologicaDAOHibernate;
 import br.com.aps.meteorologia.dao.impl.LogColetaDAOHibernate;
+import br.com.aps.meteorologia.dao.impl.ResumoDiarioMeteorologicoDAOHibernate;
+import br.com.aps.meteorologia.dao.impl.ResumoHorarioMeteorologicoDAOHibernate;
 import jakarta.annotation.PreDestroy;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -43,6 +47,16 @@ public class CollectorApplication {
     @Bean
     public ILogColetaDAO logColetaDAO() {
         return new LogColetaDAOHibernate();
+    }
+
+    @Bean
+    public ResumoDiarioMeteorologicoDAO resumoDiarioMeteorologicoDAO() {
+        return new ResumoDiarioMeteorologicoDAOHibernate();
+    }
+
+    @Bean
+    public ResumoHorarioMeteorologicoDAO resumoHorarioMeteorologicoDAO() {
+        return new ResumoHorarioMeteorologicoDAOHibernate();
     }
 
     /** Ao encerrar a aplicação, fecha a SessionFactory do Hibernate. */
