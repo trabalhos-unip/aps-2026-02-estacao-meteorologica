@@ -3,7 +3,7 @@ import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-6";
 import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-14";
-import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-2";
+import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261029-3";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
 const pages = { "/": overviewPage, "/historico": historyPage, "/simulacoes": simulationsPage, "/configuracoes": settingsPage };
@@ -89,14 +89,15 @@ document.querySelector("#theme-toggle").addEventListener("click", () => {
 function showLocation(preferences) {
   const city = String(preferences.city || "").trim();
   const state = String(preferences.state || "").trim();
-  text("#location-label", city ? `${city}${state === "São Paulo" ? ", SP" : state ? `, ${state}` : ""}` : "Localização da estação");
+  const label = city ? `${city}${state === "São Paulo" ? ", SP" : state ? `, ${state}` : ""}` : "Localização da estação";
+  document.querySelectorAll("[data-location-label]").forEach(element => { element.textContent = label; });
 }
 showLocation(savedPreferences());
 
 async function showConfiguredLocation() {
   try {
     const source = await leiturasApi.buscarFonte();
-    if (source.cidade) text("#location-label", `${source.cidade}${source.estado ? `, ${source.estado}` : ""}`);
+    if (source.cidade) document.querySelectorAll("[data-location-label]").forEach(element => { element.textContent = `${source.cidade}${source.estado ? `, ${source.estado}` : ""}`; });
   } catch {
     // A localização configurada não impede o uso da página se a API local estiver indisponível.
   }
