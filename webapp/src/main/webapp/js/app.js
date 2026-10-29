@@ -2,7 +2,7 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-6";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-9";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-10";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-2";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -797,6 +797,36 @@ function renderSummary(readings) {
     <div class="summary-row"><span>Velocidade média do vento</span><strong>${unit(average(wind), "km/h")}</strong></div>`;
 }
 
+function renderCoverageAndExtremes(readings) {
+  const daily = isDailyPeriod(historyStart, historyEnd);
+  const slotKey = reading => {
+    const stamp = parseDate(reading.dataHoraColeta);
+    if (!stamp) return null;
+    const day = dateInput(stamp);
+    return daily ? day : `${day}T${String(stamp.getHours()).padStart(2, "0")}`;
+  };
+  const slots = new Set(readings.map(slotKey).filter(Boolean));
+  const divisor = daily ? 86_400_000 : 3_600_000;
+  const total = Math.max(1, Math.floor((historyEnd.getTime() - historyStart.getTime()) / divisor) + 1);
+  const coverage = Math.min(100, slots.size / total * 100);
+  const sorted = [...readings].filter(reading => parseDate(reading.dataHoraColeta)).sort((a, b) => parseDate(a.dataHoraColeta) - parseDate(b.dataHoraColeta));
+  const numericReading = (field, direction) => sorted
+    .filter(reading => Number.isFinite(Number(reading[field])))
+    .reduce((selected, reading) => !selected || direction * (Number(reading[field]) - Number(selected[field])) > 0 ? reading : selected, null);
+  const maxTemperature = numericReading("temperatura", 1);
+  const minTemperature = numericReading("temperatura", -1);
+  const maxWind = numericReading("velocidadeVento", 1);
+  text("#coverage-summary", `${slots.size} de ${total} ${daily ? "dias" : "horas"} com dados`);
+  const first = sorted[0];
+  const last = sorted.at(-1);
+  text("#coverage-period", first && last ? `${daily ? "Período disponível" : "Leituras disponíveis"}: ${readingMoment(first)}–${readingMoment(last)}` : "Nenhuma leitura disponível");
+  document.querySelector("#coverage-meter-bar")?.style.setProperty("--coverage", `${coverage}%`);
+  const extreme = (reading, field, suffix, digits = 1) => reading ? `${unit(reading[field], suffix, digits)} · ${readingMoment(reading)}` : "—";
+  text("#coverage-temperature-max", extreme(maxTemperature, "temperatura", "°C"));
+  text("#coverage-temperature-min", extreme(minTemperature, "temperatura", "°C"));
+  text("#coverage-wind-max", extreme(maxWind, "velocidadeVento", "km/h"));
+}
+
 function redrawHistoryCharts() {
   const variable = document.querySelector("#history-variable").value;
   const settings = variables[variable];
@@ -826,6 +856,7 @@ function redrawHistoryCharts() {
 function renderHistoryDetails() {
   text("#summary-period", `${dateTime(historyStart)} a ${dateTime(historyEnd)}`);
   renderSummary(historyReadings);
+  renderCoverageAndExtremes(historyReadings);
   const ordered = [...historyReadings].reverse();
   const totalPages = Math.max(1, Math.ceil(ordered.length / HISTORY_PAGE_SIZE));
   historyCurrentPage = Math.min(historyCurrentPage, totalPages);
