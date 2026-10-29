@@ -2,7 +2,7 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-1";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-1";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-2";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-2";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -747,12 +747,6 @@ function redrawHistoryCharts() {
 
 function renderHistoryDetails() {
   text("#summary-period", `${dateTime(historyStart)} a ${dateTime(historyEnd)}`);
-  text("#period-start", dateTime(historyStart));
-  text("#period-end", dateTime(historyEnd));
-  text("#period-count-label", historyReadings.at(0)?.diario ? "Dias com dados" : "Registros do dia");
-  text("#period-total", number(historyReadings.length, 0));
-  const sources = [...new Set(historyReadings.map(reading => reading.fonteDados).filter(Boolean))];
-  text("#period-source", sources.length ? sources.join(", ") : "—");
   renderSummary(historyReadings);
   const visible = [...historyReadings].reverse().slice(0, 100);
   fillTable("#history-rows", visible, [
