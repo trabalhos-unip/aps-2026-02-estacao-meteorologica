@@ -1,17 +1,15 @@
 import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js?v=20261028-6";
 import { demoApi } from "./demo-data.js?v=20261026-4";
-import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-8";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-19";
-import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261029-12";
+import { overviewPage, historyPage, settingsPage } from "./pages.js?v=20261029-20";
+import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261029-13";
 
-const routeFromLocation = () => ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
+const routeFromLocation = () => ({ "/historico": "/historico", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
 let path = routeFromLocation();
-const pages = { "/": overviewPage, "/historico": historyPage, "/simulacoes": simulationsPage, "/configuracoes": settingsPage };
+const pages = { "/": overviewPage, "/historico": historyPage, "/configuracoes": settingsPage };
 const pageHeadings = {
   "/": ["Visão geral", "Acompanhe em tempo real as condições meteorológicas"],
   "/historico": ["Histórico e análises", "Visualize a evolução das variáveis meteorológicas"],
-  "/simulacoes": ["Simulações", "Exemplo de cenários meteorológicos para testes do sistema"],
   "/configuracoes": ["Configurações", "Ajuste os parâmetros de coleta de dados e o comportamento do sistema."],
 };
 renderShell(path, pages[path]());
@@ -70,7 +68,6 @@ function applyMode(mode) {
     text("#page-subtitle", {
       "/": "Explore condições meteorológicas simuladas",
       "/historico": "Visualize a evolução de dados simulados",
-      "/simulacoes": "Exemplos de cenários meteorológicos para testes do sistema",
       "/configuracoes": "Escolha quais dados aparecem na aplicação",
     }[path]);
   }
@@ -1010,63 +1007,6 @@ async function initHistory() {
   });
 }
 
-async function initSimulations() {
-  await fetchLatest();
-  drawScenarioComparison("#comparison-chart", "Temperatura");
-  const executions = [];
-  function renderPreview() {
-    const last = executions[0];
-    if (!last) return;
-    const item = scenarios.find(scenario => scenario.key === last.key);
-    const container = document.querySelector("#last-simulation-content");
-    container.className = "simulation-result";
-    container.replaceChildren();
-    const head = document.createElement("div");
-    head.className = "simulation-result-head";
-    const heading = document.createElement("div");
-    heading.innerHTML = `<span class="icon-disc ${item.tone}">${document.querySelector(`[data-scenario="${item.key}"]`).closest(".scenario-card").querySelector(".scenario-icon").innerHTML}</span><div><strong></strong><small>Prévia local em <time></time></small></div>`;
-    heading.querySelector("strong").textContent = item.title;
-    heading.querySelector("time").textContent = dateTime(last.at);
-    const badge = document.createElement("span");badge.className="pill green-pill";badge.textContent="Prévia";
-    head.append(heading,badge);container.append(head);
-    const values = document.createElement("dl");
-    for (const [label,value] of [["Temperatura",item.values[0]],["Umidade",item.values[1]],["Precipitação",item.values[2]],["Vento",item.values[3]]]) {
-      const row=document.createElement("div"),dt=document.createElement("dt"),dd=document.createElement("dd");
-      dt.textContent=label;dd.textContent=value;row.append(dt,dd);values.append(row);
-    }
-    container.append(values);
-    const note=document.createElement("p");note.className="simulation-result-note";note.textContent="Resultado ilustrativo; não registrado no banco.";container.append(note);
-    const rows=document.querySelector("#sim-history-rows");rows.replaceChildren();
-    for(const execution of executions){
-      const scenario=scenarios.find(candidate=>candidate.key===execution.key);
-      const row=rows.insertRow();
-      for(const value of [dateTime(execution.at),scenario.title,...scenario.values]){row.insertCell().textContent=value;}
-    }
-  }
-  if (simulated()) {
-    const now = Date.now();
-    executions.push(
-      { key: "chuva", at: new Date(now - 60 * 60_000) },
-      { key: "seco", at: new Date(now - 4 * 60 * 60_000) },
-      { key: "vento", at: new Date(now - 24 * 60 * 60_000) },
-    );
-    renderPreview();
-  }
-  document.querySelectorAll("[data-scenario]").forEach(button => {
-    button.addEventListener("click", () => {
-      executions.unshift({key:button.dataset.scenario,at:new Date()});
-      renderPreview();
-      showToast("Prévia local exibida. Nenhum dado foi enviado ao coletor ou gravado no MySQL.");
-    });
-  });
-  document.querySelectorAll("[data-sim-metric]").forEach(button => {
-    button.addEventListener("click", () => {
-      document.querySelectorAll("[data-sim-metric]").forEach(other => other.classList.toggle("selected", other === button));
-      drawScenarioComparison("#comparison-chart", button.dataset.simMetric);
-    });
-  });
-}
-
 async function initSettings() {
   const saved = savedPreferences();
   document.querySelector("#settings-interval").value = saved.interval || "900";
@@ -1144,7 +1084,7 @@ function startBackgroundRefresh() {
 
 async function initializeCurrentPage() {
   try {
-    await ({ "/": initHome, "/historico": initHistory, "/simulacoes": initSimulations, "/configuracoes": initSettings })[path]();
+    await ({ "/": initHome, "/historico": initHistory, "/configuracoes": initSettings })[path]();
   } catch (error) {
     showToast(error.message || "Não foi possível carregar os dados iniciais.");
   } finally {
@@ -1183,7 +1123,7 @@ document.addEventListener("click", event => {
   const link = event.target.closest("a[href]");
   if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
   const target = new URL(link.href, window.location.href);
-  const nextPath = ({ "/": "/", "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[target.pathname.replace(/\/$/, "") || "/"];
+  const nextPath = ({ "/": "/", "/historico": "/historico", "/configuracoes": "/configuracoes" })[target.pathname.replace(/\/$/, "") || "/"];
   if (!nextPath || target.origin !== window.location.origin) return;
   event.preventDefault();
   void navegarPara(nextPath);

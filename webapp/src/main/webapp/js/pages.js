@@ -18,10 +18,6 @@ function meteocon(asset, className = "metric-meteocon") {
   return `<img class="${className}" src="${METEOCONS_STATIC}/${asset}.svg" alt="" aria-hidden="true" decoding="async">`;
 }
 
-function scenarioMeteoconAsset(key) {
-  return { seco: "partly-cloudy-day", chuva: "rain", vento: "wind" }[key] || "overcast-day";
-}
-
 function metricCard(label, asset, id, suffix, detailId) {
   return `<article class="card metric-card">
     <div class="metric-heading">${meteocon(asset)}<strong>${label}</strong></div>
@@ -112,34 +108,6 @@ export function historyPage() {
     <div class="table-scroll"><table><caption class="sr-only">Registros meteorológicos do período</caption><thead><tr><th>Data</th><th>Temperatura</th><th>Umidade</th><th>Precipitação</th><th>Vento</th><th>Origem</th></tr></thead><tbody id="history-rows"><tr><td colspan="6" class="empty-cell">Carregando…</td></tr></tbody></table></div>
     <nav class="table-pagination" id="history-pagination" aria-label="Paginação dos registros" hidden><button type="button" class="secondary-button" data-history-page="previous">Anterior</button><span id="history-page-label"></span><button type="button" class="secondary-button" data-history-page="next">Próxima</button></nav>
   </section>`;
-}
-
-export const scenarios = [
-  { key: "seco", title: "Tempo seco", desc: "Temperatura elevada, umidade reduzida e sem precipitação.", icon: "sun", tone: "amber", values: ["32,0 °C", "30%", "0,0 mm", "10,0 km/h"] },
-  { key: "chuva", title: "Chuva intensa", desc: "Precipitação presente, umidade alta e temperatura menor.", icon: "rain", tone: "blue", values: ["20,0 °C", "90%", "15,0 mm", "18,0 km/h"] },
-  { key: "vento", title: "Vento forte", desc: "Velocidade do vento elevada e registro da ocorrência.", icon: "wind", tone: "teal", values: ["24,0 °C", "60%", "0,0 mm", "50,0 km/h"] },
-];
-
-export function simulationsPage() {
-  return `<div class="sim-grid">
-    <div class="sim-main">
-      <section class="scenario-hero"><div><h2>Teste cenários meteorológicos</h2><p>Execute simulações para verificar a coleta, validação e o armazenamento dos dados.</p></div><span class="source-chip">${icon("flask")} Modo de simulação</span></section>
-      <div class="scenario-grid">
-        ${scenarios.map(item => `<article class="card scenario-card ${item.tone}"><div class="scenario-head"><span class="scenario-icon">${meteocon(scenarioMeteoconAsset(item.key), "scenario-meteocon")}</span><div><h3>${item.title}</h3><p>${item.desc}</p></div></div><dl>
-          <div><dt>${meteocon("thermometer", "scenario-detail-meteocon")}<span class="sr-only">Temperatura</span></dt><dd>${item.values[0]}</dd></div>
-          <div><dt>${meteocon("humidity", "scenario-detail-meteocon")}<span class="sr-only">Umidade</span></dt><dd>${item.values[1]}</dd></div>
-          <div><dt>${meteocon("rain", "scenario-detail-meteocon")}<span class="sr-only">Precipitação</span></dt><dd>${item.values[2]}</dd></div>
-          <div><dt>${meteocon("wind", "scenario-detail-meteocon")}<span class="sr-only">Vento</span></dt><dd>${item.values[3]}</dd></div>
-        </dl><button class="primary-button scenario-button" type="button" data-scenario="${item.key}">${icon("play")} Executar cenário</button></article>`).join("")}
-      </div>
-      <section class="card comparison-card"><div class="section-head"><div class="title-with-icon"><span class="title-icon blue-text">${icon("chart")}</span><div><h2>Comparação dos cenários</h2><small>Prévia ilustrativa dos cenários · não gravada</small></div></div></div><div class="scenario-metric-tabs" role="group" aria-label="Variável da comparação"><button class="selected" type="button" data-sim-metric="Temperatura">Temperatura</button><button type="button" data-sim-metric="Umidade">Umidade</button><button type="button" data-sim-metric="Precipitação">Precipitação</button><button type="button" data-sim-metric="Vento">Vento</button></div><div class="scenario-chart" id="comparison-chart"></div><div class="scenario-legend"><span><i class="amber-dot"></i>Tempo seco</span><span><i class="blue-dot"></i>Chuva intensa</span><span><i class="teal-dot"></i>Vento forte</span></div></section>
-    </div>
-    <aside class="sim-aside">
-      <section class="card last-simulation"><div class="card-title">${icon("clock")}<h2>Última simulação</h2></div><div id="last-simulation-content" class="empty-feature"><span class="icon-disc teal">${icon("flask")}</span><strong>Nenhuma execução registrada</strong><p>Selecione um cenário para ver uma prévia local. A API ainda não grava simulações.</p></div></section>
-      <section class="card sim-history"><div class="section-head"><div class="title-with-icon">${icon("clock")}<h2>Histórico de simulações</h2></div><span class="muted local-label">Nesta página</span></div><div class="table-scroll"><table><caption class="sr-only">Prévias locais de simulação nesta página</caption><thead><tr><th>Data e hora</th><th>Cenário</th><th>Temperatura</th><th>Umidade</th><th>Precip.</th><th>Vento</th></tr></thead><tbody id="sim-history-rows"><tr><td colspan="6" class="empty-cell">Nenhuma prévia nesta página.</td></tr></tbody></table></div></section>
-      <div class="info-strip sim-info">${icon("info")}<span>A comparação é uma prévia visual. Os cenários testados nesta página não são enviados ao coletor nem gravados no MySQL; execução real depende da integração com o back-end e o banco.</span></div>
-    </aside>
-  </div>`;
 }
 
 export function settingsPage() {

@@ -35,14 +35,12 @@ export function icon(name, className = "") {
 const menu = [
   { path: "/", label: "Visão geral", icon: "home" },
   { path: "/historico", label: "Histórico", icon: "history" },
-  { path: "/simulacoes", label: "Simulações", icon: "flask" },
   { path: "/configuracoes", label: "Configurações", icon: "settings" },
 ];
 
 const titles = {
   "/": ["Visão geral", "Acompanhe em tempo real as condições meteorológicas"],
   "/historico": ["Histórico e análises", "Visualize a evolução das variáveis meteorológicas"],
-  "/simulacoes": ["Simulações", "Exemplo de cenários meteorológicos para testes do sistema"],
   "/configuracoes": ["Configurações", "Ajuste os parâmetros de coleta de dados e o comportamento do sistema."],
 };
 

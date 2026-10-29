@@ -7,8 +7,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class PaginaController {
 
-    @GetMapping({"/historico", "/simulacoes", "/configuracoes"})
+    @GetMapping({"/historico", "/configuracoes"})
     public String pagina() {
         return "forward:/index.html";
+    }
+
+    @GetMapping("/simulacoes")
+    public String redirecionarSimulacoes() {
+        return "redirect:/";
     }
 }
