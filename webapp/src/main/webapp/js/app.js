@@ -640,8 +640,9 @@ function renderPrevisaoDiariaNoPainel(previsoes, limite, resetarNavegacao = fals
     return `<article class="daily-forecast-item"><time>${rotuloDaPrevisao(item, indice)}<small>${data ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(data) : ""}</small></time>${simboloClimaEstatico(tipo)}<strong>${number(item.temperaturaMaxima, 0)}° <small>${number(item.temperaturaMinima, 0)}°</small></strong><span class="daily-forecast-rain">${icon("drop")}${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span></article>`;
   }).join("");
   requestAnimationFrame(() => {
-    scroller.scrollLeft = posicaoAnterior;
     atualizarNavegacaoPrevisaoDiaria();
+    scroller.scrollLeft = posicaoAnterior;
+    requestAnimationFrame(atualizarNavegacaoPrevisaoDiaria);
   });
 }
 
@@ -651,14 +652,16 @@ function atualizarNavegacaoPrevisaoDiaria() {
   const proximo = document.querySelector("#daily-forecast-next");
   if (!scroller || !anterior || !proximo) return;
   const quantidade = Number(scroller.dataset.itemCount || scroller.children.length);
-  // Sete dias ficam fixos apenas quando a largura preserva uma coluna legível por dia.
-  // Em telas menores, a mesma faixa volta a ser navegável.
-  const semanaCabeNoPainel = quantidade <= 7 && scroller.clientWidth >= 720;
+  // Sete dias ficam fixos no layout desktop. Em tela estreita, a faixa volta a
+  // ser navegável para não comprimir as colunas.
+  const semanaCabeNoPainel = quantidade <= 7 && !window.matchMedia("(max-width: 760px)").matches;
   scroller.classList.toggle("fit-seven-days", semanaCabeNoPainel);
   scroller.dataset.allowNavigation = String(quantidade > 0 && !semanaCabeNoPainel);
-  const podeNavegar = scroller.dataset.allowNavigation === "true" && scroller.scrollWidth > scroller.clientWidth + 1;
-  anterior.hidden = !podeNavegar || scroller.scrollLeft <= 1;
-  proximo.hidden = !podeNavegar || scroller.scrollLeft >= scroller.scrollWidth - scroller.clientWidth - 1;
+  const maximoScroll = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+  const posicao = Math.min(maximoScroll, Math.max(0, scroller.scrollLeft));
+  const podeNavegar = scroller.dataset.allowNavigation === "true" && maximoScroll > 1;
+  anterior.hidden = !podeNavegar || posicao <= 2;
+  proximo.hidden = !podeNavegar || posicao >= maximoScroll - 2;
 }
 
 function renderDemoForecast() {
