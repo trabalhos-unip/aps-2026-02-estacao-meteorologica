@@ -1,8 +1,8 @@
-import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js";
+import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js?v=20261028-6";
 import { demoApi, demoForecast } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261028-3";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261028-2";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261028-6";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-1";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -228,9 +228,7 @@ let latestReading = null;
 let historyReadings = [];
 let historyStart = null;
 let historyEnd = null;
-let homeChartRequest = 0;
 let historyRequest = 0;
-let homeRange = "7d";
 let pageRefreshInProgress = false;
 
 function rangeDates(range, anchor = anchorDate(latestReading)) {
@@ -311,6 +309,7 @@ function resumoHorarioComoLeitura(resumo) {
     umidadeRelativa: resumo.umidadeRelativa,
     precipitacao: resumo.precipitacao,
     chuva: resumo.chuva,
+    probabilidadeChuva: resumo.probabilidadeChuva,
     velocidadeVento: resumo.velocidadeVento,
     codigoClima: resumo.codigoClima,
     descricaoClima: resumo.descricaoClima,
@@ -425,23 +424,70 @@ function renderHomeReading(reading, recent) {
   text("#wind-detail-trend", simulated() ? "Dados simulados" : "Dados da estação");
 }
 
-async function loadHomeChart(range) {
-  const request = ++homeChartRequest;
-  setRangeButtons(range, ["home-range"]);
-  const [start, end] = rangeDates(range);
-  text("#home-chart-subtitle", "Carregando período…");
+function iconeDoClimaHorario(item) {
+  const chance = Number(item.probabilidadeChuva);
+  if (rainCodes.includes(Number(item.codigoClima)) || Number.isFinite(chance) && chance >= 40) return "rain";
+  if ([0, 1].includes(Number(item.codigoClima))) return "sun";
+  return "cloud";
+}
+
+function graficoDeTemperatura(previsoes) {
+  const temperaturas = previsoes.map(item => Number(item.temperatura)).filter(Number.isFinite);
+  if (!temperaturas.length) return "";
+  const minimo = Math.min(...temperaturas);
+  const maximo = Math.max(...temperaturas);
+  const amplitude = Math.max(maximo - minimo, 2);
+  const pontos = previsoes.map((item, index) => {
+    const x = previsoes.length === 1 ? 50 : 4 + index * 92 / (previsoes.length - 1);
+    const y = Number.isFinite(Number(item.temperatura)) ? 49 - ((Number(item.temperatura) - minimo) / amplitude) * 23 : 61;
+    return `${x},${y}`;
+  }).join(" ");
+  return `<svg class="hourly-temperature-line" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pontos}" /></svg>`;
+}
+
+function desenharGraficoClimaHorario(previsoes, fonte) {
+  const canvas = document.querySelector("#hourly-weather-rows");
+  if (!canvas) return;
+  if (!previsoes.length) {
+    canvas.innerHTML = '<div class="chart-empty">A previsão por hora ainda não está disponível.</div>';
+    return;
+  }
+  text("#hourly-weather-subtitle", fonte);
+  canvas.setAttribute("aria-label", "Previsão climática por hora");
+  canvas.innerHTML = `${graficoDeTemperatura(previsoes)}<div class="hourly-weather-points">${previsoes.map(item => {
+    const data = parseDate(item.dataHora);
+    const hora = data ? new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" }).format(data) : "—";
+    const chance = Number(item.probabilidadeChuva);
+    return `<article class="hourly-weather-point"><time>${hora}</time><span class="hourly-weather-icon ${iconeDoClimaHorario(item)}">${icon(iconeDoClimaHorario(item))}</span><strong>${number(item.temperatura, 0)}°</strong><span class="hourly-rain-chance">${icon("drop")} ${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span></article>`;
+  }).join("")}</div>`;
+}
+
+function previsaoHorariaDeExemplo() {
+  const inicio = new Date();
+  inicio.setMinutes(0, 0, 0);
+  const chances = [10, 15, 20, 35, 50, 60, 45, 30];
+  return chances.map((probabilidadeChuva, indice) => ({
+    dataHora: new Date(inicio.getTime() + indice * 3_600_000).toISOString(),
+    temperatura: 25 - Math.min(indice, 6), probabilidadeChuva,
+    codigoClima: probabilidadeChuva >= 40 ? 61 : indice < 2 ? 1 : 3,
+  }));
+}
+
+async function renderGraficoClimaHorario() {
+  if (simulated()) {
+    desenharGraficoClimaHorario(previsaoHorariaDeExemplo(), "Exemplo de previsão por hora");
+    return;
+  }
+  const inicio = new Date();
+  inicio.setMinutes(0, 0, 0);
+  const fim = new Date(inicio.getTime() + 11 * 3_600_000);
   try {
-    const readings = await buscarSerieDoPeriodo(start, end);
-    if (request !== homeChartRequest) return;
-    const chartReadings = readingsForPeriod(readings, start, end);
-    const summary = drawTemporalChart("#home-chart-canvas", chartReadings, "temperatura", "°C", "#2498ed", { start, end, daily: isDailyPeriod(start, end) });
-    text("#home-chart-subtitle", range === "24h"
-      ? `Médias por hora · ${summary.available} de 24 horas com dados${summary.first ? ` · ${summary.first}–${summary.last}` : ""}`
-      : `Médias por dia · ${summary.available} de ${summary.total} dias com dados`);
+    const previsoes = await resumosHorariosApi.buscarPrevisoes(apiDate(inicio), apiDate(fim));
+    desenharGraficoClimaHorario(previsoes, "Previsão por hora · dados da Open-Meteo");
   } catch (error) {
-    if (request !== homeChartRequest) return;
-    clearTemporalChart("#home-chart-canvas", error.message);
-    text("#home-chart-subtitle", "Dados indisponíveis");
+    const canvas = document.querySelector("#hourly-weather-rows");
+    if (canvas) canvas.innerHTML = `<div class="chart-empty">${error.message}</div>`;
+    text("#hourly-weather-subtitle", "Previsão horária indisponível");
   }
 }
 
@@ -504,17 +550,11 @@ async function refreshHome() {
     renderHomeReading(latestReading, []);
     fillTable("#recent-rows", [], Array.from({ length: 5 }, () => ({})), error.message);
   }
-  await loadHomeChart(homeRange);
+  await renderGraficoClimaHorario();
 }
 
 async function initHome() {
   await refreshHome();
-  document.querySelector("#home-range").addEventListener("click", event => {
-    const button = event.target.closest("[data-range]");
-    if (!button) return;
-    homeRange = button.dataset.range;
-    loadHomeChart(homeRange);
-  });
 }
 
 function renderSummary(readings) {
@@ -610,7 +650,7 @@ function setHistoryPreset(range) {
 
 async function initHistory() {
   await fetchLatest();
-  setHistoryPreset("7d");
+  setHistoryPreset("24h");
   for (const id of ["history-range", "chart-range"]) {
     document.querySelector(`#${id}`).addEventListener("click", event => {
       const button = event.target.closest("[data-range]");
