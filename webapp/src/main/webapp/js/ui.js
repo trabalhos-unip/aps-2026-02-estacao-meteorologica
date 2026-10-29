@@ -83,12 +83,11 @@ export function renderShell(path, content) {
     </div>
     <div id="location-modal" class="location-modal" role="dialog" aria-modal="true" aria-labelledby="location-modal-title" hidden>
       <div class="location-modal-card">
-        <div class="location-modal-heading"><div><small>LOCALIZAÇÃO DA ESTAÇÃO</small><h2 id="location-modal-title">Escolha uma cidade</h2><p>A UF e as coordenadas são identificadas automaticamente.</p></div><button type="button" class="location-modal-close" data-close-location-modal aria-label="Fechar">×</button></div>
-        <label class="location-search-label" for="location-city">Buscar cidade brasileira</label>
-        <select id="location-city" data-placeholder="Digite uma cidade, por exemplo Porto de Galinhas" aria-label="Buscar cidade brasileira"><option value=""></option></select>
+        <div class="location-modal-heading"><div><small>LOCALIZAÇÃO DA ESTAÇÃO</small><h2 id="location-modal-title">Escolha uma cidade</h2><p>Estado e coordenadas são preenchidos automaticamente.</p></div><button type="button" class="location-modal-close" data-close-location-modal aria-label="Fechar">×</button></div>
+        <label class="location-search-label" for="location-city">Buscar cidade</label>
+        <select id="location-city" data-placeholder="Digite o nome da cidade" aria-label="Buscar cidade brasileira"><option value=""></option></select>
         <div class="location-modal-section"><span>Cidades sugeridas</span><div class="location-shortcuts" role="list"><button type="button" data-location-city="Sorocaba" data-location-state="SP">Sorocaba, SP</button><button type="button" data-location-city="Campinas" data-location-state="SP">Campinas, SP</button><button type="button" data-location-city="Porto Alegre" data-location-state="RS">Porto Alegre, RS</button><button type="button" data-location-city="Porto de Galinhas" data-location-state="PE">Porto de Galinhas, PE</button></div></div>
-        <div class="location-modal-section" id="location-recent-section" hidden><span>Usadas recentemente</span><div class="location-recent" id="location-recent"></div></div>
-        <div class="location-modal-footer"><span>Selecione uma cidade para atualizar os dados.</span><div><button type="button" class="secondary-button" data-close-location-modal>Cancelar</button><button type="button" class="primary-button" id="location-confirm" disabled>Usar esta cidade</button></div></div>
+        <div class="location-modal-footer"><div><button type="button" class="secondary-button" data-close-location-modal>Cancelar</button><button type="button" class="primary-button" id="location-confirm" disabled>Usar esta cidade</button></div></div>
       </div>
     </div>
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>`;

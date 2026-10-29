@@ -6,28 +6,28 @@
 .location-settings-button { display: inline-flex; align-items: center; gap: 7px; margin-top: 12px; }
 .location-settings-button .icon { width: 17px; height: 17px; }
 .location-modal[hidden] { display: none; }
-.location-modal { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 18px; background: #19314a73; backdrop-filter: blur(3px); }
+.location-modal { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 18px; background: #19314a73; backdrop-filter: blur(8px); }
 .location-modal-open { overflow: hidden; }
-.location-modal-card { width: min(560px, 100%); max-height: min(650px, calc(100vh - 36px)); overflow: auto; border: 1px solid #e0eaf2; border-radius: 14px; background: #fff; box-shadow: 0 24px 55px #10294545; padding: 24px; }
-.location-modal-heading { display: flex; justify-content: space-between; gap: 18px; padding-bottom: 19px; border-bottom: 1px solid #e8eef4; }
+.location-modal-card { width: min(500px, 100%); max-height: min(580px, calc(100vh - 36px)); overflow: auto; border: 1px solid #e0eaf2; border-radius: 24px; background: #fff; box-shadow: 0 28px 70px #1029454a; padding: 26px; }
+.location-modal-heading { display: flex; justify-content: space-between; gap: 18px; padding-bottom: 17px; border-bottom: 1px solid #e8eef4; }
 .location-modal-heading small { color: #168fec; font-weight: 700; font-size: .66rem; letter-spacing: .08em; }
-.location-modal-heading h2 { margin: 5px 0 4px; color: #102f56; font-size: 1.25rem; }
+.location-modal-heading h2 { margin: 5px 0 4px; color: #102f56; font-size: 1.32rem; letter-spacing: -.025em; }
 .location-modal-heading p { margin: 0; color: #6f85a0; font-size: .82rem; }
-.location-modal-close { width: 29px; height: 29px; padding: 0 0 3px; flex: none; border: 1px solid #d6e2eb; border-radius: 50%; background: #fff; color: #42627e; font-size: 1.25rem; line-height: 1; }
+.location-modal-close { width: 32px; height: 32px; padding: 0 0 3px; flex: none; border: 1px solid #d6e2eb; border-radius: 50%; background: #f8fbfe; color: #42627e; font-size: 1.3rem; line-height: 1; }
 .location-modal-close:hover { background: #f2f8fc; color: #146fba; }
 .location-search-label { display: block; margin: 20px 0 7px; color: #315374; font-size: .78rem; font-weight: 600; }
-.location-modal .select2-container--default .select2-selection--single { height: 44px; border-color: #86c8f2; box-shadow: 0 0 0 3px #2499f51a; }
-.location-modal .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 42px; }
-.location-modal .select2-container--default .select2-selection--single .select2-selection__arrow { height: 42px; }
-.location-modal-section { margin-top: 20px; }
-.location-modal-section > span { display: block; margin-bottom: 9px; color: #7086a0; font-size: .73rem; font-weight: 600; }
-.location-shortcuts, .location-recent { display: flex; flex-wrap: wrap; gap: 8px; }
-.location-shortcuts button, .location-recent button { border: 1px solid #d9e7f0; border-radius: 18px; background: #f8fbfe; color: #315374; padding: 8px 11px; font-size: .76rem; }
-.location-shortcuts button:hover, .location-recent button:hover { border-color: #70bdf0; background: #eaf6fe; color: #0b76bd; }
-.location-modal-footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 24px; padding-top: 17px; border-top: 1px solid #e8eef4; color: #7288a1; font-size: .72rem; }
+.location-modal .select2-container--default .select2-selection--single { height: 48px; border-color: #9dd3f5; border-radius: 14px; box-shadow: 0 0 0 4px #2499f514; }
+.location-modal .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 46px; padding-left: 14px; }
+.location-modal .select2-container--default .select2-selection--single .select2-selection__arrow { height: 46px; right: 7px; }
+.location-modal-section { margin-top: 22px; }
+.location-modal-section > span { display: block; margin-bottom: 10px; color: #7086a0; font-size: .72rem; font-weight: 700; letter-spacing: .02em; }
+.location-shortcuts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.location-shortcuts button { min-height: 42px; border: 1px solid #dce8f1; border-radius: 14px; background: #f8fbfe; color: #315374; padding: 8px 12px; font-size: .77rem; text-align: left; transition: background .15s ease, border-color .15s ease, transform .15s ease; }
+.location-shortcuts button:hover { border-color: #70bdf0; background: #eaf6fe; color: #0b76bd; transform: translateY(-1px); }
+.location-modal-footer { display: flex; justify-content: flex-end; gap: 14px; margin-top: 24px; padding-top: 17px; border-top: 1px solid #e8eef4; color: #7288a1; font-size: .72rem; }
 .location-modal-footer > div { display: flex; gap: 8px; flex: none; }
 .location-modal-footer .primary-button { min-height: 39px; }
-@media (max-width: 520px) { .location-modal-card { padding: 18px; } .location-modal-footer { align-items: stretch; flex-direction: column; } .location-modal-footer > div { display: grid; grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) { .location-modal-card { padding: 20px; border-radius: 20px; } .location-shortcuts { grid-template-columns: 1fr; } .location-modal-footer { align-items: stretch; } .location-modal-footer > div { display: grid; width: 100%; grid-template-columns: 1fr 1fr; } }
 .select2-container { width: 100% !important; }
 .select2-container--default .select2-selection--single { height: 39px; border: 1px solid #d9e5ef; border-radius: 8px; background: #fff; }
 .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 37px; padding-left: 11px; color: #173d65; font-size: .83rem; }

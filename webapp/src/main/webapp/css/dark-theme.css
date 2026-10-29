@@ -260,3 +260,18 @@
 :where([data-theme="dark"]) .initial-page-skeleton i,
 :where([data-theme="dark"]) .initial-page-skeleton .skeleton-hero,
 :where([data-theme="dark"]) .initial-page-skeleton .skeleton-chart{background:linear-gradient(100deg,#172230 20%,#223143 38%,#172230 55%);background-size:220% 100%}
+
+/* Histórico: os dois painéis laterais pertencem à mesma superfície. */
+:where([data-theme="dark"]) .summary-card,
+:where([data-theme="dark"]) .historical-weather-card{border-color:var(--line)}
+:where([data-theme="dark"]) #history-filter .field select,
+:where([data-theme="dark"]) #history-variable{background-color:#151c26;border-color:#354556;color:#edf4fb}
+:where([data-theme="dark"]) #history-filter .field select:focus,
+:where([data-theme="dark"]) #history-variable:focus{border-color:#5aaee7;box-shadow:0 0 0 3px #269cea26;outline:0}
+:where([data-theme="dark"]) #history-variable option{background:#151c26;color:#edf4fb}
+
+/* Modal de localização simplificado e coerente com a superfície escura. */
+:where([data-theme="dark"]) .location-modal-card{border-radius:24px;background:#121924;border-color:#2d3a4b}
+:where([data-theme="dark"]) .location-modal .select2-container--default .select2-selection--single{background:#17212e;border-color:#4c94ca;box-shadow:0 0 0 4px #269cea1f}
+:where([data-theme="dark"]) .location-shortcuts button{background:#17212e;border-color:#304458;color:#d5e2ef}
+:where([data-theme="dark"]) .location-shortcuts button:hover{background:#1f3347;border-color:#5da7dc;color:#ecf7ff}

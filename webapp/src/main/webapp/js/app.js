@@ -3,7 +3,7 @@ import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-8";
 import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-18";
-import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261029-9";
+import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261029-10";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
 const pages = { "/": overviewPage, "/historico": historyPage, "/simulacoes": simulationsPage, "/configuracoes": settingsPage };
@@ -132,8 +132,6 @@ function setupLocationSelector() {
   const modal = document.querySelector("#location-modal");
   const citySelect = document.querySelector("#location-city");
   const confirm = document.querySelector("#location-confirm");
-  const recentSection = document.querySelector("#location-recent-section");
-  const recentContainer = document.querySelector("#location-recent");
   const $ = window.jQuery;
   let $city = null;
   let openRequest = 0;
@@ -158,24 +156,6 @@ function setupLocationSelector() {
     locationChoice = { city, state };
     confirm.disabled = false;
     if (syncWidget && $city) $city.val(id).trigger("change.select2");
-  }
-
-  function recentLocations() {
-    const locations = savedPreferences().recentCities;
-    return Array.isArray(locations) ? locations.filter(item => item?.city && item?.state).slice(0, 5) : [];
-  }
-
-  function renderRecent() {
-    const locations = recentLocations();
-    recentContainer.replaceChildren();
-    recentSection.hidden = locations.length === 0;
-    locations.forEach(item => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.textContent = `${item.city}, ${item.state}`;
-      button.addEventListener("click", () => selectCity(item.city, item.state));
-      recentContainer.append(button);
-    });
   }
 
   if ($?.fn?.select2) {
@@ -213,7 +193,6 @@ function setupLocationSelector() {
     const request = ++openRequest;
     locationChoice = null;
     confirm.disabled = true;
-    renderRecent();
     modal.hidden = false;
     document.body.classList.add("location-modal-open");
     try {
@@ -238,9 +217,7 @@ function setupLocationSelector() {
     try {
       const station = await estacaoApi.selecionar(locationChoice.city, locationChoice.state);
       const preferences = savedPreferences();
-      const recentCities = [{ city: station.cidade, state: station.estado }, ...recentLocations()
-        .filter(item => !(item.city === station.cidade && item.state === station.estado))].slice(0, 5);
-      localStorage.setItem(preferencesKey, JSON.stringify({ ...preferences, city: station.cidade, state: station.estado, recentCities }));
+      localStorage.setItem(preferencesKey, JSON.stringify({ ...preferences, city: station.cidade, state: station.estado }));
       showLocation({ city: station.cidade, state: station.estado });
       close();
       showToast("Cidade atualizada. Os dados começam a ser carregados em instantes.");
