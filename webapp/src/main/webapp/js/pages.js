@@ -5,7 +5,7 @@ function tabs(id, selected = "24h") {
     ? [["24h", "Hoje"], ["7d", "7 dias"], ["15d", "15 dias"]]
     : id === "history-range"
       ? [["24h", "Hoje"], ["7d", "7 dias"], ["30d", "30 dias"]]
-      : [["24h", "Hoje"], ["7d", "7d"], ["30d", "30d"]];
+      : [["24h", "Hoje"], ["7d", "7 dias"], ["30d", "30 dias"]];
   return `<div class="segmented" id="${id}" role="group" aria-label="Período do gráfico">
     ${options.map(([value, label]) =>
       `<button type="button" class="segment ${value === selected ? "selected" : ""}" data-range="${value}" aria-pressed="${value === selected}">${label}</button>`).join("")}

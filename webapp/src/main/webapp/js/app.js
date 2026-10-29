@@ -2,7 +2,7 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-2";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-3";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-4";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-2";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -628,6 +628,7 @@ function renderPrevisaoDiariaNoPainel(previsoes, limite, resetarNavegacao = fals
   }
   scroller.setAttribute("aria-label", `Previsão para os próximos ${Math.min(limite, previsoes.length)} dias`);
   scroller.dataset.allowNavigation = String(limite > 7);
+  scroller.classList.toggle("fit-seven-days", limite === 7 && previsoes.length <= 7);
   const posicaoAnterior = resetarNavegacao ? 0 : scroller.scrollLeft;
   scroller.innerHTML = previsoes.slice(0, limite).map((item, indice) => {
     const data = dataDaPrevisao(item);
