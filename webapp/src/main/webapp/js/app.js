@@ -2,7 +2,7 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261028-3";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261028-8";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261028-9";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-2";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -530,7 +530,7 @@ async function renderGraficoClimaHorario() {
   }
 }
 
-async function renderHomeChart(range = homeChartRange) {
+async function renderHomeChart(range = homeChartRange, resetarNavegacao = false) {
   homeChartRange = range;
   setRangeButtons(range, ["home-chart-range"]);
   const hourlyCanvas = document.querySelector("#hourly-weather-rows");
@@ -551,7 +551,7 @@ async function renderHomeChart(range = homeChartRange) {
   try {
     const previsoes = await buscarPrevisoesDiarias(limite);
     if (request !== homeChartRequest || homeChartRange !== range) return;
-    renderPrevisaoDiariaNoPainel(previsoes, limite);
+    renderPrevisaoDiariaNoPainel(previsoes, limite, resetarNavegacao);
     if (!previsoes.length) text("#hourly-weather-subtitle", `Próximos ${limite} dias · previsão ainda indisponível`);
   } catch (error) {
     if (request !== homeChartRequest || homeChartRange !== range) return;
@@ -595,7 +595,7 @@ function detalhesChuvaDaPrevisao(item) {
   return { chance, mm };
 }
 
-function renderPrevisaoDiariaNoPainel(previsoes, limite) {
+function renderPrevisaoDiariaNoPainel(previsoes, limite, resetarNavegacao = false) {
   const scroller = document.querySelector("#home-daily-forecast-scroll");
   if (!scroller) return;
   if (!previsoes.length) {
@@ -603,14 +603,17 @@ function renderPrevisaoDiariaNoPainel(previsoes, limite) {
     return;
   }
   scroller.setAttribute("aria-label", `Previsão para os próximos ${Math.min(limite, previsoes.length)} dias`);
-  scroller.scrollLeft = 0;
+  const posicaoAnterior = resetarNavegacao ? 0 : scroller.scrollLeft;
   scroller.innerHTML = previsoes.slice(0, limite).map((item, indice) => {
     const data = dataDaPrevisao(item);
     const { chance, mm } = detalhesChuvaDaPrevisao(item);
     const tipo = iconeDoClimaHorario(item);
     return `<article class="daily-forecast-item"><time>${rotuloDaPrevisao(item, indice)}<small>${data ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(data) : ""}</small></time>${simboloClimaEstatico(tipo)}<strong>${number(item.temperaturaMaxima, 0)}° <small>${number(item.temperaturaMinima, 0)}°</small></strong><span class="daily-forecast-rain">${icon("drop")}${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span></article>`;
   }).join("");
-  requestAnimationFrame(atualizarNavegacaoPrevisaoDiaria);
+  requestAnimationFrame(() => {
+    scroller.scrollLeft = posicaoAnterior;
+    atualizarNavegacaoPrevisaoDiaria();
+  });
 }
 
 function atualizarNavegacaoPrevisaoDiaria() {
@@ -618,7 +621,7 @@ function atualizarNavegacaoPrevisaoDiaria() {
   const anterior = document.querySelector("#daily-forecast-previous");
   const proximo = document.querySelector("#daily-forecast-next");
   if (!scroller || !anterior || !proximo) return;
-  const podeNavegar = scroller.scrollWidth > scroller.clientWidth + 1;
+  const podeNavegar = scroller.children.length > 7 && scroller.scrollWidth > scroller.clientWidth + 1;
   anterior.hidden = !podeNavegar || scroller.scrollLeft <= 1;
   proximo.hidden = !podeNavegar || scroller.scrollLeft >= scroller.scrollWidth - scroller.clientWidth - 1;
 }
@@ -686,7 +689,7 @@ async function refreshHome() {
 async function initHome() {
   document.querySelector("#home-chart-range").addEventListener("click", event => {
     const button = event.target.closest("[data-range]");
-    if (button) renderHomeChart(button.dataset.range);
+    if (button) renderHomeChart(button.dataset.range, true);
   });
   const previsaoDiaria = document.querySelector("#home-daily-forecast-scroll");
   const moverPrevisao = direcao => {
