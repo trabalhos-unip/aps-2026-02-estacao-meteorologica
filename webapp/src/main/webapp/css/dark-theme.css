@@ -275,3 +275,5 @@
 :where([data-theme="dark"]) .location-modal .select2-container--default .select2-selection--single{background:#17212e;border-color:#4c94ca;box-shadow:0 0 0 4px #269cea1f}
 :where([data-theme="dark"]) .location-shortcuts button{background:#17212e;border-color:#304458;color:#d5e2ef}
 :where([data-theme="dark"]) .location-shortcuts button:hover{background:#1f3347;border-color:#5da7dc;color:#ecf7ff}
+:where([data-theme="dark"]) .recent-see-all{border:0;background:linear-gradient(120deg,#167dcc,#2a9ee9);color:#fff;box-shadow:0 2px 8px #00000070}
+:where([data-theme="dark"]) .recent-see-all:hover{background:linear-gradient(120deg,#126aaf,#2089ce);border-color:transparent;color:#fff}
