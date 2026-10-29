@@ -65,9 +65,9 @@ function yScale(values, field, daily) {
   const low = Math.min(...values);
   const high = Math.max(...values);
   const padding = Math.max((high - low) * .18, field === "temperatura" ? .8 : field === "precipitacao" ? .2 : 1);
-  // Colunas partem de zero; uma linha horária usa escala próxima dos valores observados.
-  const minimum = daily ? Math.min(0, low - (low < 0 ? padding : 0)) : field === "precipitacao" ? 0 : low - padding;
-  const maximum = daily ? Math.max(0, high + padding) : high + padding;
+  // Apenas precipitação parte de zero; as demais séries usam uma escala próxima aos valores observados.
+  const minimum = field === "precipitacao" ? Math.min(0, low - (low < 0 ? padding : 0)) : low - padding;
+  const maximum = high + padding;
   const step = niceStep((maximum - minimum) / 4);
   const bottom = Math.floor(minimum / step) * step;
   const top = Math.ceil(maximum / step) * step;
@@ -116,9 +116,8 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
   const scale = yScale(available.map(slot => slot.value), field, daily);
-  const barWidth = Math.min(compact ? 15 : 22, plotWidth / Math.max(slots.length, 2) * .65);
-  // Recuo nas pontas: as barras (ou pontos) do primeiro e do último horário não invadem os rótulos do eixo.
-  const inset = daily ? barWidth / 2 + (compact ? 6 : 10) : compact ? 6 : 8;
+  // Recuo nas pontas: os pontos não invadem os rótulos do eixo.
+  const inset = compact ? 6 : 8;
   const xAt = index => left + inset + (slots.length === 1 ? (plotWidth - 2 * inset) / 2 : index * (plotWidth - 2 * inset) / (slots.length - 1));
   const yAt = value => top + (scale.maximum - value) / (scale.maximum - scale.minimum) * plotHeight;
   const baseline = top + plotHeight;
@@ -134,32 +133,24 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
     return `<line x1="${x}" y1="${top}" x2="${x}" y2="${baseline}" class="grid-line temporal-grid-vertical"/><text x="${x}" y="${height - 7}" text-anchor="middle" class="axis-label">${slots[index].label}</text>`;
   }).join("");
 
-  let shape;
-  if (daily) {
-    const zeroY = yAt(0);
-    shape = available.map(slot => {
-      const x = xAt(slot.index);
-      const y = yAt(slot.value);
-      return `<rect class="temporal-bar" x="${(x - barWidth / 2).toFixed(2)}" y="${Math.min(y, zeroY).toFixed(2)}" width="${barWidth.toFixed(2)}" height="${Math.max(2, Math.abs(zeroY - y)).toFixed(2)}" rx="3" fill="${color}" opacity=".77"/>`;
-    }).join("");
-  } else {
-    const sections = [];
-    let section = [];
-    for (const slot of available) {
-      if (section.length && slot.index - section.at(-1).index > 1) {
-        sections.push(section);
-        section = [];
-      }
-      section.push(slot);
+  const sections = [];
+  let section = [];
+  for (const slot of available) {
+    if (section.length && slot.index - section.at(-1).index > 1) {
+      sections.push(section);
+      section = [];
     }
-    if (section.length) sections.push(section);
-    const lines = sections.filter(group => group.length > 1).map(group => {
-      const path = group.map((slot, index) => `${index ? "L" : "M"}${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`).join(" ");
-      return `<path d="${path}" fill="none" stroke="${color}" stroke-width="${compact ? 2 : 2.5}" stroke-linecap="round" stroke-linejoin="round"/>`;
-    }).join("");
-    const dots = available.map(slot => `<circle cx="${xAt(slot.index)}" cy="${yAt(slot.value)}" r="${compact ? 3 : 4}" fill="${color}" stroke="#fff" stroke-width="1.5"/>`).join("");
-    shape = `${lines}${dots}`;
+    section.push(slot);
   }
+  if (section.length) sections.push(section);
+  const lines = sections.filter(group => group.length > 1).map(group => {
+    const line = group.map((slot, index) => `${index ? "L" : "M"}${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`).join(" ");
+    const points = group.map(slot => `L${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`).join(" ");
+    const area = `M${xAt(group[0].index).toFixed(2)} ${baseline.toFixed(2)} ${points} L${xAt(group.at(-1).index).toFixed(2)} ${baseline.toFixed(2)} Z`;
+    return `<path d="${area}" fill="${color}" opacity=".10"/><path d="${line}" fill="none" stroke="${color}" stroke-width="${compact ? 2 : 2.5}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  }).join("");
+  const dots = available.map(slot => `<circle cx="${xAt(slot.index)}" cy="${yAt(slot.value)}" r="${compact ? 3 : 4}" fill="${color}" stroke="#fff" stroke-width="1.5"/>`).join("");
+  const shape = `${lines}${dots}`;
 
   const axisTitle = `${field === "precipitacao" ? "Maior valor" : "Média"} por ${daily ? "dia" : "hora"}`;
   target.innerHTML = `<svg class="plot temporal-plot" viewBox="0 0 ${width} ${height}" role="img" aria-label="${axisTitle}: ${available.length} ${daily ? "dias" : "horas"} com dados de ${total}; ${suffix}"><text x="2" y="12" class="axis-label">${suffix}</text>${horizontal}${vertical}${shape}<line class="temporal-guide" x1="0" x2="0" y1="${top}" y2="${baseline}" stroke="${color}" stroke-dasharray="4 4"/><circle class="temporal-selected" cx="0" cy="0" r="${compact ? 4 : 6}" fill="${color}" stroke="#fff" stroke-width="2"/></svg><div class="temporal-tooltip" aria-hidden="true"><small></small><strong></strong></div>`;

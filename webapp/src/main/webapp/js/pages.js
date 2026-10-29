@@ -85,26 +85,24 @@ export function historyPage() {
     <button class="primary-button apply-button" type="submit">Aplicar</button>
   </form>
   <div class="history-grid">
-    <div class="history-main">
-      <section class="card chart-card primary-history-chart">
-        <div class="section-head"><div class="title-with-icon"><span class="title-icon blue-text">${icon("chart")}</span><div><h2 id="history-chart-title">Evolução da temperatura</h2><small id="history-chart-subtitle">Carregando período…</small></div></div>${tabs("chart-range")}</div>
-        <div class="chart-canvas" id="history-chart-canvas"><div class="chart-empty">Carregando leituras…</div></div>
-      </section>
-      <div class="mini-chart-grid">
-        <section class="card mini-chart-card"><div class="title-with-icon">${meteocon("humidity", "mini-weather-icon")}<div><h3>Umidade relativa</h3><small>Últimas 24 horas</small></div></div><div class="chart-canvas small" id="humidity-chart"></div></section>
-        <section class="card mini-chart-card"><div class="title-with-icon">${meteocon("rain", "mini-weather-icon")}<div><h3>Precipitação</h3><small>Últimas 24 horas</small></div></div><div class="chart-canvas small" id="rain-chart"></div></section>
-        <section class="card mini-chart-card"><div class="title-with-icon">${meteocon("wind", "mini-weather-icon")}<div><h3>Velocidade do vento</h3><small>Últimas 24 horas</small></div></div><div class="chart-canvas small" id="wind-chart"></div></section>
-      </div>
-      <section class="card records-card">
-        <div class="section-head"><div class="title-with-icon"><span class="blue-text">${icon("database")}</span><h2>Registros no período</h2></div></div>
-        <div class="table-scroll"><table><caption class="sr-only">Registros meteorológicos do período</caption><thead><tr><th>Data</th><th>Temperatura</th><th>Umidade</th><th>Precipitação</th><th>Vento</th><th>Origem</th></tr></thead><tbody id="history-rows"><tr><td colspan="6" class="empty-cell">Carregando…</td></tr></tbody></table></div>
-      </section>
+    <section class="card chart-card primary-history-chart">
+      <div class="section-head"><div class="title-with-icon"><span class="title-icon blue-text">${icon("chart")}</span><div><h2 id="history-chart-title">Histórico de temperatura</h2><small id="history-chart-subtitle">Carregando período…</small></div></div>${tabs("chart-range")}</div>
+      <div class="chart-canvas" id="history-chart-canvas"><div class="chart-empty">Carregando leituras…</div></div>
+    </section>
+    <div class="history-insights">
+      <section class="card mini-chart-card"><div class="title-with-icon">${meteocon("humidity", "mini-weather-icon")}<div><h3>Umidade relativa</h3><small>Últimas 24 horas</small></div></div><div class="chart-canvas small" id="humidity-chart"></div></section>
+      <section class="card mini-chart-card"><div class="title-with-icon">${meteocon("rain", "mini-weather-icon")}<div><h3>Precipitação</h3><small>Últimas 24 horas</small></div></div><div class="chart-canvas small" id="rain-chart"></div></section>
+      <section class="card mini-chart-card"><div class="title-with-icon">${meteocon("wind", "mini-weather-icon")}<div><h3>Velocidade do vento</h3><small>Últimas 24 horas</small></div></div><div class="chart-canvas small" id="wind-chart"></div></section>
+      <section class="card summary-card"><div class="card-title"><div><h2>Resumo do período</h2><small id="summary-period">—</small></div></div><div id="summary-rows" class="summary-rows"><p class="muted">Aguardando leituras…</p></div></section>
     </div>
-    <aside class="history-aside">
-      <section class="card summary-card"><div class="card-title">${icon("calendar")}<div><h2>Resumo do período</h2><small id="summary-period">—</small></div></div><div id="summary-rows" class="summary-rows"><p class="muted">Aguardando leituras…</p></div></section>
+    <div class="history-support">
       <section class="card selected-period"><div class="card-title">${icon("clock")}<h2>Período selecionado</h2></div><dl><div><dt>Início</dt><dd id="period-start">—</dd></div><div><dt>Fim</dt><dd id="period-end">—</dd></div><div><dt id="period-count-label">Registros do dia</dt><dd id="period-total">—</dd></div><div><dt>Origem dos dados</dt><dd id="period-source">—</dd></div></dl></section>
       <div class="attribution-card"><div>${icon("file")}<p id="history-data-note">Os dados exibidos vêm da Open-Meteo e são armazenados no MySQL conforme o projeto APS 2026/2.</p></div></div>
-    </aside>
+    </div>
+    <section class="card records-card">
+      <div class="section-head"><div class="title-with-icon"><span class="blue-text">${icon("database")}</span><h2>Registros no período</h2></div></div>
+      <div class="table-scroll"><table><caption class="sr-only">Registros meteorológicos do período</caption><thead><tr><th>Data</th><th>Temperatura</th><th>Umidade</th><th>Precipitação</th><th>Vento</th><th>Origem</th></tr></thead><tbody id="history-rows"><tr><td colspan="6" class="empty-cell">Carregando…</td></tr></tbody></table></div>
+    </section>
   </div>`;
 }
 

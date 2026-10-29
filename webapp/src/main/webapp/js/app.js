@@ -1,8 +1,8 @@
 import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js?v=20261028-6";
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
-import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261028-3";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261028-10";
+import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-1";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-1";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-2";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -710,23 +710,21 @@ function renderSummary(readings) {
     rows.innerHTML = '<p class="muted">Não há temperaturas válidas neste período.</p>';
     return;
   }
-  const average = values.reduce((sum, value) => sum + value, 0) / values.length;
-  const minimum = Math.min(...values);
-  const maximum = Math.max(...values);
-  const variation = values.at(-1) - values[0];
-  const minReading = readings.find(reading => reading.temperatura != null && Number(reading.temperatura) === minimum);
-  const maxReading = readings.find(reading => reading.temperatura != null && Number(reading.temperatura) === maximum);
+  const average = list => list.length ? list.reduce((sum, value) => sum + value, 0) / list.length : null;
+  const humidity = numericValues(readings, "umidadeRelativa");
+  const precipitation = numericValues(readings, "precipitacao");
+  const wind = numericValues(readings, "velocidadeVento");
   rows.innerHTML = `
-    <div class="summary-row"><span class="icon-disc red">♨</span><span>Temperatura média</span><strong>${unit(average, "°C")}</strong></div>
-    <div class="summary-row"><span class="icon-disc blue">↓</span><span>Temperatura mínima</span><strong class="summary-value">${unit(minimum, "°C")}<small>${readingMoment(minReading)}</small></strong></div>
-    <div class="summary-row"><span class="icon-disc red">↑</span><span>Temperatura máxima</span><strong class="summary-value">${unit(maximum, "°C")}<small>${readingMoment(maxReading)}</small></strong></div>
-    <div class="summary-row"><span class="icon-disc teal">↗</span><span>Variação no período</span><strong class="${variation >= 0 ? "positive" : "negative"}">${variation >= 0 ? "+" : ""}${unit(variation, "°C")}</strong></div>`;
+    <div class="summary-row"><span>Temperatura média</span><strong>${unit(average(values), "°C")}</strong></div>
+    <div class="summary-row"><span>Umidade média</span><strong>${unit(average(humidity), "%", 0)}</strong></div>
+    <div class="summary-row"><span>Precipitação total</span><strong>${unit(precipitation.length ? precipitation.reduce((sum, value) => sum + value, 0) : null, "mm")}</strong></div>
+    <div class="summary-row"><span>Velocidade média do vento</span><strong>${unit(average(wind), "km/h")}</strong></div>`;
 }
 
 function redrawHistoryCharts() {
   const variable = document.querySelector("#history-variable").value;
   const settings = variables[variable];
-  text("#history-chart-title", `Evolução da ${settings.title}`);
+  text("#history-chart-title", `Histórico de ${settings.title}`);
   const domain = { start: historyStart, end: historyEnd, daily: isDailyPeriod(historyStart, historyEnd) };
   const periodSubtitle = (summary, field) => {
     const measure = field === "precipitacao" ? "Maior valor" : "Média";
