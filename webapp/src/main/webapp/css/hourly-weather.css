@@ -38,9 +38,10 @@
   .app-layout:has(.overview-grid) .overview-right { gap: clamp(12px, 1.6vh, 20px); }
   .app-layout:has(.overview-grid) .weather-hero { height: clamp(178px, 20.6vh, 222px); }
   .app-layout:has(.overview-grid) .metric-card { height: clamp(158px, 20.5vh, 221px); }
-  .app-layout:has(.overview-grid) .home-chart.hourly-weather-chart { display: flex; flex: none; flex-direction: column; height: clamp(310px, 39vh, 420px); min-height: 0; }
-  .app-layout:has(.overview-grid) .hourly-weather-chart-canvas,
-  .app-layout:has(.overview-grid) .home-daily-forecast { flex: 1 1 0; height: auto; min-height: 0; }
+  .app-layout:has(.overview-grid) .home-chart.hourly-weather-chart { display: block; flex: none; height: 368px; min-height: 0; }
+  .app-layout:has(.overview-grid) .home-chart.hourly-weather-chart.daily-forecast-mode { height: 318px; }
+  .app-layout:has(.overview-grid) .hourly-weather-chart-canvas { flex: none; height: 280px; min-height: 0; }
+  .app-layout:has(.overview-grid) .home-daily-forecast { flex: none; height: 230px; min-height: 0; }
   .app-layout:has(.overview-grid) .forecast-card { flex: none; height: 431px; min-height: 0; }
   .app-layout:has(.overview-grid) .recent-card { flex: 1 1 0; height: auto; min-height: 0; }
 }
@@ -61,7 +62,7 @@ html[data-theme="dark"] .hourly-weather-chart-canvas { scrollbar-color: #52b8f4 
 .home-daily-forecast-scroll::-webkit-scrollbar-track { margin: 0 14px; background: transparent; }
 .home-daily-forecast-scroll::-webkit-scrollbar-thumb { min-width: 48px; border: 2px solid transparent; border-radius: 999px; background: linear-gradient(90deg, #1595e8, #45b7fb); background-clip: padding-box; }
 .home-daily-forecast-scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(90deg, #087ed1, #22a7f5); background-clip: padding-box; }
-.daily-forecast-item { display: grid; min-height: 198px; align-content: start; justify-items: center; gap: 7px; padding: 6px 8px; scroll-snap-align: start; text-align: center; }
+.daily-forecast-item { display: grid; min-height: 198px; align-content: center; justify-items: center; gap: 7px; padding: 6px 8px; scroll-snap-align: start; text-align: center; }
 .daily-forecast-item time { color: #55799d; font-size: .82rem; font-weight: 600; }
 .daily-forecast-item time small { display: block; margin-top: 3px; color: #91a5bc; font-size: .71rem; font-weight: 400; }
 .forecast-meteocon { width: 48px; height: 48px; object-fit: contain; }
