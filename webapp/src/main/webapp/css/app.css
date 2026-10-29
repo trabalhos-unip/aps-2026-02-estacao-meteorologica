@@ -188,6 +188,20 @@ html,body{background:#f1f2ef}
 body:has(.overview-grid){overflow-x:hidden;overflow-y:auto}
 .app-layout:has(.overview-grid) .workspace{overflow:visible}
 
+/* Sidebar: comportamento idêntico em qualquer altura de conteúdo. */
+.nav-link.active[href="/"] .icon{fill:none}
+.sidebar-collapse-toggle{top:28px;right:18px;left:auto}
+.sidebar-collapsed .sidebar-collapse-toggle{top:47px;right:auto;left:43px}
+.sidebar-collapsed .sidebar-location-input{width:46px;min-height:45px;margin-bottom:18px;padding:0;justify-content:center;border:0;border-radius:15px;background:transparent;box-shadow:none;color:#556276}
+.sidebar-collapsed .sidebar-location-input:hover,.sidebar-collapsed .sidebar-location-input:focus-visible{background:#f6f8fa;border:0;box-shadow:none}
+.sidebar-collapsed .sidebar-foot{position:absolute;right:0;bottom:18px;left:0;padding:0}
+.sidebar-collapsed .collector-card{margin:0;min-height:36px}
+.sidebar-collapsed .collector-title .status-dot{width:12px;height:12px}
+.sidebar-collapsed .collector-title .status-dot.success{animation:sidebar-live-pulse 1.7s ease-out infinite}
+@keyframes sidebar-live-pulse{0%{box-shadow:0 0 0 0 #11c47666}70%{box-shadow:0 0 0 7px #11c47600}100%{box-shadow:0 0 0 0 #11c47600}}
+@media(prefers-reduced-motion:reduce){.sidebar-collapsed .collector-title .status-dot.success{animation:none}}
+@media(max-width:1250px){.sidebar-collapsed .sidebar-collapse-toggle{left:36px}}
+
 /* Histórico: um único conjunto de filtros, compacto e com leitura de pills. */
 #history-filter.history-filter-bar,.filter-bar#history-filter{grid-template-columns:minmax(300px,480px) minmax(210px,300px);justify-content:start;gap:16px;min-height:0;height:auto;padding:15px 20px}
 #history-filter .field{gap:7px}

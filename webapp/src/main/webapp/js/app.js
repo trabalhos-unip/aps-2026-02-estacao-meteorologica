@@ -760,11 +760,19 @@ async function refreshHome() {
   await renderForecast();
   await fetchLatest();
   try {
-    recentReadings = await activeReadingsApi.buscarUltimas(100);
+    const inicioDoDia = new Date();
+    inicioDoDia.setHours(0, 0, 0, 0);
+    const fimDoDia = new Date(inicioDoDia);
+    fimDoDia.setHours(23, 59, 59, 999);
+    const [leiturasRecentes, leiturasDoDia] = await Promise.all([
+      activeReadingsApi.buscarUltimas(100),
+      activeReadingsApi.buscarPorPeriodo(apiDate(inicioDoDia), apiDate(fimDoDia)).catch(() => []),
+    ]);
+    recentReadings = leiturasRecentes;
     const lastValid = [...recentReadings].reverse().find(reading => reading.temperatura != null || reading.umidadeRelativa != null || reading.precipitacao != null || reading.velocidadeVento != null);
     renderHomeReading(lastValid || latestReading, recentReadings);
     renderRecentReadings();
-    renderHomeInsights();
+    renderHomeInsights(leiturasDoDia.length ? leiturasDoDia : recentReadings);
   } catch (error) {
     recentReadings = [];
     renderHomeReading(latestReading, []);
@@ -774,7 +782,7 @@ async function refreshHome() {
   await renderHomeChart(homeChartRange);
 }
 
-function renderHomeInsights() {
+function renderHomeInsights(readings = recentReadings) {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   const end = new Date(start);
@@ -786,7 +794,7 @@ function renderHomeInsights() {
     ["#home-wind-chart", "#home-wind-subtitle", "velocidadeVento", "km/h", "#18b979", "Vento registrado hoje"],
   ];
   charts.forEach(([selector, subtitle, field, suffix, color, description]) => {
-    const summary = drawTemporalChart(selector, recentReadings, field, suffix, color, domain);
+    const summary = drawTemporalChart(selector, readings, field, suffix, color, domain);
     const period = summary?.available ? `${summary.available} horas medidas hoje` : "Sem leituras medidas hoje";
     text(subtitle, `${description} · ${period}`);
   });
