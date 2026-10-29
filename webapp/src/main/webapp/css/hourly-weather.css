@@ -27,7 +27,7 @@ html[data-theme="dark"] .hourly-grid-line { stroke: #294763; }
 
 /* Faixa de previsão diária navegável no mesmo cartão principal. */
 .home-daily-forecast { height: 230px; margin-top: 8px; }
-.home-daily-forecast-scroll { display: grid; grid-template-columns: .5fr repeat(5, minmax(0, 1fr)) .5fr; grid-auto-flow: column; grid-auto-columns: minmax(142px, calc((100% - 48px) / 7)); gap: 8px; height: 100%; overflow-x: auto; overscroll-behavior-inline: contain; padding: 0 0 10px; scroll-behavior: smooth; scroll-snap-type: x mandatory; scrollbar-width: thin; scrollbar-color: #9bd9fb #eef8fe; }
+.home-daily-forecast-scroll { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-auto-flow: column; grid-auto-columns: minmax(142px, calc((100% - 48px) / 7)); gap: 8px; height: 100%; overflow-x: auto; overscroll-behavior-inline: contain; padding: 0 0 10px; scroll-behavior: smooth; scroll-snap-type: x mandatory; scrollbar-width: thin; scrollbar-color: #9bd9fb #eef8fe; }
 .home-daily-forecast-scroll::-webkit-scrollbar { height: 8px; }
 .home-daily-forecast-scroll::-webkit-scrollbar-track { background: #eef8fe; border-radius: 999px; }
 .home-daily-forecast-scroll::-webkit-scrollbar-thumb { background: #8cd4fb; border: 2px solid #eef8fe; border-radius: 999px; }
