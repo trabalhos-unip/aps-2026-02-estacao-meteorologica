@@ -5,23 +5,21 @@
 .home-chart-toolbar small { color: #7187a0; font-size: .82rem; }
 .home-temporal-canvas { height: 280px !important; margin-top: 12px !important; }
 .hourly-weather-points { position: relative; z-index: 2; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(116px, 1fr); min-width: 930px; height: 100%; }
-.hourly-weather-point { display: grid; min-width: 0; grid-template-rows: 58px 32px minmax(90px, 1fr) 22px 26px; align-items: center; justify-items: center; gap: 3px; padding: 0 8px; color: #7187a0; text-align: center; }
-.hourly-weather-point time { grid-row: 4; color: #607a99; font-size: .93rem; font-variant-numeric: tabular-nums; }
-.hourly-weather-icon { display: grid; grid-row: 1; place-items: center; width: 68px; height: 56px; }
+.hourly-weather-point { display: grid; min-width: 0; grid-template-rows: 22px 58px 32px minmax(90px, 1fr) 26px; align-items: center; justify-items: center; gap: 3px; padding: 0 8px; color: #7187a0; text-align: center; }
+.hourly-weather-point time { grid-row: 1; color: #607a99; font-size: .93rem; font-variant-numeric: tabular-nums; }
+.hourly-weather-icon { display: grid; grid-row: 2; place-items: center; width: 68px; height: 56px; }
 .hourly-weather-symbol { width: 68px; height: 56px; object-fit: contain; }
-.hourly-weather-point strong { grid-row: 2; color: #082a59; font-size: 1.48rem; line-height: 1; letter-spacing: -.045em; }
+.hourly-weather-point strong { grid-row: 3; color: #082a59; font-size: 1.48rem; line-height: 1; letter-spacing: -.045em; }
 .hourly-rain-chance { display: inline-flex; grid-row: 5; align-items: center; gap: 7px; color: #5d82ae; font-size: .97rem; font-weight: 500; }
 .hourly-rain-chance .icon { width: 21px; height: 21px; color: #22a9f1; fill: #22a9f1; }
-.hourly-temperature-line { position: absolute; z-index: 1; top: 0; left: 0; width: max(100%, 930px); height: 100%; overflow: visible; pointer-events: none; }
-.hourly-temperature-dots { position: absolute; z-index: 3; top: 0; left: 0; width: max(100%, 930px); height: 100%; pointer-events: none; }
-.hourly-temperature-dots i { position: absolute; width: 14px; height: 14px; border: 2px solid #fff; border-radius: 50%; background: #1299ed; box-shadow: 0 1px 4px #128fe847; transform: translate(-50%, -50%); }
+.hourly-rain-probability-line { position: absolute; z-index: 1; top: 0; left: 0; width: max(100%, 930px); height: 100%; overflow: visible; pointer-events: none; }
+.hourly-rain-probability-dots { position: absolute; z-index: 3; top: 0; left: 0; width: max(100%, 930px); height: 100%; pointer-events: none; }
+.hourly-rain-probability-dots i { position: absolute; width: 14px; height: 14px; border: 2px solid #fff; border-radius: 50%; background: #1299ed; box-shadow: 0 1px 4px #128fe847; transform: translate(-50%, -50%); }
 .hourly-grid-line { stroke: #dceefa; stroke-width: .45; vector-effect: non-scaling-stroke; stroke-dasharray: 4 4; }
 .hourly-grid-line-vertical { stroke: #d9ebf8; }
-.hourly-temperature-area { fill: url(#hourly-temperature-fill); }
-.hourly-temperature-line polyline { fill: none; stroke: #1299ed; stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; }
-.hourly-temperature-line circle { fill: #1299ed; stroke: #fff; stroke-width: 1.1; vector-effect: non-scaling-stroke; }
+.hourly-rain-probability-area { fill: url(#hourly-rain-probability-fill); }
+.hourly-rain-probability-line polyline { fill: none; stroke: #1299ed; stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; }
 @media (max-width: 760px) { .hourly-weather-chart { height: auto; } .hourly-weather-chart-canvas { height: 280px; } }
 html[data-theme="dark"] .hourly-weather-point strong { color: #edf7ff; }
 html[data-theme="dark"] .hourly-weather-point time { color: #a6bbd0; }
 html[data-theme="dark"] .hourly-grid-line { stroke: #294763; }
-html[data-theme="dark"] .hourly-temperature-line circle { stroke: #0f2238; }
