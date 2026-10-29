@@ -31,6 +31,10 @@ function metricCard(label, asset, id, suffix, detailId) {
   </article>`;
 }
 
+function miniSeriesLegend(id) {
+  return `<div class="mini-series-legend" id="${id}" aria-label="Legenda das séries" hidden><span class="measured"><i></i>Medido</span><span class="forecast"><i></i>Previsão</span></div>`;
+}
+
 function forecastRows() {
   return Array.from({ length: 5 }, (_, index) => {
     const date = new Date();
@@ -90,9 +94,9 @@ export function historyPage() {
         <div class="chart-canvas" id="history-chart-canvas"><div class="chart-empty">Carregando leituras…</div></div>
       </section>
       <div class="history-insights">
-        <section class="card mini-chart-card"><div class="title-with-icon">${meteocon("humidity", "mini-weather-icon")}<div><h3>Umidade relativa</h3><small>Últimas 24 horas</small></div></div><div class="chart-canvas small" id="humidity-chart"></div></section>
-        <section class="card mini-chart-card"><div class="title-with-icon">${meteocon("rain", "mini-weather-icon")}<div><h3>Precipitação</h3><small>Últimas 24 horas</small></div></div><div class="chart-canvas small" id="rain-chart"></div></section>
-        <section class="card mini-chart-card"><div class="title-with-icon">${meteocon("wind", "mini-weather-icon")}<div><h3>Velocidade do vento</h3><small>Últimas 24 horas</small></div></div><div class="chart-canvas small" id="wind-chart"></div></section>
+        <section class="card mini-chart-card"><div class="title-with-icon">${meteocon("humidity", "mini-weather-icon")}<div><h3>Umidade relativa</h3><small>Carregando…</small></div>${miniSeriesLegend("humidity-series-legend")}</div><div class="chart-canvas small" id="humidity-chart"></div></section>
+        <section class="card mini-chart-card"><div class="title-with-icon">${meteocon("rain", "mini-weather-icon")}<div><h3>Precipitação</h3><small>Carregando…</small></div>${miniSeriesLegend("rain-series-legend")}</div><div class="chart-canvas small" id="rain-chart"></div></section>
+        <section class="card mini-chart-card"><div class="title-with-icon">${meteocon("wind", "mini-weather-icon")}<div><h3>Velocidade do vento</h3><small>Carregando…</small></div>${miniSeriesLegend("wind-series-legend")}</div><div class="chart-canvas small" id="wind-chart"></div></section>
       </div>
     </div>
     <aside class="history-side">

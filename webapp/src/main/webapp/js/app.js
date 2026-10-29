@@ -2,7 +2,7 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-6";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-12";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-13";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-2";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -835,22 +835,22 @@ function redrawHistoryCharts() {
   const domain = { start: historyStart, end: historyEnd, daily: isDailyPeriod(historyStart, historyEnd) };
   const periodSubtitle = (summary, field) => {
     const measure = field === "precipitacao" ? "Maior valor" : "Média";
-    return domain.daily
-      ? `${measure} por dia · ${summary.available} de ${summary.total} dias com dados`
-      : `${measure} por hora · ${summary.available} de 24 horas medidas${summary.first ? ` · ${summary.first}–${summary.last}` : ""}${summary.forecast ? ` · previsão para 24 horas` : ""}`;
+    return `${measure} por ${domain.daily ? "dia" : "hora"}`;
   };
   const summary = drawTemporalChart("#history-chart-canvas", historyReadings, variable, settings.suffix, settings.color, domain, historyForecasts);
   text("#history-chart-subtitle", periodSubtitle(summary, variable));
   const legend = document.querySelector("#history-series-legend");
   if (legend) legend.hidden = summary.forecast === 0;
   const miniCharts = [
-    ["#humidity-chart", "umidadeRelativa", "%", "#269ceb"],
-    ["#rain-chart", "precipitacao", "mm", "#6a95ed"],
-    ["#wind-chart", "velocidadeVento", "km/h", "#18b979"],
+    ["#humidity-chart", "umidadeRelativa", "%", "#269ceb", "#humidity-series-legend"],
+    ["#rain-chart", "precipitacao", "mm", "#6a95ed", "#rain-series-legend"],
+    ["#wind-chart", "velocidadeVento", "km/h", "#18b979", "#wind-series-legend"],
   ];
-  miniCharts.forEach(([selector, field, suffix, color], index) => {
+  miniCharts.forEach(([selector, field, suffix, color, legendSelector], index) => {
     const miniSummary = drawTemporalChart(selector, historyReadings, field, suffix, color, domain, historyForecasts);
     document.querySelectorAll(".mini-chart-card .title-with-icon small")[index].textContent = periodSubtitle(miniSummary, field);
+    const miniLegend = document.querySelector(legendSelector);
+    if (miniLegend) miniLegend.hidden = miniSummary.forecast === 0;
   });
 }
 
