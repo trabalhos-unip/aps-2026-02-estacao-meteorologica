@@ -178,6 +178,12 @@ html,body{background:#f1f2ef}
 @media(max-width:1050px){.home-insights{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:760px){.home-insights{grid-template-columns:1fr}.home-insight-card{min-height:230px}.home-insight-card .chart-canvas.small{height:150px}}
 
+/* Sidebar: Heroicons outline e cidade destacada antes da navegação. */
+.sidebar-location-input{margin-bottom:18px}
+.sidebar-location-input .icon{width:19px;height:19px;stroke-width:1.5;color:#2d557f}
+.sidebar-section-label{margin-top:0}
+.nav-link .icon{stroke-width:1.5}
+
 /* Histórico: um único conjunto de filtros, compacto e com leitura de pills. */
 #history-filter.history-filter-bar,.filter-bar#history-filter{grid-template-columns:minmax(300px,480px) minmax(210px,300px);justify-content:start;gap:16px;min-height:0;height:auto;padding:15px 20px}
 #history-filter .field{gap:7px}
