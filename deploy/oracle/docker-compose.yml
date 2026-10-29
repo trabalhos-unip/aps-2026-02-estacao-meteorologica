@@ -8,6 +8,7 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    command: ["--innodb-buffer-pool-size=256M", "--max-connections=30"]
     volumes:
       - mysql-data:/var/lib/mysql
       - ../../database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro

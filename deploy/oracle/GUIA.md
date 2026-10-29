@@ -14,13 +14,15 @@ Este diretório executa a aplicação completa em uma VM Ubuntu: MySQL persisten
    - nome: `estacao-meteorologica`;
    - imagem: Ubuntu 24.04 Minimal;
    - shape: `VM.Standard.A1.Flex` (Ampere ARM), dentro do limite Always Free;
-   - OCPU: 2; memória: 12 GB;
+   - OCPU: 1; memória: 4 GB;
    - rede: criar uma VCN nova;
    - SSH key: cole uma chave pública sua e guarde a privada fora do Git.
 5. Crie a instância e anote o IPv4 público.
 
-Se o shape A1 estiver sem capacidade, tente outra região/availability domain ou
-use uma VM AMD Always Free menor. Não habilite recursos que apareçam como pagos.
+Essa configuração é suficiente para a demonstração: o webapp usa no máximo
+512 MB, o collector 384 MB e o MySQL foi limitado a 256 MB de buffer. Se o
+shape A1 estiver sem capacidade, tente outra região/availability domain. Não
+habilite recursos que apareçam como pagos.
 
 ## 2. Liberar o acesso HTTP
 
