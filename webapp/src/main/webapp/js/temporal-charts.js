@@ -102,7 +102,7 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
   // Horas/dias já medidos pertencem exclusivamente à série azul. A previsão
   // começa no primeiro intervalo ainda não medido, sem voltar sobre o histórico.
   const projected = slots.map((slot, index) => ({ ...slot, index, value: forecastValues.get(slot.key), source: "forecast" }))
-    .filter(slot => slot.value !== undefined && index > lastMeasuredIndex);
+    .filter(slot => slot.value !== undefined && slot.index > lastMeasuredIndex);
   const plotted = [...available, ...projected].sort((a, b) => a.index - b.index);
   const total = daily ? slots.length : 24;
   const summary = { available: available.length, forecast: projected.length, total, daily,
