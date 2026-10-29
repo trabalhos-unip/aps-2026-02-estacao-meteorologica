@@ -2,7 +2,7 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-6";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-13";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-14";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-2";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -626,10 +626,16 @@ function dataDaPrevisao(item) {
   return item.data ? parseDate(`${item.data}T12:00:00`) : item.day instanceof Date ? item.day : null;
 }
 
+function nomeDoDia(data) {
+  if (!data) return "—";
+  const day = new Intl.DateTimeFormat("pt-BR", { weekday: "long" }).format(data);
+  return `${day.charAt(0).toLocaleUpperCase("pt-BR")}${day.slice(1)}`;
+}
+
 function rotuloDaPrevisao(item, indice = 0) {
   const data = dataDaPrevisao(item);
   if (!data) return "—";
-  return indice === 0 ? "Hoje" : new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(data).replace(".", "");
+  return indice === 0 ? "Hoje" : nomeDoDia(data);
 }
 
 function detalhesChuvaDaPrevisao(item) {
@@ -808,7 +814,7 @@ function renderHistoricalWeather() {
   }
   container.innerHTML = historicalDailyWeather.slice(-5).reverse().map(item => {
     const data = dataDaPrevisao(item);
-    const label = data ? new Intl.DateTimeFormat("pt-BR", { weekday: "long" }).format(data) : "—";
+    const label = nomeDoDia(data);
     const dataCurta = data ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(data) : "";
     const chuva = Number(item.precipitacaoTotal);
     const asset = iconeDoClimaHorario(item);
@@ -833,10 +839,12 @@ function redrawHistoryCharts() {
   const settings = variables[variable];
   text("#history-chart-title", `Histórico de ${settings.title}`);
   const domain = { start: historyStart, end: historyEnd, daily: isDailyPeriod(historyStart, historyEnd) };
-  const periodSubtitle = (summary, field) => {
-    const measure = field === "precipitacao" ? "Maior valor" : "Média";
-    return `${measure} por ${domain.daily ? "dia" : "hora"}`;
-  };
+  const periodSubtitle = (_summary, field) => ({
+    temperatura: "Variação da temperatura",
+    umidadeRelativa: "Umidade relativa do ar",
+    precipitacao: "Chuva registrada no período",
+    velocidadeVento: "Velocidade do vento no período",
+  })[field] || "Condições registradas no período";
   const summary = drawTemporalChart("#history-chart-canvas", historyReadings, variable, settings.suffix, settings.color, domain, historyForecasts);
   text("#history-chart-subtitle", periodSubtitle(summary, variable));
   const legend = document.querySelector("#history-series-legend");

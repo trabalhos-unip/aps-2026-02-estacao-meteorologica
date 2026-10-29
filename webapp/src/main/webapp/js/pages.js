@@ -39,7 +39,8 @@ function forecastRows() {
   return Array.from({ length: 5 }, (_, index) => {
     const date = new Date();
     date.setDate(date.getDate() + index);
-    const label = index === 0 ? "Hoje" : new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(date).replace(".", "");
+    const weekday = new Intl.DateTimeFormat("pt-BR", { weekday: "long" }).format(date);
+    const label = index === 0 ? "Hoje" : `${weekday.charAt(0).toLocaleUpperCase("pt-BR")}${weekday.slice(1)}`;
     const compactDate = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(date);
     return `<div class="forecast-row"><span><strong>${label}</strong><small>${compactDate}</small></span><span class="forecast-weather">${meteocon("overcast-day", "forecast-meteocon")}</span><span class="forecast-rain">—</span><span class="forecast-temperatures"><strong>—°</strong><small>—°</small></span></div>`;
   }).join("");
