@@ -27,7 +27,7 @@ function forecastRows() {
     date.setDate(date.getDate() + index);
     const label = index === 0 ? "Hoje" : new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(date).replace(".", "");
     const compactDate = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(date);
-    return `<div class="forecast-row"><span><strong>${label}</strong><small>${compactDate}</small></span><span class="forecast-weather">${icon("cloud")}</span><span>—°</span><span>—°</span><span class="forecast-rain">— <small>(— mm)</small></span></div>`;
+    return `<div class="forecast-row"><span><strong>${label}</strong><small>${compactDate}</small></span><span class="forecast-weather">${icon("cloud")}</span><span>—°</span><span>—°</span><span class="forecast-rain">—</span></div>`;
   }).join("");
 }
 
@@ -48,9 +48,7 @@ export function overviewPage() {
       <div class="section-head home-chart-toolbar"><small id="hourly-weather-subtitle">Hoje · previsão por hora da Open-Meteo</small>${tabs("home-chart-range")}</div>
       <div class="hourly-weather-chart-canvas" id="hourly-weather-rows" aria-label="Carregando previsão por hora"><div class="chart-empty">Carregando previsão por hora…</div></div>
       <div class="home-daily-forecast" id="home-daily-forecast" hidden aria-label="Carregando previsão dos próximos dias">
-        <button class="forecast-scroll-button previous" type="button" data-home-forecast-step="-1" aria-label="Ver dias anteriores">${icon("chevron")}</button>
         <div class="home-daily-forecast-scroll" id="home-daily-forecast-scroll"></div>
-        <button class="forecast-scroll-button next" type="button" data-home-forecast-step="1" aria-label="Ver próximos dias">${icon("chevron")}</button>
       </div>
     </section></div><div class="overview-right">
     <aside class="card forecast-card" aria-labelledby="forecast-title">

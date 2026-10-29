@@ -410,21 +410,17 @@ function renderHomeReading(reading, recent) {
   text("#current-date", `${isPreviousValid ? "Última leitura válida: " : ""}${dateTime(reading.dataHoraColeta)}`);
   text("#metric-temperature", number(reading.temperatura));
   text("#metric-humidity", number(reading.umidadeRelativa, 0));
-  // A chance e o acumulado previstos pertencem ao resumo horário, não à medição atual.
-  // O cartão é preenchido assim que a previsão por hora for carregada abaixo.
-  text("#metric-rain-chance", "—");
+  // O cartão de chuva conserva a última previsão válida enquanto a nova consulta carrega.
   text("#metric-wind", number(reading.velocidadeVento));
   const first = recent.at(0);
   const temperatures = numericValues(recent, "temperatura");
   const humidity = numericValues(recent, "umidadeRelativa");
   text("#temperature-detail", temperatures.length ? `Mín. ${unit(Math.min(...temperatures), "°C")} · Máx. ${unit(Math.max(...temperatures), "°C")}` : "Sem histórico comparável");
   text("#humidity-detail", humidity.length ? `Mín. ${number(Math.min(...humidity), 0)}% · Máx. ${number(Math.max(...humidity), 0)}%` : "Sem histórico comparável");
-  text("#rain-detail", "Precipitação prevista: —");
   text("#wind-detail", "Velocidade na última leitura");
   const delta = first && first.temperatura !== null && reading.temperatura !== null ? Number(reading.temperatura) - Number(first.temperatura) : null;
   text("#temperature-detail-trend", delta === null ? "Sem tendência disponível" : `${delta >= 0 ? "↗ +" : "↘ "}${number(delta)} °C nas últimas leituras`);
   text("#humidity-detail-trend", simulated() ? "Dados simulados" : "Dados da estação");
-  text("#rain-detail-trend", "Aguardando previsão por hora");
   text("#wind-detail-trend", simulated() ? "Dados simulados" : "Dados da estação");
 }
 
@@ -489,7 +485,6 @@ function desenharGraficoClimaHorario(previsoes, fonte) {
   if (!canvas) return;
   if (!previsoes.length) {
     canvas.innerHTML = '<div class="chart-empty">A previsão por hora ainda não está disponível.</div>';
-    atualizarCartaoChuva([]);
     return;
   }
   text("#hourly-weather-subtitle", fonte);
@@ -531,7 +526,6 @@ async function renderGraficoClimaHorario() {
     const canvas = document.querySelector("#hourly-weather-rows");
     if (canvas) canvas.innerHTML = `<div class="chart-empty">${error.message}</div>`;
     text("#hourly-weather-subtitle", "Previsão horária indisponível");
-    atualizarCartaoChuva([]);
   }
 }
 
@@ -610,7 +604,7 @@ function renderPrevisaoDiariaNoPainel(previsoes, limite) {
     const data = dataDaPrevisao(item);
     const { chance, mm } = detalhesChuvaDaPrevisao(item);
     const tipo = iconeDoClimaHorario(item);
-    return `<article class="daily-forecast-item"><time>${rotuloDaPrevisao(item, indice)}<small>${data ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(data) : ""}</small></time>${simboloClimaAnimado(tipo)}<strong>${number(item.temperaturaMaxima, 0)}° <small>${number(item.temperaturaMinima, 0)}°</small></strong><span class="daily-forecast-rain">${icon("drop")}${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}<small>${Number.isFinite(mm) ? `(${number(mm)} mm)` : ""}</small></span></article>`;
+    return `<article class="daily-forecast-item"><time>${rotuloDaPrevisao(item, indice)}<small>${data ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(data) : ""}</small></time>${simboloClimaAnimado(tipo)}<strong>${number(item.temperaturaMaxima, 0)}° <small>${number(item.temperaturaMinima, 0)}°</small></strong><span class="daily-forecast-rain">${icon("drop")}${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span></article>`;
   }).join("");
 }
 
@@ -627,10 +621,10 @@ function renderDemoForecast() {
 
 function renderLinhaPrevisaoDiaria(item, indice) {
   const data = dataDaPrevisao(item);
-  const { chance, mm } = detalhesChuvaDaPrevisao(item);
+  const { chance } = detalhesChuvaDaPrevisao(item);
   const tipo = iconeDoClimaHorario(item);
   const dataCurta = data ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(data) : "";
-  return `<div class="forecast-row"><span><strong>${rotuloDaPrevisao(item, indice)}</strong><small>${dataCurta}</small></span><span class="forecast-weather">${simboloClimaAnimado(tipo)}</span><span>${number(item.temperaturaMaxima, 0)}°</span><span>${number(item.temperaturaMinima, 0)}°</span><span class="forecast-rain">${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}<small>${Number.isFinite(mm) ? `(${number(mm)} mm)` : ""}</small></span></div>`;
+  return `<div class="forecast-row"><span><strong>${rotuloDaPrevisao(item, indice)}</strong><small>${dataCurta}</small></span><span class="forecast-weather">${simboloClimaAnimado(tipo)}</span><span>${number(item.temperaturaMaxima, 0)}°</span><span>${number(item.temperaturaMinima, 0)}°</span><span class="forecast-rain">${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span></div>`;
 }
 
 async function renderForecast() {
@@ -679,11 +673,6 @@ async function initHome() {
     const button = event.target.closest("[data-range]");
     if (button) renderHomeChart(button.dataset.range);
   });
-  document.querySelectorAll("[data-home-forecast-step]").forEach(button => button.addEventListener("click", () => {
-    const scroller = document.querySelector("#home-daily-forecast-scroll");
-    if (!scroller) return;
-    scroller.scrollBy({ left: Number(button.dataset.homeForecastStep) * Math.max(260, scroller.clientWidth * .72), behavior: "smooth" });
-  }));
   await refreshHome();
 }
 
