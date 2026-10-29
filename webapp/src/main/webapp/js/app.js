@@ -2,8 +2,8 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261028-3";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261028-7";
-import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-1";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261028-8";
+import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-2";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
 const pages = { "/": overviewPage, "/historico": historyPage, "/simulacoes": simulationsPage, "/configuracoes": settingsPage };
@@ -603,12 +603,24 @@ function renderPrevisaoDiariaNoPainel(previsoes, limite) {
     return;
   }
   scroller.setAttribute("aria-label", `Previsão para os próximos ${Math.min(limite, previsoes.length)} dias`);
+  scroller.scrollLeft = 0;
   scroller.innerHTML = previsoes.slice(0, limite).map((item, indice) => {
     const data = dataDaPrevisao(item);
     const { chance, mm } = detalhesChuvaDaPrevisao(item);
     const tipo = iconeDoClimaHorario(item);
     return `<article class="daily-forecast-item"><time>${rotuloDaPrevisao(item, indice)}<small>${data ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(data) : ""}</small></time>${simboloClimaEstatico(tipo)}<strong>${number(item.temperaturaMaxima, 0)}° <small>${number(item.temperaturaMinima, 0)}°</small></strong><span class="daily-forecast-rain">${icon("drop")}${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span></article>`;
   }).join("");
+  requestAnimationFrame(atualizarNavegacaoPrevisaoDiaria);
+}
+
+function atualizarNavegacaoPrevisaoDiaria() {
+  const scroller = document.querySelector("#home-daily-forecast-scroll");
+  const anterior = document.querySelector("#daily-forecast-previous");
+  const proximo = document.querySelector("#daily-forecast-next");
+  if (!scroller || !anterior || !proximo) return;
+  const podeNavegar = scroller.scrollWidth > scroller.clientWidth + 1;
+  anterior.hidden = !podeNavegar || scroller.scrollLeft <= 1;
+  proximo.hidden = !podeNavegar || scroller.scrollLeft >= scroller.scrollWidth - scroller.clientWidth - 1;
 }
 
 function renderDemoForecast() {
@@ -646,7 +658,7 @@ async function renderForecast() {
   } catch (error) {
     text("#forecast-source", "Previsão ainda indisponível");
     text("#forecast-note", "Inicie o coletor para carregar os próximos dias.");
-    rows.innerHTML = `<div class="forecast-row"><span><strong>—</strong><small>sem dados</small></span><span>—</span><span>—</span><span>—</span><span class="forecast-rain">—</span></div>`;
+    rows.innerHTML = `<div class="forecast-row"><span><strong>—</strong><small>sem dados</small></span><span class="forecast-weather">—</span><span class="forecast-rain">—</span><span class="forecast-temperatures"><strong>—°</strong><small>—°</small></span></div>`;
   }
 }
 
@@ -676,6 +688,15 @@ async function initHome() {
     const button = event.target.closest("[data-range]");
     if (button) renderHomeChart(button.dataset.range);
   });
+  const previsaoDiaria = document.querySelector("#home-daily-forecast-scroll");
+  const moverPrevisao = direcao => {
+    if (!previsaoDiaria) return;
+    previsaoDiaria.scrollBy({ left: direcao * Math.max(previsaoDiaria.clientWidth * .82, 420), behavior: "smooth" });
+  };
+  document.querySelector("#daily-forecast-previous")?.addEventListener("click", () => moverPrevisao(-1));
+  document.querySelector("#daily-forecast-next")?.addEventListener("click", () => moverPrevisao(1));
+  previsaoDiaria?.addEventListener("scroll", atualizarNavegacaoPrevisaoDiaria, { passive: true });
+  window.addEventListener("resize", atualizarNavegacaoPrevisaoDiaria);
   await refreshHome();
 }
 

@@ -26,11 +26,15 @@ html[data-theme="dark"] .hourly-weather-point time { color: #a6bbd0; }
 html[data-theme="dark"] .hourly-grid-line { stroke: #294763; }
 
 /* Faixa de previsão diária navegável no mesmo cartão principal. */
-.home-daily-forecast { height: 230px; margin-top: 8px; }
-.home-daily-forecast-scroll { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(142px, calc((100% - 48px) / 7)); gap: 8px; height: 100%; overflow-x: auto; overscroll-behavior-inline: contain; padding: 0 0 10px; scroll-behavior: smooth; scroll-snap-type: x mandatory; scrollbar-width: thin; scrollbar-color: #9bd9fb #eef8fe; }
-.home-daily-forecast-scroll::-webkit-scrollbar { height: 8px; }
-.home-daily-forecast-scroll::-webkit-scrollbar-track { background: #eef8fe; border-radius: 999px; }
-.home-daily-forecast-scroll::-webkit-scrollbar-thumb { background: #8cd4fb; border: 2px solid #eef8fe; border-radius: 999px; }
+.home-daily-forecast { position: relative; height: 230px; margin-top: 8px; }
+.home-daily-forecast-scroll { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(142px, calc((100% - 48px) / 7)); gap: 8px; height: 100%; overflow-x: auto; overscroll-behavior-inline: contain; padding: 0; scroll-behavior: smooth; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.home-daily-forecast-scroll::-webkit-scrollbar { display: none; }
+.daily-forecast-nav { position: absolute; z-index: 3; top: 50%; display: grid; place-items: center; width: 30px; height: 46px; transform: translateY(-50%); border: 0; border-radius: 9px; background: #ffffffde; box-shadow: 0 2px 10px #1b5f8d20; color: #138fe8; }
+.daily-forecast-nav:hover { background: #fff; color: #057cd4; }
+.daily-forecast-nav .icon { width: 20px; height: 20px; }
+.daily-forecast-nav.previous { left: 2px; }
+.daily-forecast-nav.previous .icon { transform: rotate(180deg); }
+.daily-forecast-nav.next { right: 2px; }
 .daily-forecast-item { display: grid; min-height: 198px; align-content: start; justify-items: center; gap: 7px; padding: 6px 8px; scroll-snap-align: start; text-align: center; }
 .daily-forecast-item time { color: #55799d; font-size: .82rem; font-weight: 600; }
 .daily-forecast-item time small { display: block; margin-top: 3px; color: #91a5bc; font-size: .71rem; font-weight: 400; }

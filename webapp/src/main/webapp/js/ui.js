@@ -24,6 +24,7 @@ export const iconSprite = `
   <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 2h9l4 4v16H6zM15 2v5h4M9 12h7m-7 4h7"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12 5 5L20 6"/></symbol>
   <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
   <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-3-14-2 18"/></symbol>
   <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 9a8 8 0 1 0 1 6M20 3v6h-6"/></symbol>
 </svg>`;
