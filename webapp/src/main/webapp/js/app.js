@@ -2,7 +2,7 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-6";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-10";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-11";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-2";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -250,7 +250,7 @@ let homeChartRange = "24h";
 let homeChartRequest = 0;
 let recentReadings = [];
 let recentCurrentPage = 1;
-const RECENT_PAGE_SIZE = 5;
+const RECENT_PAGE_SIZE = 15;
 // A coleta permanece em 10 s conforme o enunciado; a interface não precisa
 // repetir todas as consultas nessa mesma frequência.
 const UI_REFRESH_INTERVAL_MS = 30_000;
@@ -484,15 +484,16 @@ function graficoDeProbabilidadeChuva(previsoes, largura) {
   const pontos = previsoes.map((item, index) => {
     const divisor = previsoes.length - 1;
     const x = previsoes.length === 1 ? 50 : index === 0 ? 25 / divisor : index === divisor ? 100 - 25 / divisor : index / divisor * 100;
-    // Percentuais usam a escala 0–100%, mas ficam dentro da área visual do cartão.
+    // Percentuais usam a escala 0–100%, concentrada logo abaixo dos ícones para
+    // o gráfico permanecer visualmente ligado às condições de cada hora.
     const chance = Math.min(100, Math.max(0, Number(item.probabilidadeChuva)));
-    const y = Number.isFinite(chance) ? 78 - chance * .32 : 78;
+    const y = Number.isFinite(chance) ? 64 - chance * .24 : 64;
     return { x, y };
   });
   const linha = pontos.map(({ x, y }) => `${x},${y}`).join(" ");
-  const area = `M ${pontos[0].x},84 L ${linha.replaceAll(" ", " L ")} L ${pontos.at(-1).x},84 Z`;
-  const linhasHorizontais = [46, 57, 68, 79].map(y => `<line class="hourly-grid-line" x1="0" x2="100" y1="${y}" y2="${y}" />`).join("");
-  const linhasVerticais = pontos.map(({ x }) => `<line class="hourly-grid-line hourly-grid-line-vertical" x1="${x}" x2="${x}" y1="43" y2="84" />`).join("");
+  const area = `M ${pontos[0].x},70 L ${linha.replaceAll(" ", " L ")} L ${pontos.at(-1).x},70 Z`;
+  const linhasHorizontais = [40, 48, 56, 64].map(y => `<line class="hourly-grid-line" x1="0" x2="100" y1="${y}" y2="${y}" />`).join("");
+  const linhasVerticais = pontos.map(({ x }) => `<line class="hourly-grid-line hourly-grid-line-vertical" x1="${x}" x2="${x}" y1="38" y2="70" />`).join("");
   return `<svg class="hourly-rain-probability-line" style="width:${largura}px" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="hourly-rain-probability-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#38a9f8" stop-opacity=".26"/><stop offset="1" stop-color="#38a9f8" stop-opacity=".015"/></linearGradient></defs>${linhasHorizontais}${linhasVerticais}<path class="hourly-rain-probability-area" d="${area}"/><polyline points="${linha}" /></svg><span class="hourly-rain-probability-dots" style="width:${largura}px" aria-hidden="true">${pontos.map(({ x, y }) => `<i style="left:${x}%;top:${y}%"></i>`).join("")}</span>`;
 }
 

@@ -38,11 +38,11 @@
   .app-layout:has(.overview-grid) .overview-right { gap: clamp(12px, 1.6vh, 20px); }
   .app-layout:has(.overview-grid) .weather-hero { height: clamp(178px, 20.6vh, 222px); }
   .app-layout:has(.overview-grid) .metric-card { height: clamp(158px, 20.5vh, 221px); }
-  .app-layout:has(.overview-grid) .home-chart.hourly-weather-chart { display: flex; flex: 1 1 0; flex-direction: column; height: auto; min-height: 0; }
+  .app-layout:has(.overview-grid) .home-chart.hourly-weather-chart { display: flex; flex: none; flex-direction: column; height: clamp(310px, 39vh, 420px); min-height: 0; }
   .app-layout:has(.overview-grid) .hourly-weather-chart-canvas,
   .app-layout:has(.overview-grid) .home-daily-forecast { flex: 1 1 0; height: auto; min-height: 0; }
-  .app-layout:has(.overview-grid) .forecast-card { flex: 1 1 0; height: auto; min-height: 330px; }
-  .app-layout:has(.overview-grid) .recent-card { flex: none; height: clamp(300px, 36vh, 380px); }
+  .app-layout:has(.overview-grid) .forecast-card { flex: none; height: 431px; min-height: 0; }
+  .app-layout:has(.overview-grid) .recent-card { flex: 1 1 0; height: auto; min-height: 0; }
 }
 @media (min-width: 761px) and (max-height: 850px) {
   .app-layout:has(.overview-grid) .forecast-card .card-title { height: 52px; }
