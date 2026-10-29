@@ -1149,8 +1149,10 @@ async function refreshCurrentPage() {
 }
 
 function refreshAfterCityChange() {
-  // A primeira tentativa é imediata; as demais acompanham a coleta e a sincronização da nova cidade.
-  [0, 2_000, 5_000, 10_000].forEach(delay => window.setTimeout(() => { void refreshCurrentPage(); }, delay));
+  // Atualiza somente os dados da tela aberta. Não recria o shell, nem repete
+  // renderizações em sequência após a troca de cidade; o ciclo normal cuida
+  // das leituras posteriores do coletor.
+  void refreshCurrentPage();
 }
 
 function startBackgroundRefresh() {
