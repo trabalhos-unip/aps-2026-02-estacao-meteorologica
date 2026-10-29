@@ -77,7 +77,7 @@ export function overviewPage() {
       <p class="forecast-note" id="forecast-note">Previsão ainda não integrada; valores indisponíveis.</p>
     </aside>
     <section class="card recent-card" aria-labelledby="recent-title">
-      <div class="section-head"><div class="title-with-icon">${icon("database")}<h2 id="recent-title">Últimas medições</h2></div><a class="text-link" href="/historico">Ver histórico ${icon("arrow")}</a></div>
+      <div class="section-head"><div class="title-with-icon">${icon("database")}<h2 id="recent-title">Últimas medições</h2></div><a class="secondary-button recent-see-all" href="/historico">Ver tudo ${icon("arrow")}</a></div>
       <div class="table-scroll"><table><caption class="sr-only">Últimas medições da estação</caption><thead><tr><th>Horário</th><th>Temp.</th><th>Umidade</th><th>Precip.</th><th>Vento</th></tr></thead><tbody id="recent-rows"><tr><td colspan="5" class="empty-cell">Carregando…</td></tr></tbody></table></div>
       <nav class="table-pagination recent-pagination" id="recent-pagination" aria-label="Paginação das últimas medições" hidden><button type="button" class="secondary-button" data-recent-page="previous">Anterior</button><span id="recent-page-label"></span><button type="button" class="secondary-button" data-recent-page="next">Próxima</button></nav>
     </section>

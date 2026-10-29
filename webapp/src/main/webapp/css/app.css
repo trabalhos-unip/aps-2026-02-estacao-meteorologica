@@ -202,6 +202,20 @@ body:has(.overview-grid){overflow-x:hidden;overflow-y:auto}
 @media(prefers-reduced-motion:reduce){.sidebar-collapsed .collector-title .status-dot.success{animation:none}}
 @media(max-width:1250px){.sidebar-collapsed .sidebar-collapse-toggle{left:36px}}
 
+/* Cidade participa da navegação; o estado da estação ocupa sempre o rodapé. */
+.primary-nav>.sidebar-location-input{height:45px;min-height:45px;margin:0;padding:0 13px;border-radius:15px;box-shadow:none}
+.primary-nav>.sidebar-location-input .icon{width:20px;height:20px}
+.sidebar-foot{position:absolute;right:17px;bottom:18px;left:17px;margin:0;padding:14px 0 0;border-top:1px solid #e8edf2}
+.collector-card{margin:0;padding:0;min-height:0}
+.sidebar-collapsed .sidebar-foot{right:14px;bottom:18px;left:14px;padding-top:0;border-top:0}
+.home-chart-toolbar #home-chart-range{border-radius:999px;padding:3px;background:#f1f5f9}
+.home-chart-toolbar #home-chart-range .segment{height:34px;min-width:68px;border:0;border-radius:999px}
+.home-chart-toolbar #home-chart-range .segment+.segment{border-left:0}
+.home-chart-toolbar #home-chart-range .segment.selected{box-shadow:0 2px 7px #168fec38}
+.secondary-button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:32px;border:1px solid #dbe7f1;border-radius:10px;background:#fff;color:#196fba;font-size:.72rem;font-weight:600;text-decoration:none;white-space:nowrap}
+.secondary-button:hover{background:#f4f9fd;border-color:#a9ceee}
+.recent-see-all{padding:0 10px}.recent-see-all .icon{width:15px;height:15px}
+
 /* Histórico: um único conjunto de filtros, compacto e com leitura de pills. */
 #history-filter.history-filter-bar,.filter-bar#history-filter{grid-template-columns:minmax(300px,480px) minmax(210px,300px);justify-content:start;gap:16px;min-height:0;height:auto;padding:15px 20px}
 #history-filter .field{gap:7px}

@@ -2,8 +2,8 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-8";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-16";
-import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261029-8";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-17";
+import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261029-9";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
 const pages = { "/": overviewPage, "/historico": historyPage, "/simulacoes": simulationsPage, "/configuracoes": settingsPage };
@@ -766,7 +766,7 @@ async function refreshHome() {
     fimDoDia.setHours(23, 59, 59, 999);
     const [leiturasRecentes, leiturasDoDia] = await Promise.all([
       activeReadingsApi.buscarUltimas(100),
-      activeReadingsApi.buscarPorPeriodo(apiDate(inicioDoDia), apiDate(fimDoDia)).catch(() => []),
+      buscarSerieDoPeriodo(inicioDoDia, fimDoDia).catch(() => []),
     ]);
     recentReadings = leiturasRecentes;
     const lastValid = [...recentReadings].reverse().find(reading => reading.temperatura != null || reading.umidadeRelativa != null || reading.precipitacao != null || reading.velocidadeVento != null);

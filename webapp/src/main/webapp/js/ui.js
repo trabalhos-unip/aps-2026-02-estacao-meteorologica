@@ -58,9 +58,9 @@ export function renderShell(path, content) {
           <span class="brand-copy"><strong>Meteora</strong><span>Estação Meteorológica</span></span>
         </a>
         <button class="sidebar-collapse-toggle" type="button" id="sidebar-collapse-toggle" aria-label="Recolher menu" title="Recolher menu">${icon("arrow")}</button>
-        <button class="sidebar-location-input" type="button" data-open-location-modal title="Alterar cidade da estação">${icon("pin")}<span data-location-label>Localização da estação</span></button>
         <p class="sidebar-section-label">NAVEGAÇÃO</p>
         <nav class="primary-nav" aria-label="Navegação principal">
+          <button class="sidebar-location-input" type="button" data-open-location-modal title="Alterar cidade da estação">${icon("pin")}<span data-location-label>Localização da estação</span></button>
           ${menu.map(item => `<a href="${item.path}" class="nav-link ${item.path === path ? "active" : ""}" ${item.path === path ? 'aria-current="page"' : ""}>${icon(item.icon)}<span>${item.label}</span></a>`).join("")}
         </nav>
         <div class="sidebar-foot">
