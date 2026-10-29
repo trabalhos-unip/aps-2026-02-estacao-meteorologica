@@ -57,17 +57,15 @@ export function renderShell(path, content) {
           <span class="brand-mark" aria-hidden="true"><span class="brand-sun"></span><span class="brand-cloud"></span></span>
           <span class="brand-copy"><strong>Meteora</strong><span>Estação Meteorológica</span></span>
         </a>
-        <button class="sidebar-location-input" type="button" data-open-location-modal title="Alterar cidade da estação">${icon("search")}<span data-location-label>Localização da estação</span>${icon("pin")}</button>
+        <button class="sidebar-location-input" type="button" data-open-location-modal title="Alterar cidade da estação">${icon("search")}<span data-location-label>Localização da estação</span></button>
         <p class="sidebar-section-label">NAVEGAÇÃO</p>
         <nav class="primary-nav" aria-label="Navegação principal">
           ${menu.map(item => `<a href="${item.path}" class="nav-link ${item.path === path ? "active" : ""}" ${item.path === path ? 'aria-current="page"' : ""}>${icon(item.icon)}<span>${item.label}</span></a>`).join("")}
         </nav>
-        <div class="sidebar-station-status"><p class="sidebar-section-label">ESTAÇÃO</p><span class="status-dot neutral"></span><span>Leituras disponíveis</span></div>
         <div class="sidebar-foot">
           <div class="collector-card" id="collector-card">
             <div class="collector-title"><span class="status-dot neutral"></span><strong id="collector-title">Coleta não verificada</strong></div>
             <strong id="sidebar-last-reading">Carregando…</strong>
-            <span id="sidebar-collector-note">O status do processo depende do back-end.</span>
           </div>
           <small>UNIP · APS 2026/2</small>
         </div>
@@ -149,8 +147,7 @@ export function updateCollectorCard(latest) {
   const stamp = parseDate(latest?.dataHoraColeta);
   text("#sidebar-last-reading", stamp ? dateTime(stamp) : "Nenhuma leitura");
   text("#collector-title", stamp ? "Leituras disponíveis" : "Sem leituras");
-  text("#sidebar-collector-note", "Atividade do coletor não monitorada.");
-  document.querySelectorAll(".collector-title .status-dot, .sidebar-station-status .status-dot")
+  document.querySelectorAll(".collector-title .status-dot")
     .forEach(dot => { dot.className = `status-dot ${stamp ? "success" : "neutral"}`; });
 }
 
