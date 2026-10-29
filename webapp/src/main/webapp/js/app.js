@@ -2,7 +2,7 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-2";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-2";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-3";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-2";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -481,14 +481,13 @@ function atualizarCartaoChuva(previsoes) {
   text("#rain-detail-trend", proximaPrevisao ? `Previsão para ${horarioEmFormato24h(proximaPrevisao.dataHora)}` : "Previsão horária indisponível");
 }
 
-function desenharGraficoClimaHorario(previsoes, fonte) {
+function desenharGraficoClimaHorario(previsoes) {
   const canvas = document.querySelector("#hourly-weather-rows");
   if (!canvas) return;
   if (!previsoes.length) {
     canvas.innerHTML = '<div class="chart-empty">A previsão por hora ainda não está disponível.</div>';
     return;
   }
-  text("#hourly-weather-subtitle", fonte);
   atualizarCartaoChuva(previsoes);
   canvas.setAttribute("aria-label", "Previsão por hora com probabilidade de chuva");
   canvas.innerHTML = `${graficoDeProbabilidadeChuva(previsoes)}<div class="hourly-weather-points">${previsoes.map(item => {
@@ -513,7 +512,7 @@ function previsaoHorariaDeExemplo() {
 
 async function renderGraficoClimaHorario() {
   if (simulated()) {
-    desenharGraficoClimaHorario(previsaoHorariaDeExemplo(), "Exemplo de previsão por hora");
+    desenharGraficoClimaHorario(previsaoHorariaDeExemplo());
     return;
   }
   const inicio = new Date();
@@ -522,17 +521,23 @@ async function renderGraficoClimaHorario() {
   const fim = new Date(inicio.getTime() + 7 * 3_600_000);
   try {
     const previsoes = await resumosHorariosApi.buscarPrevisoes(apiDate(inicio), apiDate(fim));
-    desenharGraficoClimaHorario(previsoes, "Hoje · previsão por hora da Open-Meteo");
+    desenharGraficoClimaHorario(previsoes);
   } catch (error) {
     const canvas = document.querySelector("#hourly-weather-rows");
     if (canvas) canvas.innerHTML = `<div class="chart-empty">${error.message}</div>`;
-    text("#hourly-weather-subtitle", "Previsão horária indisponível");
   }
 }
+
+const titulosPrevisaoDoTempo = {
+  "24h": "Previsão do tempo · Hoje",
+  "7d": "Previsão do tempo · Em 7 dias",
+  "15d": "Previsão do tempo · Em 15 dias",
+};
 
 async function renderHomeChart(range = homeChartRange, resetarNavegacao = false) {
   homeChartRange = range;
   setRangeButtons(range, ["home-chart-range"]);
+  text("#hourly-weather-title", titulosPrevisaoDoTempo[range] || titulosPrevisaoDoTempo["24h"]);
   const hourlyCanvas = document.querySelector("#hourly-weather-rows");
   const dailyPanel = document.querySelector("#home-daily-forecast");
   const chartPanel = document.querySelector(".hourly-weather-chart");
@@ -547,19 +552,16 @@ async function renderHomeChart(range = homeChartRange, resetarNavegacao = false)
   }
   const request = ++homeChartRequest;
   const limite = range === "7d" ? 7 : 15;
-  text("#hourly-weather-subtitle", "Previsão do tempo · dados da Open-Meteo");
   try {
     const previsoes = await buscarPrevisoesDiarias(limite);
     if (request !== homeChartRequest || homeChartRange !== range) return;
     renderPrevisaoDiariaNoPainel(previsoes, limite, resetarNavegacao);
-    if (!previsoes.length) text("#hourly-weather-subtitle", "Previsão do tempo ainda indisponível");
   } catch (error) {
     if (request !== homeChartRequest || homeChartRange !== range) return;
     const scroller = document.querySelector("#home-daily-forecast-scroll");
     scroller.dataset.allowNavigation = "false";
     scroller.innerHTML = `<div class="chart-empty">${error.message}</div>`;
     atualizarNavegacaoPrevisaoDiaria();
-    text("#hourly-weather-subtitle", "Previsão indisponível");
   }
 }
 

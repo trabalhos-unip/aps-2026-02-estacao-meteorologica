@@ -136,3 +136,4 @@
 @media(max-width:1200px){.history-grid{grid-template-columns:minmax(0,1fr) 286px}.history-insights{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:980px){.history-grid{grid-template-columns:1fr}.history-side{grid-template-columns:minmax(230px,.75fr) minmax(0,1.25fr);align-items:stretch}.records-card{height:255px}.records-card .table-scroll{max-height:196px}}
 @media(max-width:760px){.primary-history-chart{min-height:330px;padding:19px 15px}.primary-history-chart .section-head{gap:13px}.primary-history-chart .chart-canvas{height:230px}.history-insights,.history-side{grid-template-columns:1fr}.mini-chart-card .chart-canvas.small{height:160px}.records-card{height:265px}.records-card .table-scroll{max-height:205px}}
+.home-chart .title-with-icon h2{font-size:1.28rem}
