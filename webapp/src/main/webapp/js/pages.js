@@ -1,8 +1,13 @@
 import { icon } from "./ui.js?v=20261028-1";
 
 function tabs(id, selected = "24h") {
+  const options = id === "home-chart-range"
+    ? [["24h", "Hoje"], ["7d", "7 dias"], ["15d", "15 dias"]]
+    : id === "history-range"
+      ? [["24h", "Hoje"], ["7d", "7 dias"], ["30d", "30 dias"]]
+      : [["24h", "Hoje"], ["7d", "7d"], ["30d", "30d"]];
   return `<div class="segmented" id="${id}" role="group" aria-label="Período do gráfico">
-    ${(id === "history-range" ? [["24h", "Hoje"], ["7d", "7 dias"], ["30d", "30 dias"]] : [["24h", "Hoje"], ["7d", "7d"], ["30d", "30d"]]).map(([value, label]) =>
+    ${options.map(([value, label]) =>
       `<button type="button" class="segment ${value === selected ? "selected" : ""}" data-range="${value}" aria-pressed="${value === selected}">${label}</button>`).join("")}
   </div>`;
 }
@@ -22,7 +27,7 @@ function forecastRows() {
     date.setDate(date.getDate() + index);
     const label = index === 0 ? "Hoje" : new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(date).replace(".", "");
     const compactDate = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(date);
-    return `<div class="forecast-row"><span><strong>${label}</strong><small>${compactDate}</small></span><span class="forecast-weather">${icon("cloud")}</span><span>—°</span><span>—°</span><span>— mm</span>${icon("chevron")}</div>`;
+    return `<div class="forecast-row"><span><strong>${label}</strong><small>${compactDate}</small></span><span class="forecast-weather">${icon("cloud")}</span><span>—°</span><span>—°</span><span class="forecast-rain">— <small>(— mm)</small></span></div>`;
   }).join("");
 }
 
@@ -42,7 +47,11 @@ export function overviewPage() {
     <section class="card chart-card home-chart hourly-weather-chart" aria-label="Clima e histórico de temperatura">
       <div class="section-head home-chart-toolbar"><small id="hourly-weather-subtitle">Hoje · previsão por hora da Open-Meteo</small>${tabs("home-chart-range")}</div>
       <div class="hourly-weather-chart-canvas" id="hourly-weather-rows" aria-label="Carregando previsão por hora"><div class="chart-empty">Carregando previsão por hora…</div></div>
-      <div class="chart-canvas home-temporal-canvas" id="home-temporal-chart" hidden aria-label="Carregando histórico de temperatura"></div>
+      <div class="home-daily-forecast" id="home-daily-forecast" hidden aria-label="Carregando previsão dos próximos dias">
+        <button class="forecast-scroll-button previous" type="button" data-home-forecast-step="-1" aria-label="Ver dias anteriores">${icon("chevron")}</button>
+        <div class="home-daily-forecast-scroll" id="home-daily-forecast-scroll"></div>
+        <button class="forecast-scroll-button next" type="button" data-home-forecast-step="1" aria-label="Ver próximos dias">${icon("chevron")}</button>
+      </div>
     </section></div><div class="overview-right">
     <aside class="card forecast-card" aria-labelledby="forecast-title">
       <div class="card-title">${icon("calendar")}<div><h2 id="forecast-title">Previsão dos próximos dias</h2><small id="forecast-source">Dados da API Open-Meteo</small></div></div>

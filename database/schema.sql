@@ -103,6 +103,7 @@ CREATE TABLE IF NOT EXISTS resumo_diario_meteorologico (
     temperatura_media   DOUBLE       NULL,
     umidade_media       DOUBLE       NULL,
     precipitacao_total  DOUBLE       NULL,
+    probabilidade_chuva_maxima INT  NULL,
     vento_maximo        DOUBLE       NULL,
     codigo_clima        INT          NULL,
     fonte_dados         VARCHAR(100) NOT NULL,
@@ -112,6 +113,7 @@ CREATE TABLE IF NOT EXISTS resumo_diario_meteorologico (
         ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT uq_resumo_diario_estacao_data_tipo UNIQUE (estacao_id, data_referencia, tipo),
     CONSTRAINT ck_resumo_diario_tipo CHECK (tipo IN ('HISTORICO', 'PREVISAO')),
+    CONSTRAINT ck_resumo_diario_probabilidade_chuva CHECK (probabilidade_chuva_maxima BETWEEN 0 AND 100),
     INDEX idx_resumo_diario_estacao_data_tipo (estacao_id, data_referencia, tipo)
 ) ENGINE=InnoDB;
 

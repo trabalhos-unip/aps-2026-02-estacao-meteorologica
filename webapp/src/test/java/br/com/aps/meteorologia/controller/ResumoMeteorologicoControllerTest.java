@@ -51,6 +51,23 @@ class ResumoMeteorologicoControllerTest {
     }
 
     @Test
+    void previsaoDiariaRetornaChanceMaximaDeChuva() throws Exception {
+        comEstacaoAtiva();
+        br.com.aps.meteorologia.model.ResumoDiarioMeteorologico resumo = new br.com.aps.meteorologia.model.ResumoDiarioMeteorologico();
+        resumo.setEstacaoId(1L);
+        resumo.setData(java.time.LocalDate.of(2026, 10, 29));
+        resumo.setTipo(TipoResumoDiario.PREVISAO);
+        resumo.setProbabilidadeChuvaMaxima(72);
+        resumo.setFonteDados("Open-Meteo");
+        resumo.setAtualizadoEm(java.time.LocalDateTime.of(2026, 10, 28, 10, 0));
+        when(diarios.buscarPrevisoes(eq(1L), any(), anyInt())).thenReturn(List.of(resumo));
+
+        mvc.perform(get("/api/resumos-diarios/previsoes").param("dias", "7"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].probabilidadeChuvaMaxima").value(72));
+    }
+
+    @Test
     void previsaoComDiasForaDoIntervaloRetorna400() throws Exception {
         comEstacaoAtiva();
         mvc.perform(get("/api/resumos-diarios/previsoes").param("dias", "0"))

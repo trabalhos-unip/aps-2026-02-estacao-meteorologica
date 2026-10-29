@@ -1,5 +1,5 @@
 import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js?v=20261028-6";
-import { demoApi, demoForecast } from "./demo-data.js?v=20261026-4";
+import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261028-3";
 import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261028-6";
@@ -429,20 +429,27 @@ function renderHomeReading(reading, recent) {
 }
 
 function iconeDoClimaHorario(item) {
-  const chance = Number(item.probabilidadeChuva);
+  const chance = Number(item.probabilidadeChuva ?? item.probabilidadeChuvaMaxima);
   if (rainCodes.includes(Number(item.codigoClima)) || Number.isFinite(chance) && chance >= 40) return "rain";
   if ([0, 1, 2].includes(Number(item.codigoClima))) return "sun";
   return "cloud";
 }
 
 // Meteocons Fill (MIT): SVGs estáticos, para não adicionar animações ao gráfico.
-function simboloClimaHorario(tipo) {
-  const asset = {
+function assetMeteocon(tipo) {
+  return {
     sun: "partly-cloudy-day",
     cloud: "overcast-day",
     rain: "rain",
   }[tipo] || "overcast-day";
-  return `<img class="hourly-weather-symbol" src="https://cdn.meteocons.com/3.0.0-next.10/svg-static/fill/${asset}.svg" alt="" aria-hidden="true" decoding="async">`;
+}
+
+function simboloClimaHorario(tipo) {
+  return `<img class="hourly-weather-symbol" src="https://cdn.meteocons.com/3.0.0-next.10/svg-static/fill/${assetMeteocon(tipo)}.svg" alt="" aria-hidden="true" decoding="async">`;
+}
+
+function simboloClimaAnimado(tipo) {
+  return `<img class="forecast-meteocon" src="https://cdn.meteocons.com/3.0.0-next.10/svg/fill/${assetMeteocon(tipo)}.svg" alt="" aria-hidden="true" decoding="async">`;
 }
 
 function graficoDeProbabilidadeChuva(previsoes) {
@@ -532,28 +539,79 @@ async function renderHomeChart(range = homeChartRange) {
   homeChartRange = range;
   setRangeButtons(range, ["home-chart-range"]);
   const hourlyCanvas = document.querySelector("#hourly-weather-rows");
-  const historicalCanvas = document.querySelector("#home-temporal-chart");
-  if (!hourlyCanvas || !historicalCanvas) return;
+  const dailyPanel = document.querySelector("#home-daily-forecast");
+  if (!hourlyCanvas || !dailyPanel) return;
   const hourly = range === "24h";
   hourlyCanvas.hidden = !hourly;
-  historicalCanvas.hidden = hourly;
+  dailyPanel.hidden = hourly;
   if (hourly) {
     await renderGraficoClimaHorario();
     return;
   }
   const request = ++homeChartRequest;
-  const [start, end] = rangeDates(range);
-  text("#hourly-weather-subtitle", `Últimos ${range === "7d" ? "7" : "30"} dias · média diária de temperatura`);
+  const limite = range === "7d" ? 7 : 15;
+  text("#hourly-weather-subtitle", `Próximos ${limite} dias · previsão diária da Open-Meteo`);
   try {
-    const readings = readingsForPeriod(await buscarSerieDoPeriodo(start, end), start, end);
+    const previsoes = await buscarPrevisoesDiarias(limite);
     if (request !== homeChartRequest || homeChartRange !== range) return;
-    const summary = drawTemporalChart("#home-temporal-chart", readings, "temperatura", "°C", "#1299ed", { start, end, daily: true });
-    if (!summary.available) text("#hourly-weather-subtitle", `Últimos ${range === "7d" ? "7" : "30"} dias · sem dados históricos`);
+    renderPrevisaoDiariaNoPainel(previsoes, limite);
+    if (!previsoes.length) text("#hourly-weather-subtitle", `Próximos ${limite} dias · previsão ainda indisponível`);
   } catch (error) {
     if (request !== homeChartRequest || homeChartRange !== range) return;
-    clearTemporalChart("#home-temporal-chart", error.message);
-    text("#hourly-weather-subtitle", "Histórico indisponível");
+    document.querySelector("#home-daily-forecast-scroll").innerHTML = `<div class="chart-empty">${error.message}</div>`;
+    text("#hourly-weather-subtitle", "Previsão indisponível");
   }
+}
+
+function previsoesDiariasDeExemplo(limite) {
+  const inicio = new Date();
+  inicio.setHours(12, 0, 0, 0);
+  return Array.from({ length: limite }, (_, indice) => {
+    const data = new Date(inicio);
+    data.setDate(data.getDate() + indice);
+    const chance = [14, 21, 38, 60, 75, 48, 25, 15][indice % 8];
+    return {
+      data: dateInput(data), temperaturaMinima: 15 + indice % 3, temperaturaMaxima: 24 - indice % 4,
+      precipitacaoTotal: chance >= 40 ? chance / 25 : 0, probabilidadeChuvaMaxima: chance,
+      codigoClima: chance >= 40 ? 61 : indice % 3 === 0 ? 1 : 3,
+    };
+  });
+}
+
+async function buscarPrevisoesDiarias(limite) {
+  return simulated() ? previsoesDiariasDeExemplo(limite) : resumosDiariosApi.buscarPrevisoes(limite);
+}
+
+function dataDaPrevisao(item) {
+  return item.data ? parseDate(`${item.data}T12:00:00`) : item.day instanceof Date ? item.day : null;
+}
+
+function rotuloDaPrevisao(item, indice = 0) {
+  const data = dataDaPrevisao(item);
+  if (!data) return "—";
+  return indice === 0 ? "Hoje" : new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(data).replace(".", "");
+}
+
+function detalhesChuvaDaPrevisao(item) {
+  const chance = Number(item.probabilidadeChuvaMaxima ?? item.probabilidadeChuva);
+  const mm = Number(item.precipitacaoTotal ?? item.precipitacao ?? item.rain);
+  return { chance, mm };
+}
+
+function renderPrevisaoDiariaNoPainel(previsoes, limite) {
+  const scroller = document.querySelector("#home-daily-forecast-scroll");
+  if (!scroller) return;
+  if (!previsoes.length) {
+    scroller.innerHTML = '<div class="chart-empty">A previsão diária ainda não está disponível.</div>';
+    return;
+  }
+  scroller.setAttribute("aria-label", `Previsão para os próximos ${Math.min(limite, previsoes.length)} dias`);
+  scroller.innerHTML = previsoes.slice(0, limite).map((item, indice) => {
+    const data = dataDaPrevisao(item);
+    const { chance, mm } = detalhesChuvaDaPrevisao(item);
+    const tipo = iconeDoClimaHorario(item);
+    return `<article class="daily-forecast-item"><time>${rotuloDaPrevisao(item, indice)}<small>${data ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(data) : ""}</small></time>${simboloClimaAnimado(tipo)}<strong>${number(item.temperaturaMaxima, 0)}° <small>${number(item.temperaturaMinima, 0)}°</small></strong><span class="daily-forecast-rain">${icon("drop")}${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}<small>${Number.isFinite(mm) ? `(${number(mm)} mm)` : ""}</small></span></article>`;
+  }).join("");
 }
 
 function renderDemoForecast() {
@@ -564,11 +622,15 @@ function renderDemoForecast() {
   document.querySelector("#home-source-chip").innerHTML = `${icon("flask")} Fonte: Simulado`;
   const rows = document.querySelector("#forecast-rows");
   rows.setAttribute("aria-label", "Previsão simulada para cinco dias");
-  rows.innerHTML = demoForecast().map((item, index) => {
-    const label = index === 0 ? "Hoje" : new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(item.day).replace(".", "");
-    const date = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(item.day);
-    return `<div class="forecast-row"><span><strong>${label}</strong><small>${date}</small></span><span class="forecast-weather">${icon(item.rain > 0 ? "rain" : "sun")}</span><span>${number(item.maximum, 0)}°</span><span>${number(item.minimum, 0)}°</span><span>${number(item.rain)} mm</span>${icon("chevron")}</div>`;
-  }).join("");
+  rows.innerHTML = previsoesDiariasDeExemplo(5).map(renderLinhaPrevisaoDiaria).join("");
+}
+
+function renderLinhaPrevisaoDiaria(item, indice) {
+  const data = dataDaPrevisao(item);
+  const { chance, mm } = detalhesChuvaDaPrevisao(item);
+  const tipo = iconeDoClimaHorario(item);
+  const dataCurta = data ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(data) : "";
+  return `<div class="forecast-row"><span><strong>${rotuloDaPrevisao(item, indice)}</strong><small>${dataCurta}</small></span><span class="forecast-weather">${simboloClimaAnimado(tipo)}</span><span>${number(item.temperaturaMaxima, 0)}°</span><span>${number(item.temperaturaMinima, 0)}°</span><span class="forecast-rain">${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}<small>${Number.isFinite(mm) ? `(${number(mm)} mm)` : ""}</small></span></div>`;
 }
 
 async function renderForecast() {
@@ -578,22 +640,16 @@ async function renderForecast() {
   }
   const rows = document.querySelector("#forecast-rows");
   try {
-    const previsoes = await resumosDiariosApi.buscarPrevisoes(5);
+    const previsoes = await buscarPrevisoesDiarias(5);
     if (!previsoes.length) throw new Error("A previsão ainda não foi carregada pelo coletor.");
     text("#forecast-source", "Previsão da Open-Meteo");
     text("#forecast-note", "Atualizada pelo coletor; dias futuros não são leituras da estação.");
     rows.setAttribute("aria-label", "Previsão para os próximos cinco dias");
-    rows.innerHTML = previsoes.map((item, index) => {
-      const day = parseDate(`${item.data}T12:00:00`);
-      const label = index === 0 ? "Hoje" : new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(day).replace(".", "");
-      const date = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(day);
-      const rainy = Number(item.precipitacaoTotal || 0) > 0 || rainCodes.includes(item.codigoClima);
-      return `<div class="forecast-row"><span><strong>${label}</strong><small>${date}</small></span><span class="forecast-weather">${icon(rainy ? "rain" : "sun")}</span><span>${number(item.temperaturaMaxima, 0)}°</span><span>${number(item.temperaturaMinima, 0)}°</span><span>${number(item.precipitacaoTotal)} mm</span>${icon("chevron")}</div>`;
-    }).join("");
+    rows.innerHTML = previsoes.map(renderLinhaPrevisaoDiaria).join("");
   } catch (error) {
     text("#forecast-source", "Previsão ainda indisponível");
     text("#forecast-note", "Inicie o coletor para carregar os próximos dias.");
-    rows.innerHTML = `<div class="forecast-row"><span><strong>—</strong><small>sem dados</small></span><span>—</span><span>—</span><span>—</span><span>—</span></div>`;
+    rows.innerHTML = `<div class="forecast-row"><span><strong>—</strong><small>sem dados</small></span><span>—</span><span>—</span><span>—</span><span class="forecast-rain">—</span></div>`;
   }
 }
 
@@ -623,6 +679,11 @@ async function initHome() {
     const button = event.target.closest("[data-range]");
     if (button) renderHomeChart(button.dataset.range);
   });
+  document.querySelectorAll("[data-home-forecast-step]").forEach(button => button.addEventListener("click", () => {
+    const scroller = document.querySelector("#home-daily-forecast-scroll");
+    if (!scroller) return;
+    scroller.scrollBy({ left: Number(button.dataset.homeForecastStep) * Math.max(260, scroller.clientWidth * .72), behavior: "smooth" });
+  }));
   await refreshHome();
 }
 
