@@ -808,11 +808,11 @@ function renderHistoricalWeather() {
   }
   container.innerHTML = historicalDailyWeather.slice(-5).reverse().map(item => {
     const data = dataDaPrevisao(item);
-    const label = data ? new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(data).replace(".", "") : "—";
+    const label = data ? new Intl.DateTimeFormat("pt-BR", { weekday: "long" }).format(data) : "—";
     const dataCurta = data ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(data) : "";
     const chuva = Number(item.precipitacaoTotal);
     const asset = iconeDoClimaHorario(item);
-    return `<div class="forecast-row historical-weather-row"><span><strong>${label}</strong><small>${dataCurta}</small></span><span class="forecast-weather">${simboloClimaEstatico(asset)}</span><span class="forecast-rain">${icon("drop")}${Number.isFinite(chuva) ? unit(chuva, "mm") : "—"}</span><span class="forecast-temperatures"><strong>${number(item.temperaturaMaxima, 0)}°</strong><small>${number(item.temperaturaMinima, 0)}°</small></span></div>`;
+    return `<div class="forecast-row historical-weather-row"><span><strong>${label}</strong><small>${dataCurta}</small></span><span class="forecast-weather">${simboloClimaEstatico(asset)}</span><span class="forecast-rain">${Number.isFinite(chuva) ? unit(chuva, "mm") : "—"}</span><span class="forecast-temperatures"><strong>${number(item.temperaturaMaxima, 0)}°</strong><small>${number(item.temperaturaMinima, 0)}°</small></span></div>`;
   }).join("");
 }
 
