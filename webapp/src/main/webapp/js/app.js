@@ -502,23 +502,30 @@ function iconeResumo(asset) {
   return `<span class="summary-meteocon"><img src="https://cdn.meteocons.com/3.0.0-next.10/svg-static/fill/${asset}.svg" alt="" aria-hidden="true" decoding="async"></span>`;
 }
 
-function graficoDeProbabilidadeChuva(previsoes, largura) {
-  const probabilidades = previsoes.map(item => Number(item.probabilidadeChuva)).filter(Number.isFinite);
-  if (!probabilidades.length) return "";
+function graficoDeTemperaturaHoraria(previsoes, largura) {
+  const temperaturas = previsoes.map(item => Number(item.temperatura)).filter(Number.isFinite);
+  if (!temperaturas.length) return "";
+  const minima = Math.min(...temperaturas);
+  const maxima = Math.max(...temperaturas);
+  const media = temperaturas.reduce((soma, temperatura) => soma + temperatura, 0) / temperaturas.length;
+  const semiAmplitude = Math.max((maxima - minima) / 2, .5);
   const pontos = previsoes.map((item, index) => {
     const divisor = previsoes.length - 1;
     const x = previsoes.length === 1 ? 50 : index === 0 ? 25 / divisor : index === divisor ? 100 - 25 / divisor : index / divisor * 100;
-    // Percentuais usam a escala 0–100%, concentrada logo abaixo dos ícones para
-    // o gráfico permanecer visualmente ligado às condições de cada hora.
-    const chance = Math.min(100, Math.max(0, Number(item.probabilidadeChuva)));
-    const y = Number.isFinite(chance) ? 64 - chance * .24 : 64;
+    // A curva traduz somente a variação térmica. A média fica no centro da
+    // área gráfica; mínimo e máximo usam a amplitude disponível sem alcançar
+    // os rótulos de temperatura, acima, nem a chance de chuva, abaixo.
+    const temperatura = Number(item.temperatura);
+    const desvioNormalizado = Number.isFinite(temperatura)
+      ? Math.max(-1, Math.min(1, (temperatura - media) / semiAmplitude)) : 0;
+    const y = 53 - desvioNormalizado * 11;
     return { x, y };
   });
   const linha = pontos.map(({ x, y }) => `${x},${y}`).join(" ");
   const area = `M ${pontos[0].x},70 L ${linha.replaceAll(" ", " L ")} L ${pontos.at(-1).x},70 Z`;
-  const linhasHorizontais = [40, 48, 56, 64].map(y => `<line class="hourly-grid-line" x1="0" x2="100" y1="${y}" y2="${y}" />`).join("");
-  const linhasVerticais = pontos.map(({ x }) => `<line class="hourly-grid-line hourly-grid-line-vertical" x1="${x}" x2="${x}" y1="38" y2="70" />`).join("");
-  return `<svg class="hourly-rain-probability-line" style="width:${largura}px" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="hourly-rain-probability-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#38a9f8" stop-opacity=".26"/><stop offset="1" stop-color="#38a9f8" stop-opacity=".015"/></linearGradient></defs>${linhasHorizontais}${linhasVerticais}<path class="hourly-rain-probability-area" d="${area}"/><polyline points="${linha}" /></svg><span class="hourly-rain-probability-dots" style="width:${largura}px" aria-hidden="true">${pontos.map(({ x, y }) => `<i style="left:${x}%;top:${y}%"></i>`).join("")}</span>`;
+  const linhasHorizontais = [42, 49, 56, 63].map(y => `<line class="hourly-grid-line" x1="0" x2="100" y1="${y}" y2="${y}" />`).join("");
+  const linhasVerticais = pontos.map(({ x }) => `<line class="hourly-grid-line hourly-grid-line-vertical" x1="${x}" x2="${x}" y1="40" y2="70" />`).join("");
+  return `<svg class="hourly-temperature-line" style="width:${largura}px" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="hourly-temperature-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#38a9f8" stop-opacity=".26"/><stop offset="1" stop-color="#38a9f8" stop-opacity=".015"/></linearGradient></defs>${linhasHorizontais}${linhasVerticais}<path class="hourly-temperature-area" d="${area}"/><polyline points="${linha}" /></svg><span class="hourly-temperature-dots" style="width:${largura}px" aria-hidden="true">${pontos.map(({ x, y }) => `<i style="left:${x}%;top:${y}%"></i>`).join("")}</span>`;
 }
 
 function horarioEmFormato24h(value) {
@@ -544,10 +551,10 @@ function desenharGraficoClimaHorario(previsoes) {
     return;
   }
   atualizarCartaoChuva(previsoes);
-  canvas.setAttribute("aria-label", "Previsão por hora com probabilidade de chuva");
+  canvas.setAttribute("aria-label", "Previsão por hora com linha de temperatura e probabilidade de chuva");
   // Mantém cada hora legível e permite navegar pelo restante do dia sem comprimir ícones ou pontos.
   const largura = Math.max(canvas.clientWidth, previsoes.length * 104);
-  canvas.innerHTML = `${graficoDeProbabilidadeChuva(previsoes, largura)}<div class="hourly-weather-points" style="--hourly-items:${previsoes.length};width:${largura}px">${previsoes.map(item => {
+  canvas.innerHTML = `${graficoDeTemperaturaHoraria(previsoes, largura)}<div class="hourly-weather-points" style="--hourly-items:${previsoes.length};width:${largura}px">${previsoes.map(item => {
     const hora = horarioEmFormato24h(item.dataHora);
     const chance = Number(item.probabilidadeChuva);
     const asset = iconeDoClimaHorario(item);
