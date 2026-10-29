@@ -108,10 +108,10 @@ O usuário e a senha definidos no `.env` devem existir no MySQL e possuir acesso
 O Hibernate utiliza `hibernate.hbm2ddl.auto=validate`: ele apenas verifica se o banco é compatível com as entidades
 Java. Portanto, **o Hibernate não cria nem atualiza as tabelas automaticamente**.
 
-Para atualizar uma instalação antiga, faça um backup e execute primeiro
-[`database/migrations/V2__estacao_log_e_variaveis_extras.sql`](database/migrations/V2__estacao_log_e_variaveis_extras.sql),
-depois [`database/migrations/V3__resumos_por_estacao.sql`](database/migrations/V3__resumos_por_estacao.sql) e por fim
-[`database/migrations/V4__estacao_brasileira_ativa.sql`](database/migrations/V4__estacao_brasileira_ativa.sql).
+Para atualizar uma instalação anterior à V2, faça um backup e execute a migration consolidada
+[`database/migrations/V2__estacao_log_e_variaveis_extras.sql`](database/migrations/V2__estacao_log_e_variaveis_extras.sql).
+Ela preserva as leituras e resumos existentes e acrescenta estação, localização brasileira, logs,
+resumos por estação e probabilidades de chuva.
 Não execute as migrações depois do `schema.sql` atual, pois uma instalação nova já nasce completa.
 
 O arquivo [`database/dados-teste.sql`](database/dados-teste.sql) é opcional e insere leituras reais e simuladas para

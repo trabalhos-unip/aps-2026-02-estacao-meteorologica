@@ -17,7 +17,9 @@ CREATE TABLE IF NOT EXISTS estacao (
     PRIMARY KEY (id),
     CONSTRAINT uq_estacao_nome UNIQUE (nome),
     CONSTRAINT ck_estacao_latitude CHECK (latitude BETWEEN -90 AND 90),
-    CONSTRAINT ck_estacao_longitude CHECK (longitude BETWEEN -180 AND 180)
+    CONSTRAINT ck_estacao_longitude CHECK (longitude BETWEEN -180 AND 180),
+    CONSTRAINT ck_estacao_pais CHECK (pais = 'BR'),
+    CONSTRAINT ck_estacao_estado CHECK (estado REGEXP '^[A-Z]{2}$')
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS leitura_meteorologica (

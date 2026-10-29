@@ -3,9 +3,7 @@
 O banco MySQL do projeto se chama `estacao_meteorologica` e possui cinco tabelas: `estacao`, `leitura_meteorologica`, `log_coleta`, `resumo_diario_meteorologico` e `resumo_horario_meteorologico`.
 
 - [schema.sql](../database/schema.sql) cria uma instalação nova.
-- [V2__estacao_log_e_variaveis_extras.sql](../database/migrations/V2__estacao_log_e_variaveis_extras.sql) atualiza a estrutura antiga sem apagar leituras.
-- [V3__resumos_por_estacao.sql](../database/migrations/V3__resumos_por_estacao.sql) vincula os resumos já existentes à estação correta.
-- [V4__estacao_brasileira_ativa.sql](../database/migrations/V4__estacao_brasileira_ativa.sql) identifica cidade, UF e país, além de definir a estação ativa.
+- [V2__estacao_log_e_variaveis_extras.sql](../database/migrations/V2__estacao_log_e_variaveis_extras.sql) é a migration consolidada: atualiza a estrutura antiga sem apagar leituras, vincula resumos à estação, identifica cidade/UF/país e inclui as probabilidades de chuva.
 - [dados-teste.sql](../database/dados-teste.sql) insere leituras de exemplo depois de a estação existir.
 
 ## Relacionamentos
