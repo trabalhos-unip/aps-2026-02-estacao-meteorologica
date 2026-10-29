@@ -408,19 +408,21 @@ function renderHomeReading(reading, recent) {
   text("#current-date", `${isPreviousValid ? "Última leitura válida: " : ""}${dateTime(reading.dataHoraColeta)}`);
   text("#metric-temperature", number(reading.temperatura));
   text("#metric-humidity", number(reading.umidadeRelativa, 0));
-  text("#metric-precipitation", number(reading.precipitacao));
+  // A chance e o acumulado previstos pertencem ao resumo horário, não à medição atual.
+  // O cartão é preenchido assim que a previsão por hora for carregada abaixo.
+  text("#metric-rain-chance", "—");
   text("#metric-wind", number(reading.velocidadeVento));
   const first = recent.at(0);
   const temperatures = numericValues(recent, "temperatura");
   const humidity = numericValues(recent, "umidadeRelativa");
   text("#temperature-detail", temperatures.length ? `Mín. ${unit(Math.min(...temperatures), "°C")} · Máx. ${unit(Math.max(...temperatures), "°C")}` : "Sem histórico comparável");
   text("#humidity-detail", humidity.length ? `Mín. ${number(Math.min(...humidity), 0)}% · Máx. ${number(Math.max(...humidity), 0)}%` : "Sem histórico comparável");
-  text("#precipitation-detail", reading.presencaPrecipitacao == null ? "Presença de chuva desconhecida" : reading.presencaPrecipitacao ? "Chuva presente" : "Sem chuva nesta leitura");
+  text("#rain-detail", "Precipitação prevista: —");
   text("#wind-detail", "Velocidade na última leitura");
   const delta = first && first.temperatura !== null && reading.temperatura !== null ? Number(reading.temperatura) - Number(first.temperatura) : null;
   text("#temperature-detail-trend", delta === null ? "Sem tendência disponível" : `${delta >= 0 ? "↗ +" : "↘ "}${number(delta)} °C nas últimas leituras`);
   text("#humidity-detail-trend", simulated() ? "Dados simulados" : "Dados da estação");
-  text("#precipitation-detail-trend", reading.presencaPrecipitacao == null ? "Sem indicação disponível" : reading.presencaPrecipitacao ? "Precipitação detectada" : "Sem precipitação detectada");
+  text("#rain-detail-trend", "Aguardando previsão por hora");
   text("#wind-detail-trend", simulated() ? "Dados simulados" : "Dados da estação");
 }
 
@@ -439,10 +441,25 @@ function graficoDeTemperatura(previsoes) {
   const amplitude = Math.max(maximo - minimo, 2);
   const pontos = previsoes.map((item, index) => {
     const x = previsoes.length === 1 ? 50 : 4 + index * 92 / (previsoes.length - 1);
-    const y = Number.isFinite(Number(item.temperatura)) ? 49 - ((Number(item.temperatura) - minimo) / amplitude) * 23 : 61;
-    return `${x},${y}`;
-  }).join(" ");
-  return `<svg class="hourly-temperature-line" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pontos}" /></svg>`;
+    const y = Number.isFinite(Number(item.temperatura)) ? 60 - ((Number(item.temperatura) - minimo) / amplitude) * 22 : 68;
+    return { x, y };
+  });
+  return `<svg class="hourly-temperature-line" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pontos.map(({ x, y }) => `${x},${y}`).join(" ")}" />${pontos.map(({ x, y }) => `<circle cx="${x}" cy="${y}" r="1.45" />`).join("")}</svg>`;
+}
+
+function horarioEmFormato24h(value) {
+  const data = parseDate(value);
+  if (!data) return "—";
+  return `${String(data.getHours()).padStart(2, "0")}:${String(data.getMinutes()).padStart(2, "0")}`;
+}
+
+function atualizarCartaoChuva(previsoes) {
+  const proximaPrevisao = previsoes.find(item => Number.isFinite(Number(item.probabilidadeChuva))) || previsoes[0];
+  const chance = Number(proximaPrevisao?.probabilidadeChuva);
+  const precipitacao = Number(proximaPrevisao?.precipitacao);
+  text("#metric-rain-chance", Number.isFinite(chance) ? number(chance, 0) : "—");
+  text("#rain-detail", `Precipitação prevista: ${Number.isFinite(precipitacao) ? unit(precipitacao, "mm") : "—"}`);
+  text("#rain-detail-trend", proximaPrevisao ? `Previsão para ${horarioEmFormato24h(proximaPrevisao.dataHora)}` : "Previsão horária indisponível");
 }
 
 function desenharGraficoClimaHorario(previsoes, fonte) {
@@ -450,15 +467,16 @@ function desenharGraficoClimaHorario(previsoes, fonte) {
   if (!canvas) return;
   if (!previsoes.length) {
     canvas.innerHTML = '<div class="chart-empty">A previsão por hora ainda não está disponível.</div>';
+    atualizarCartaoChuva([]);
     return;
   }
   text("#hourly-weather-subtitle", fonte);
+  atualizarCartaoChuva(previsoes);
   canvas.setAttribute("aria-label", "Previsão climática por hora");
   canvas.innerHTML = `${graficoDeTemperatura(previsoes)}<div class="hourly-weather-points">${previsoes.map(item => {
-    const data = parseDate(item.dataHora);
-    const hora = data ? new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" }).format(data) : "—";
+    const hora = horarioEmFormato24h(item.dataHora);
     const chance = Number(item.probabilidadeChuva);
-    return `<article class="hourly-weather-point"><time>${hora}</time><span class="hourly-weather-icon ${iconeDoClimaHorario(item)}">${icon(iconeDoClimaHorario(item))}</span><strong>${number(item.temperatura, 0)}°</strong><span class="hourly-rain-chance">${icon("drop")} ${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span></article>`;
+    return `<article class="hourly-weather-point"><span class="hourly-weather-icon ${iconeDoClimaHorario(item)}">${icon(iconeDoClimaHorario(item))}</span><strong>${number(item.temperatura, 0)}°</strong><time>${hora}</time><span class="hourly-rain-chance">${icon("drop")} ${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span></article>`;
   }).join("")}</div>`;
 }
 
@@ -469,6 +487,7 @@ function previsaoHorariaDeExemplo() {
   return chances.map((probabilidadeChuva, indice) => ({
     dataHora: new Date(inicio.getTime() + indice * 3_600_000).toISOString(),
     temperatura: 25 - Math.min(indice, 6), probabilidadeChuva,
+    precipitacao: probabilidadeChuva >= 40 ? (probabilidadeChuva - 30) / 10 : 0,
     codigoClima: probabilidadeChuva >= 40 ? 61 : indice < 2 ? 1 : 3,
   }));
 }
@@ -488,6 +507,7 @@ async function renderGraficoClimaHorario() {
     const canvas = document.querySelector("#hourly-weather-rows");
     if (canvas) canvas.innerHTML = `<div class="chart-empty">${error.message}</div>`;
     text("#hourly-weather-subtitle", "Previsão horária indisponível");
+    atualizarCartaoChuva([]);
   }
 }
 
