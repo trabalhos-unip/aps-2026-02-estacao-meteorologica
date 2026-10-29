@@ -437,28 +437,36 @@ function renderHomeReading(reading, recent) {
   text("#wind-detail-trend", simulated() ? "Dados simulados" : "Dados da estação");
 }
 
+function previsaoNoturna(item) {
+  const horario = item.dataHora || item.dataHoraColeta || (item.data ? `${item.data}T12:00:00` : null);
+  const data = parseDate(horario);
+  return data ? data.getHours() < 6 || data.getHours() >= 18 : false;
+}
+
+// Códigos WMO da Open-Meteo. A visualização horária usa SVGs animados da
+// Meteocons; a diária mantém os mesmos símbolos em SVG estático.
 function iconeDoClimaHorario(item) {
+  const codigo = Number(item.codigoClima);
+  const noturno = previsaoNoturna(item);
+  if (codigo === 0) return noturno ? "clear-night" : "clear-day";
+  if ([1, 2].includes(codigo)) return noturno ? "partly-cloudy-night" : "partly-cloudy-day";
+  if (codigo === 3) return noturno ? "overcast-night" : "overcast-day";
+  if ([45, 48].includes(codigo)) return noturno ? "fog-night" : "fog-day";
+  if ([51, 53, 55].includes(codigo)) return "drizzle";
+  if ([56, 57, 66, 67].includes(codigo)) return "sleet";
+  if ([61, 63, 65, 80, 81, 82].includes(codigo)) return "rain";
+  if ([71, 73, 75, 77, 85, 86].includes(codigo)) return "snow";
+  if ([95, 96, 99].includes(codigo)) return "thunderstorms-rain";
   const chance = Number(item.probabilidadeChuva ?? item.probabilidadeChuvaMaxima);
-  if (rainCodes.includes(Number(item.codigoClima)) || Number.isFinite(chance) && chance >= 40) return "rain";
-  if ([0, 1, 2].includes(Number(item.codigoClima))) return "sun";
-  return "cloud";
+  return Number.isFinite(chance) && chance >= 40 ? "rain" : noturno ? "partly-cloudy-night" : "partly-cloudy-day";
 }
 
-// Meteocons Fill (MIT): o recorte de Hoje usa a variante animada; os demais são estáticos.
-function assetMeteocon(tipo) {
-  return {
-    sun: "partly-cloudy-day",
-    cloud: "overcast-day",
-    rain: "rain",
-  }[tipo] || "overcast-day";
+function simboloClimaHorario(asset) {
+  return `<img class="hourly-weather-symbol" src="https://cdn.meteocons.com/3.0.0-next.10/svg/fill/${asset}.svg" alt="" aria-hidden="true" decoding="async">`;
 }
 
-function simboloClimaHorario(tipo) {
-  return `<img class="hourly-weather-symbol" src="https://cdn.meteocons.com/3.0.0-next.10/svg/fill/${assetMeteocon(tipo)}.svg" alt="" aria-hidden="true" decoding="async">`;
-}
-
-function simboloClimaEstatico(tipo) {
-  return `<img class="forecast-meteocon" src="https://cdn.meteocons.com/3.0.0-next.10/svg-static/fill/${assetMeteocon(tipo)}.svg" alt="" aria-hidden="true" decoding="async">`;
+function simboloClimaEstatico(asset) {
+  return `<img class="forecast-meteocon" src="https://cdn.meteocons.com/3.0.0-next.10/svg-static/fill/${asset}.svg" alt="" aria-hidden="true" decoding="async">`;
 }
 
 function graficoDeProbabilidadeChuva(previsoes, largura) {
@@ -508,8 +516,8 @@ function desenharGraficoClimaHorario(previsoes) {
   canvas.innerHTML = `${graficoDeProbabilidadeChuva(previsoes, largura)}<div class="hourly-weather-points" style="--hourly-items:${previsoes.length};width:${largura}px">${previsoes.map(item => {
     const hora = horarioEmFormato24h(item.dataHora);
     const chance = Number(item.probabilidadeChuva);
-    const tipo = iconeDoClimaHorario(item);
-    return `<article class="hourly-weather-point"><time>${hora}</time><span class="hourly-weather-icon ${tipo}">${simboloClimaHorario(tipo)}</span><strong>${number(item.temperatura, 0)}°</strong><span class="hourly-rain-chance">${icon("drop")} ${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span></article>`;
+    const asset = iconeDoClimaHorario(item);
+    return `<article class="hourly-weather-point"><time>${hora}</time><span class="hourly-weather-icon ${asset}">${simboloClimaHorario(asset)}</span><strong>${number(item.temperatura, 0)}°</strong><span class="hourly-rain-chance">${icon("drop")} ${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span></article>`;
   }).join("")}</div>`;
 }
 
@@ -636,8 +644,8 @@ function renderPrevisaoDiariaNoPainel(previsoes, limite, resetarNavegacao = fals
   scroller.innerHTML = previsoes.slice(0, limite).map((item, indice) => {
     const data = dataDaPrevisao(item);
     const { chance, mm } = detalhesChuvaDaPrevisao(item);
-    const tipo = iconeDoClimaHorario(item);
-    return `<article class="daily-forecast-item"><time>${rotuloDaPrevisao(item, indice)}<small>${data ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(data) : ""}</small></time>${simboloClimaEstatico(tipo)}<strong>${number(item.temperaturaMaxima, 0)}° <small>${number(item.temperaturaMinima, 0)}°</small></strong><span class="daily-forecast-rain">${icon("drop")}${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span></article>`;
+    const asset = iconeDoClimaHorario(item);
+    return `<article class="daily-forecast-item"><time>${rotuloDaPrevisao(item, indice)}<small>${data ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(data) : ""}</small></time>${simboloClimaEstatico(asset)}<strong>${number(item.temperaturaMaxima, 0)}° <small>${number(item.temperaturaMinima, 0)}°</small></strong><span class="daily-forecast-rain">${icon("drop")}${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span></article>`;
   }).join("");
   requestAnimationFrame(() => {
     atualizarNavegacaoPrevisaoDiaria();
@@ -676,9 +684,9 @@ function renderDemoForecast() {
 function renderLinhaPrevisaoDiaria(item, indice) {
   const data = dataDaPrevisao(item);
   const { chance } = detalhesChuvaDaPrevisao(item);
-  const tipo = iconeDoClimaHorario(item);
+  const asset = iconeDoClimaHorario(item);
   const dataCurta = data ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(data) : "";
-  return `<div class="forecast-row"><span><strong>${rotuloDaPrevisao(item, indice)}</strong><small>${dataCurta}</small></span><span class="forecast-weather">${simboloClimaEstatico(tipo)}</span><span class="forecast-rain">${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span><span class="forecast-temperatures"><strong>${number(item.temperaturaMaxima, 0)}°</strong><small>${number(item.temperaturaMinima, 0)}°</small></span></div>`;
+  return `<div class="forecast-row"><span><strong>${rotuloDaPrevisao(item, indice)}</strong><small>${dataCurta}</small></span><span class="forecast-weather">${simboloClimaEstatico(asset)}</span><span class="forecast-rain">${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span><span class="forecast-temperatures"><strong>${number(item.temperaturaMaxima, 0)}°</strong><small>${number(item.temperaturaMinima, 0)}°</small></span></div>`;
 }
 
 async function renderForecast() {
