@@ -3,7 +3,7 @@ import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-8";
 import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-18";
-import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261029-10";
+import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261029-11";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
 const pages = { "/": overviewPage, "/historico": historyPage, "/simulacoes": simulationsPage, "/configuracoes": settingsPage };
@@ -219,6 +219,7 @@ function setupLocationSelector() {
       const preferences = savedPreferences();
       localStorage.setItem(preferencesKey, JSON.stringify({ ...preferences, city: station.cidade, state: station.estado }));
       showLocation({ city: station.cidade, state: station.estado });
+      delete document.querySelector("#hourly-weather-rows")?.dataset.hourlyFocusedDate;
       close();
       showToast("Cidade atualizada. Os dados começam a ser carregados em instantes.");
       refreshAfterCityChange();
@@ -537,13 +538,25 @@ function desenharGraficoClimaHorario(previsoes) {
     const asset = iconeDoClimaHorario(item);
     return `<article class="hourly-weather-point"><time>${hora}</time><span class="hourly-weather-icon ${asset}">${simboloClimaHorario(asset)}</span><strong>${number(item.temperatura, 0)}°</strong><span class="hourly-rain-chance">${icon("drop")} ${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span></article>`;
   }).join("")}</div>`;
+  const hoje = dateInput(new Date());
+  if (canvas.dataset.hourlyFocusedDate !== hoje) {
+    const horaAtual = new Date().getHours();
+    const indiceAtual = previsoes.findIndex(item => parseDate(item.dataHora)?.getHours() === horaAtual);
+    if (indiceAtual >= 0) {
+      requestAnimationFrame(() => {
+        const passo = largura / previsoes.length;
+        canvas.scrollLeft = Math.max(0, indiceAtual * passo - (canvas.clientWidth - passo) / 2);
+      });
+    }
+    canvas.dataset.hourlyFocusedDate = hoje;
+  }
 }
 
 function previsaoHorariaDeExemplo() {
   const inicio = new Date();
-  inicio.setMinutes(0, 0, 0);
+  inicio.setHours(0, 0, 0, 0);
   const chances = [10, 15, 20, 35, 50, 60, 45, 30];
-  return Array.from({ length: 24 - inicio.getHours() }, (_, indice) => ({
+  return Array.from({ length: 24 }, (_, indice) => ({
     probabilidadeChuva: chances[indice % chances.length],
     dataHora: new Date(inicio.getTime() + indice * 3_600_000).toISOString(),
     temperatura: 25 - Math.min(indice, 6),
@@ -558,7 +571,7 @@ async function renderGraficoClimaHorario() {
     return;
   }
   const inicio = new Date();
-  inicio.setMinutes(0, 0, 0);
+  inicio.setHours(0, 0, 0, 0);
   // "Hoje" termina às 23:00: a previsão não é limitada às oito primeiras horas.
   const fim = new Date(inicio);
   fim.setHours(23, 0, 0, 0);

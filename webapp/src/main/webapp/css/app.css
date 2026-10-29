@@ -216,6 +216,9 @@ body:has(.overview-grid){overflow-x:hidden;overflow-y:auto}
 .secondary-button:hover{background:#f4f9fd;border-color:#a9ceee}
 .recent-see-all{min-height:34px;padding:0 13px;border:0;border-radius:999px;background:linear-gradient(120deg,#1e94ec,#39adfa);color:#fff;box-shadow:0 2px 7px #168fec38}.recent-see-all:hover{background:linear-gradient(120deg,#147fcc,#2c9de8);border-color:transparent;color:#fff}.recent-see-all .icon{width:15px;height:15px}
 
+/* No celular, a navegação é uma barra de ícones; o pin permanece a ação principal. */
+@media(max-width:760px){.top-actions .location-pill{display:none}.primary-nav{display:grid;grid-template-columns:repeat(5,44px);justify-content:space-between;align-items:center;gap:0}.primary-nav>.sidebar-location-input,.primary-nav>.nav-link{width:44px;min-width:44px;height:44px;min-height:44px;margin:0;padding:0;justify-content:center;border-radius:15px}.primary-nav>.sidebar-location-input{background:#e7f5fd;border-color:#cce7fa;box-shadow:inset 0 0 0 1px #d8ecfb}.primary-nav>.sidebar-location-input .icon{width:21px;height:21px;color:#0877e5}.primary-nav>.nav-link{gap:0;background:transparent}.primary-nav>.nav-link span,.primary-nav>.sidebar-location-input span{display:none}.primary-nav>.nav-link .icon{width:21px;height:21px}.primary-nav>.nav-link.active{background:#f2f7fe}.primary-nav>.sidebar-location-input:hover,.primary-nav>.sidebar-location-input:focus-visible{background:#dff1fd;border-color:#98caed}}
+
 /* Histórico: um único conjunto de filtros, compacto e com leitura de pills. */
 #history-filter.history-filter-bar,.filter-bar#history-filter{grid-template-columns:minmax(300px,480px) minmax(210px,300px);justify-content:start;gap:16px;min-height:0;height:auto;padding:15px 20px}
 #history-filter .field{gap:7px}

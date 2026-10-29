@@ -75,6 +75,7 @@ export function renderShell(path, content) {
           <div class="page-heading"><h1>${title}</h1><p id="page-subtitle">${subtitle}</p></div>
           <div class="top-actions">
             <span class="mode-badge" id="mode-badge" hidden>Dados simulados</span>
+            <button class="location-pill" type="button" data-open-location-modal title="Alterar cidade da estação">${icon("pin")}<span data-location-label>Localização da estação</span></button>
             <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Ativar tema escuro" title="Ativar tema escuro">${icon("moon")}</button>
           </div>
         </header>
