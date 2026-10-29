@@ -59,8 +59,6 @@ export function overviewPage() {
       <div class="hourly-weather-chart-canvas" id="hourly-weather-rows" aria-label="Carregando previsão por hora"><div class="chart-empty">Carregando previsão por hora…</div></div>
       <div class="home-daily-forecast" id="home-daily-forecast" hidden aria-label="Carregando previsão dos próximos dias">
         <div class="home-daily-forecast-scroll" id="home-daily-forecast-scroll"></div>
-        <button class="daily-forecast-nav previous" id="daily-forecast-previous" type="button" aria-label="Ver dias anteriores" hidden><span aria-hidden="true">‹</span></button>
-        <button class="daily-forecast-nav next" id="daily-forecast-next" type="button" aria-label="Ver próximos dias" hidden><span aria-hidden="true">›</span></button>
       </div>
     </section></div><div class="overview-right">
     <aside class="card forecast-card" aria-labelledby="forecast-title">

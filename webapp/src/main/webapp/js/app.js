@@ -2,7 +2,7 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-2";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-4";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-5";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-2";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -650,18 +650,16 @@ function atualizarNavegacaoPrevisaoDiaria() {
   const scroller = document.querySelector("#home-daily-forecast-scroll");
   const anterior = document.querySelector("#daily-forecast-previous");
   const proximo = document.querySelector("#daily-forecast-next");
-  if (!scroller || !anterior || !proximo) return;
+  if (!scroller) return;
   const quantidade = Number(scroller.dataset.itemCount || scroller.children.length);
   // Sete dias ficam fixos no layout desktop. Em tela estreita, a faixa volta a
   // ser navegável para não comprimir as colunas.
   const semanaCabeNoPainel = quantidade <= 7 && !window.matchMedia("(max-width: 760px)").matches;
   scroller.classList.toggle("fit-seven-days", semanaCabeNoPainel);
   scroller.dataset.allowNavigation = String(quantidade > 0 && !semanaCabeNoPainel);
-  const maximoScroll = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
-  const posicao = Math.min(maximoScroll, Math.max(0, scroller.scrollLeft));
-  const podeNavegar = scroller.dataset.allowNavigation === "true" && maximoScroll > 1;
-  anterior.hidden = !podeNavegar || posicao <= 2;
-  proximo.hidden = !podeNavegar || posicao >= maximoScroll - 2;
+  // A rolagem personalizada é o único controle de navegação; não há setas laterais.
+  if (anterior) anterior.hidden = true;
+  if (proximo) proximo.hidden = true;
 }
 
 function renderDemoForecast() {
