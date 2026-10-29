@@ -166,6 +166,18 @@ html,body{background:#f1f2ef}
 /* A tabela ocupa a largura útil abaixo dos gráficos; o pager limita a dez linhas visíveis. */
 .history-records-card{height:auto;min-height:0;margin-top:14px;padding:18px 20px}.history-records-card .section-head{margin-bottom:12px}.history-records-card .section-head>small{color:#7189a6;font-size:.74rem}.history-records-card .table-scroll{max-height:none}.history-records-card td,.history-records-card th{padding:10px 12px}.table-pagination{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:14px;color:#67809f;font-size:.75rem}.table-pagination .secondary-button{min-height:32px;padding:0 13px}.table-pagination button:disabled{cursor:not-allowed;opacity:.5}@media(max-width:760px){.history-records-card{padding:16px 12px}.history-records-card .section-head{align-items:flex-start}.history-records-card .section-head>small{margin-top:5px}.history-records-card td,.history-records-card th{padding:9px 8px}.table-pagination{justify-content:center}}
 
+/* Visão geral: as três variáveis medidas usam a mesma linguagem dos gráficos do histórico. */
+.home-insights{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.home-insight-card{min-height:242px;height:auto;padding:18px 16px}
+.home-insight-card .title-with-icon{align-items:flex-start;gap:10px}
+.home-insight-card .mini-weather-icon{width:30px;height:30px}
+.home-insight-card h3{font-size:.9rem}
+.home-insight-card small{display:block;margin-top:2px;font-size:.67rem;color:#7890a8}
+.home-insight-card .chart-canvas.small{height:154px;margin-top:11px}
+.home-forecast-title-icon{width:34px;height:34px;object-fit:contain;flex:none}
+@media(max-width:1050px){.home-insights{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:760px){.home-insights{grid-template-columns:1fr}.home-insight-card{min-height:230px}.home-insight-card .chart-canvas.small{height:150px}}
+
 /* Histórico: um único conjunto de filtros, compacto e com leitura de pills. */
 #history-filter.history-filter-bar,.filter-bar#history-filter{grid-template-columns:minmax(300px,480px) minmax(210px,300px);justify-content:start;gap:16px;min-height:0;height:auto;padding:15px 20px}
 #history-filter .field{gap:7px}

@@ -60,11 +60,16 @@ export function overviewPage() {
       ${metricCard("Vento", "wind", "metric-wind", "km/h", "wind-detail")}
     </section>
     <section class="card chart-card home-chart hourly-weather-chart" aria-label="Previsão do tempo">
-      <div class="section-head home-chart-toolbar"><div class="title-with-icon"><span class="title-icon blue-text">${icon("chart")}</span><h2 id="hourly-weather-title">Previsão do tempo · Hoje</h2></div>${tabs("home-chart-range")}</div>
+      <div class="section-head home-chart-toolbar"><div class="title-with-icon">${meteocon("partly-cloudy-day", "forecast-meteocon home-forecast-title-icon")}<h2 id="hourly-weather-title">Previsão do tempo · Hoje</h2></div>${tabs("home-chart-range")}</div>
       <div class="hourly-weather-chart-canvas" id="hourly-weather-rows" aria-label="Carregando previsão por hora"><div class="chart-empty">Carregando previsão por hora…</div></div>
       <div class="home-daily-forecast" id="home-daily-forecast" hidden aria-label="Carregando previsão dos próximos dias">
         <div class="home-daily-forecast-scroll" id="home-daily-forecast-scroll"></div>
       </div>
+    </section>
+    <section class="home-insights" aria-label="Evolução das variáveis medidas hoje">
+      <article class="card mini-chart-card home-insight-card"><div class="title-with-icon">${meteocon("humidity", "mini-weather-icon")}<div><h3>Umidade relativa</h3><small id="home-humidity-subtitle">Umidade relativa do ar</small></div></div><div class="chart-canvas small" id="home-humidity-chart"><div class="chart-empty">Carregando leituras…</div></div></article>
+      <article class="card mini-chart-card home-insight-card"><div class="title-with-icon">${meteocon("rain", "mini-weather-icon")}<div><h3>Precipitação</h3><small id="home-rain-subtitle">Chuva registrada hoje</small></div></div><div class="chart-canvas small" id="home-rain-chart"><div class="chart-empty">Carregando leituras…</div></div></article>
+      <article class="card mini-chart-card home-insight-card"><div class="title-with-icon">${meteocon("wind", "mini-weather-icon")}<div><h3>Velocidade do vento</h3><small id="home-wind-subtitle">Vento registrado hoje</small></div></div><div class="chart-canvas small" id="home-wind-chart"><div class="chart-empty">Carregando leituras…</div></div></article>
     </section></div><div class="overview-right">
     <aside class="card forecast-card" aria-labelledby="forecast-title">
       <div class="card-title">${icon("calendar")}<div><h2 id="forecast-title">Previsão dos próximos dias</h2><small id="forecast-source">Dados da API Open-Meteo</small></div></div>

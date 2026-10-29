@@ -2,7 +2,7 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-8";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-15";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-16";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261029-7";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -757,12 +757,32 @@ async function refreshHome() {
     const lastValid = [...recentReadings].reverse().find(reading => reading.temperatura != null || reading.umidadeRelativa != null || reading.precipitacao != null || reading.velocidadeVento != null);
     renderHomeReading(lastValid || latestReading, recentReadings);
     renderRecentReadings();
+    renderHomeInsights();
   } catch (error) {
     recentReadings = [];
     renderHomeReading(latestReading, []);
     renderRecentReadings(error.message);
+    renderHomeInsights();
   }
   await renderHomeChart(homeChartRange);
+}
+
+function renderHomeInsights() {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setHours(23, 59, 59, 999);
+  const domain = { start, end, daily: false };
+  const charts = [
+    ["#home-humidity-chart", "#home-humidity-subtitle", "umidadeRelativa", "%", "#269ceb", "Umidade relativa do ar"],
+    ["#home-rain-chart", "#home-rain-subtitle", "precipitacao", "mm", "#6a95ed", "Chuva registrada hoje"],
+    ["#home-wind-chart", "#home-wind-subtitle", "velocidadeVento", "km/h", "#18b979", "Vento registrado hoje"],
+  ];
+  charts.forEach(([selector, subtitle, field, suffix, color, description]) => {
+    const summary = drawTemporalChart(selector, recentReadings, field, suffix, color, domain);
+    const period = summary?.available ? `${summary.available} horas medidas hoje` : "Sem leituras medidas hoje";
+    text(subtitle, `${description} · ${period}`);
+  });
 }
 
 function renderRecentReadings(errorMessage = null) {
