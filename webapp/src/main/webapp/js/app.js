@@ -1,8 +1,8 @@
 import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js?v=20261028-6";
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
-import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-5";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-6";
+import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-6";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-7";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-2";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -784,6 +784,8 @@ function redrawHistoryCharts() {
   };
   const summary = drawTemporalChart("#history-chart-canvas", historyReadings, variable, settings.suffix, settings.color, domain, historyForecasts);
   text("#history-chart-subtitle", periodSubtitle(summary, variable));
+  const legend = document.querySelector("#history-series-legend");
+  if (legend) legend.hidden = summary.forecast === 0;
   const miniCharts = [
     ["#humidity-chart", "umidadeRelativa", "%", "#269ceb"],
     ["#rain-chart", "precipitacao", "mm", "#6a95ed"],

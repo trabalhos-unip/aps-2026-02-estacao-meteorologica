@@ -85,7 +85,7 @@ export function historyPage() {
   <div class="history-grid">
     <div class="history-charts">
       <section class="card chart-card primary-history-chart">
-        <div class="section-head"><div class="title-with-icon"><span class="title-icon blue-text">${icon("chart")}</span><div><h2 id="history-chart-title">Histórico de temperatura</h2><small id="history-chart-subtitle">Carregando período…</small></div></div>${tabs("chart-range")}</div>
+        <div class="section-head"><div class="title-with-icon"><span class="title-icon blue-text">${icon("chart")}</span><div><h2 id="history-chart-title">Histórico de temperatura</h2><small id="history-chart-subtitle">Carregando período…</small></div></div><div class="history-chart-actions"><div class="history-series-legend" id="history-series-legend" aria-label="Legenda das séries" hidden><span class="measured"><i></i>Medido</span><span class="forecast"><i></i>Previsão</span></div>${tabs("chart-range")}</div></div>
         <div class="chart-canvas" id="history-chart-canvas"><div class="chart-empty">Carregando leituras…</div></div>
       </section>
       <div class="history-insights">

@@ -92,6 +92,7 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
   if (!target) return null;
   rendered.set(selector, [readings, field, suffix, color, domain, forecasts]);
   const daily = Boolean(domain.daily);
+  const forecastColor = "#afbdcc";
   const slots = calendarSlots(domain.start, domain.end, daily);
   const values = valuesBySlot(readings, field, daily);
   const available = slots.map((slot, index) => ({ ...slot, index, value: values.get(slot.key), source: "measured" }))
@@ -132,7 +133,12 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
     const digits = tickStep < 1 ? 2 : Number.isInteger(tickStep) ? 0 : 1;
     return `<line x1="${left}" y1="${y}" x2="${width - right}" y2="${y}" class="grid-line"/><text x="${left - 9}" y="${y + 4}" text-anchor="end" class="axis-label">${number(value, digits)}</text>`;
   }).join("");
-  const vertical = visibleTicks(slots.length, compact, daily, plotWidth - 2 * inset).map(index => {
+  // Na visão horária principal, cada coluna representa uma hora completa.
+  // Os gráficos menores mantêm a redução automática para não sobrepor rótulos.
+  const tickIndexes = !compact && !daily
+    ? slots.map((_, index) => index)
+    : visibleTicks(slots.length, compact, daily, plotWidth - 2 * inset);
+  const vertical = tickIndexes.map(index => {
     const x = xAt(index);
     return `<line x1="${x}" y1="${top}" x2="${x}" y2="${baseline}" class="grid-line temporal-grid-vertical"/><text x="${x}" y="${height - 7}" text-anchor="middle" class="axis-label">${slots[index].label}</text>`;
   }).join("");
@@ -160,10 +166,10 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
     const line = group.map((slot, index) => `${index ? "L" : "M"}${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`).join(" ");
     const points = group.map(slot => `L${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`).join(" ");
     const area = `M${xAt(group[0].index).toFixed(2)} ${baseline.toFixed(2)} ${points} L${xAt(group.at(-1).index).toFixed(2)} ${baseline.toFixed(2)} Z`;
-    return `<path d="${area}" fill="#8b9bae" opacity=".08"/><path d="${line}" fill="none" stroke="#8b9bae" stroke-width="${compact ? 2 : 2.5}" stroke-linecap="round" stroke-linejoin="round"/>`;
+    return `<path d="${area}" fill="${forecastColor}" opacity=".065"/><path d="${line}" fill="none" stroke="${forecastColor}" stroke-width="${compact ? 2 : 2.5}" stroke-dasharray="6 5" stroke-linecap="round" stroke-linejoin="round"/>`;
   }).join("");
   const measuredDots = available.map(slot => `<circle cx="${xAt(slot.index)}" cy="${yAt(slot.value)}" r="${compact ? 3 : 4}" fill="${color}" stroke="#fff" stroke-width="1.5"/>`).join("");
-  const forecastDots = projected.map(slot => `<circle cx="${xAt(slot.index)}" cy="${yAt(slot.value)}" r="${compact ? 3 : 4}" fill="#8b9bae" stroke="#fff" stroke-width="1.5"/>`).join("");
+  const forecastDots = projected.map(slot => `<circle cx="${xAt(slot.index)}" cy="${yAt(slot.value)}" r="${compact ? 3 : 4}" fill="${forecastColor}" stroke="#fff" stroke-width="1.5"/>`).join("");
   // A medição vem por cima da previsão, para permanecer legível no trecho em
   // que as duas séries existem para o mesmo horário.
   const shape = `${forecastLines}${measuredLines}${forecastDots}${measuredDots}`;
@@ -188,8 +194,8 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
     tooltip.querySelector("em").textContent = slot.source === "forecast"
       ? (available.some(item => item.index === slot.index) ? "Há medição real neste horário" : "Sem medição real neste horário")
       : previsaoDoHorario ? `Previsão: ${number(previsaoDoHorario.value)} ${suffix}` : "Sem previsão disponível";
-    guide.setAttribute("stroke", slot.source === "forecast" ? "#8b9bae" : color);
-    marker.setAttribute("fill", slot.source === "forecast" ? "#8b9bae" : color);
+    guide.setAttribute("stroke", slot.source === "forecast" ? forecastColor : color);
+    marker.setAttribute("fill", slot.source === "forecast" ? forecastColor : color);
     // Mantém a dica inteira dentro do gráfico (ela é centralizada no ponto com translateX(-50%)).
     const box = target.clientWidth;
     const half = Math.min(tooltip.offsetWidth / 2, box / 2);
