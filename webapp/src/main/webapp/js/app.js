@@ -2,7 +2,7 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-8";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-18";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-19";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261029-12";
 
 const routeFromLocation = () => ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -1068,13 +1068,6 @@ async function initSimulations() {
 }
 
 async function initSettings() {
-  function showLastReading() {
-    text("#settings-last-reading", latestReading ? dateTime(latestReading.dataHoraColeta) : "—");
-    if (!latestReading) return text("#settings-last-badge", "Indisponível");
-    if (simulated()) return text("#settings-last-badge", "Exemplo");
-    const minutes = Math.max(0, Math.round((Date.now() - parseDate(latestReading.dataHoraColeta).getTime()) / 60_000));
-    text("#settings-last-badge", minutes < 1 ? "Agora" : `Há ${minutes} min`);
-  }
   const saved = savedPreferences();
   document.querySelector("#settings-interval").value = saved.interval || "900";
   document.querySelector("#settings-notes").value = saved.notes || "";
@@ -1086,7 +1079,6 @@ async function initSettings() {
         localStorage.setItem(preferencesKey, JSON.stringify({ ...savedPreferences(), mode: radio.value }));
         applyMode(radio.value);
         await fetchLatest();
-        showLastReading();
         showToast(radio.value === "simulado" ? "Modo simulado ativo em todas as telas." : "Modo real ativo em todas as telas.");
       } catch {
         showToast("Não foi possível guardar o modo neste navegador.");
@@ -1112,26 +1104,6 @@ async function initSettings() {
     }
   });
   await fetchLatest();
-  showLastReading();
-  try {
-    const fonte = await leiturasApi.buscarFonte();
-    const link = document.querySelector("#settings-source-link");
-    link.href = fonte.urlConsulta;
-    link.hidden = false;
-    text("#settings-source-detail", `${fonte.nome} · ${fonte.cidade} · ${fonte.latitude}, ${fonte.longitude}`);
-  } catch (error) {
-    text("#settings-source-detail", "Link para a fonte indisponível");
-  }
-  try {
-    const total = await leiturasApi.buscarTotal();
-    text("#settings-db-detail", `${number(total.total, 0)} leituras disponíveis`);
-    text("#settings-db-badge", "Conectado");
-    document.querySelector("#settings-db-badge").classList.add("green-pill");
-  } catch (error) {
-    text("#settings-db-detail", error.message);
-    text("#settings-db-badge", "Indisponível");
-    document.querySelector("#settings-db-badge").classList.add("neutral-pill");
-  }
 }
 
 async function refreshCurrentPage() {
