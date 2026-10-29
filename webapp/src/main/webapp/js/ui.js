@@ -82,6 +82,12 @@ export function renderShell(path, content) {
         <main id="conteudo" class="page-content">${content}</main>
       </div>
     </div>
+    <nav class="bottom-nav" aria-label="Navegação móvel">
+      <div class="bottom-nav-links">
+        ${menu.map(item => `<a href="${item.path}" class="bottom-nav-link ${item.path === path ? "active" : ""}" aria-label="${item.label}" title="${item.label}" ${item.path === path ? 'aria-current="page"' : ""}>${icon(item.icon)}</a>`).join("")}
+      </div>
+      <button class="bottom-location-button" type="button" data-open-location-modal aria-label="Alterar cidade da estação" title="Alterar cidade da estação">${icon("pin")}</button>
+    </nav>
     <div id="location-modal" class="location-modal" role="dialog" aria-modal="true" aria-labelledby="location-modal-title" hidden>
       <div class="location-modal-card">
         <div class="location-modal-heading"><div><small>LOCALIZAÇÃO DA ESTAÇÃO</small><h2 id="location-modal-title">Escolha uma cidade</h2><p>Estado e coordenadas são preenchidos automaticamente.</p></div><button type="button" class="location-modal-close" data-close-location-modal aria-label="Fechar">×</button></div>
