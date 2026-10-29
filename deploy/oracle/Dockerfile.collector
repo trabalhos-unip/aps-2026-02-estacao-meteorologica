@@ -1,0 +1,16 @@
+FROM maven:3.9.11-eclipse-temurin-21 AS build
+
+WORKDIR /workspace
+COPY pom.xml .
+COPY compartilhado/pom.xml compartilhado/pom.xml
+COPY collector/pom.xml collector/pom.xml
+COPY webapp/pom.xml webapp/pom.xml
+RUN mvn -B -pl collector -am dependency:go-offline
+COPY compartilhado/src compartilhado/src
+COPY collector/src collector/src
+RUN mvn -B -pl collector -am package -DskipTests
+
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+COPY --from=build /workspace/collector/target/collector-*.jar /app/app.jar
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=70", "-jar", "/app/app.jar"]

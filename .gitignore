@@ -12,6 +12,7 @@ target/
 .settings/
 # Segredos e ambiente local
 .env
+deploy/oracle/.env.oracle
 .env.*
 !.env.exemplo
 # Sistema operacional

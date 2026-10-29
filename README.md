@@ -270,6 +270,10 @@ Pacote Java principal: `br.com.aps.meteorologia`.
 
 ## Documentação complementar
 
+Para publicar a aplicação completa em uma VM Oracle Cloud Always Free, consulte
+[`deploy/oracle/GUIA.md`](deploy/oracle/GUIA.md). Ele inclui os Dockerfiles do
+`webapp` e do `collector`, MySQL persistente e os passos do console da Oracle.
+
 | Documento | Conteúdo |
 |---|---|
 | [`docs/planejamento.md`](docs/planejamento.md) | Escopo, cronograma e divisão de tarefas |
