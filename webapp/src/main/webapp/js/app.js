@@ -2,7 +2,7 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-5";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-5";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-6";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-2";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -243,6 +243,8 @@ let historyForecasts = [];
 let historyStart = null;
 let historyEnd = null;
 let historyRequest = 0;
+let historyCurrentPage = 1;
+const HISTORY_PAGE_SIZE = 10;
 let pageRefreshInProgress = false;
 let homeChartRange = "24h";
 let homeChartRequest = 0;
@@ -796,7 +798,11 @@ function redrawHistoryCharts() {
 function renderHistoryDetails() {
   text("#summary-period", `${dateTime(historyStart)} a ${dateTime(historyEnd)}`);
   renderSummary(historyReadings);
-  const visible = [...historyReadings].reverse().slice(0, 100);
+  const ordered = [...historyReadings].reverse();
+  const totalPages = Math.max(1, Math.ceil(ordered.length / HISTORY_PAGE_SIZE));
+  historyCurrentPage = Math.min(historyCurrentPage, totalPages);
+  const pageStart = (historyCurrentPage - 1) * HISTORY_PAGE_SIZE;
+  const visible = ordered.slice(pageStart, pageStart + HISTORY_PAGE_SIZE);
   fillTable("#history-rows", visible, [
     { value: reading => reading.diario ? readingMoment(reading) : dateTime(reading.dataHoraColeta) },
     { value: reading => unit(reading.temperatura, "°C") },
@@ -805,6 +811,16 @@ function renderHistoryDetails() {
     { value: reading => unit(reading.velocidadeVento, "km/h") },
     { value: reading => reading.fonteDados || "—", badge: true },
   ]);
+  const pagination = document.querySelector("#history-pagination");
+  const status = document.querySelector("#history-page-status");
+  const pageLabel = document.querySelector("#history-page-label");
+  if (status) status.textContent = ordered.length ? `${pageStart + 1}–${Math.min(pageStart + HISTORY_PAGE_SIZE, ordered.length)} de ${ordered.length} registros` : "0 registros";
+  if (pagination) {
+    pagination.hidden = ordered.length <= HISTORY_PAGE_SIZE;
+    pagination.querySelector('[data-history-page="previous"]').disabled = historyCurrentPage === 1;
+    pagination.querySelector('[data-history-page="next"]').disabled = historyCurrentPage === totalPages;
+  }
+  if (pageLabel) pageLabel.textContent = `Página ${historyCurrentPage} de ${totalPages}`;
   redrawHistoryCharts();
 }
 
@@ -842,6 +858,7 @@ function setHistoryPreset(range) {
   const [start, end] = rangeDates(range);
   document.querySelector("#history-start").value = dateInput(start);
   document.querySelector("#history-end").value = dateInput(end);
+  historyCurrentPage = 1;
   return loadHistory(start, end);
 }
 
@@ -855,6 +872,12 @@ async function initHistory() {
     });
   }
   document.querySelector("#history-variable").addEventListener("change", redrawHistoryCharts);
+  document.querySelector("#history-pagination").addEventListener("click", event => {
+    const direction = event.target.closest("[data-history-page]")?.dataset.historyPage;
+    if (!direction) return;
+    historyCurrentPage += direction === "next" ? 1 : -1;
+    renderHistoryDetails();
+  });
   document.querySelector("#history-filter").addEventListener("submit", event => {
     event.preventDefault();
     const start = parseDate(`${document.querySelector("#history-start").value}T00:00:00`);
@@ -865,6 +888,7 @@ async function initHistory() {
       button.classList.remove("selected");
       button.setAttribute("aria-pressed", "false");
     });
+    historyCurrentPage = 1;
     loadHistory(start, end);
   });
 }

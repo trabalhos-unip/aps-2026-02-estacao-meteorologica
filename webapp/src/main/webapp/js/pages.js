@@ -96,12 +96,13 @@ export function historyPage() {
     </div>
     <aside class="history-side">
       <section class="card summary-card"><div class="card-title"><div><h2>Resumo do período</h2><small id="summary-period">—</small></div></div><div id="summary-rows" class="summary-rows"><p class="muted">Aguardando leituras…</p></div></section>
-      <section class="card records-card">
-        <div class="section-head"><div class="title-with-icon"><span class="blue-text">${icon("database")}</span><h2>Registros no período</h2></div></div>
-        <div class="table-scroll"><table><caption class="sr-only">Registros meteorológicos do período</caption><thead><tr><th>Data</th><th>Temperatura</th><th>Umidade</th><th>Precipitação</th><th>Vento</th><th>Origem</th></tr></thead><tbody id="history-rows"><tr><td colspan="6" class="empty-cell">Carregando…</td></tr></tbody></table></div>
-      </section>
     </aside>
-  </div>`;
+  </div>
+  <section class="card records-card history-records-card">
+    <div class="section-head"><div class="title-with-icon"><span class="blue-text">${icon("database")}</span><h2>Registros no período</h2></div><small id="history-page-status" aria-live="polite"></small></div>
+    <div class="table-scroll"><table><caption class="sr-only">Registros meteorológicos do período</caption><thead><tr><th>Data</th><th>Temperatura</th><th>Umidade</th><th>Precipitação</th><th>Vento</th><th>Origem</th></tr></thead><tbody id="history-rows"><tr><td colspan="6" class="empty-cell">Carregando…</td></tr></tbody></table></div>
+    <nav class="table-pagination" id="history-pagination" aria-label="Paginação dos registros" hidden><button type="button" class="secondary-button" data-history-page="previous">Anterior</button><span id="history-page-label"></span><button type="button" class="secondary-button" data-history-page="next">Próxima</button></nav>
+  </section>`;
 }
 
 export const scenarios = [
