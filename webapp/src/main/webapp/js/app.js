@@ -452,7 +452,8 @@ function graficoDeProbabilidadeChuva(previsoes) {
   const probabilidades = previsoes.map(item => Number(item.probabilidadeChuva)).filter(Number.isFinite);
   if (!probabilidades.length) return "";
   const pontos = previsoes.map((item, index) => {
-    const x = previsoes.length === 1 ? 50 : 4 + index * 92 / (previsoes.length - 1);
+    const divisor = previsoes.length - 1;
+    const x = previsoes.length === 1 ? 50 : index === 0 ? 25 / divisor : index === divisor ? 100 - 25 / divisor : index / divisor * 100;
     // Percentuais usam a escala 0–100%, mas ficam dentro da área visual do cartão.
     const chance = Math.min(100, Math.max(0, Number(item.probabilidadeChuva)));
     const y = Number.isFinite(chance) ? 78 - chance * .32 : 78;
@@ -534,8 +535,10 @@ async function renderHomeChart(range = homeChartRange) {
   setRangeButtons(range, ["home-chart-range"]);
   const hourlyCanvas = document.querySelector("#hourly-weather-rows");
   const dailyPanel = document.querySelector("#home-daily-forecast");
+  const chartPanel = document.querySelector(".hourly-weather-chart");
   if (!hourlyCanvas || !dailyPanel) return;
   const hourly = range === "24h";
+  chartPanel?.classList.toggle("daily-forecast-mode", !hourly);
   hourlyCanvas.hidden = !hourly;
   dailyPanel.hidden = hourly;
   if (hourly) {
