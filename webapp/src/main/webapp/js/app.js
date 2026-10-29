@@ -433,12 +433,14 @@ function iconeDoClimaHorario(item) {
   return "cloud";
 }
 
-// Ícones próprios do painel horário: preenchidos para manter a leitura rápida do clima.
+// Meteocons Fill (MIT): SVGs estáticos, para não adicionar animações ao gráfico.
 function simboloClimaHorario(tipo) {
-  const nuvem = '<path class="weather-cloud-back" d="M17 41h31.5c7.1 0 12.5-4.8 12.5-11.1 0-6-4.7-10.7-10.7-11.1C48.4 11.2 42.2 6 34.7 6c-7.7 0-14.1 5.5-15.6 12.7C11.8 19 6 24.1 6 30.2 6 36.1 10.9 41 17 41Z"/><path class="weather-cloud-light" d="M17 39h31.5c5.6 0 10-3.5 10-8.2 0-4.6-3.8-8.1-8.9-8.3-2.1-7.5-8-12.6-14.9-12.6-7.1 0-12.9 5.2-14.3 12.1-6.8.1-11.8 3.7-11.8 8.4C8.6 35.2 12.3 39 17 39Z"/>';
-  if (tipo === "sun") return `<svg class="hourly-weather-symbol partly-cloudy" viewBox="0 0 68 56" aria-hidden="true"><g class="weather-sun"><circle cx="22" cy="20" r="9"/><path d="M22 4v-4M22 40v-4M6 20H2m40 0h-4M10.7 8.7 7.8 5.8m28.4 28.4-2.9-2.9M10.7 31.3l-2.9 2.9m28.4-28.4-2.9 2.9"/></g>${nuvem}</svg>`;
-  if (tipo === "rain") return `<svg class="hourly-weather-symbol rainy" viewBox="0 0 68 56" aria-hidden="true">${nuvem}<g class="weather-rain"><path d="m23 45-3 7M35 45l-3 7M47 45l-3 7"/></g></svg>`;
-  return `<svg class="hourly-weather-symbol cloudy" viewBox="0 0 68 56" aria-hidden="true">${nuvem}</svg>`;
+  const asset = {
+    sun: "partly-cloudy-day",
+    cloud: "overcast-day",
+    rain: "rain",
+  }[tipo] || "overcast-day";
+  return `<img class="hourly-weather-symbol" src="https://cdn.meteocons.com/3.0.0-next.10/svg-static/fill/${asset}.svg" alt="" aria-hidden="true" decoding="async">`;
 }
 
 function graficoDeTemperatura(previsoes) {

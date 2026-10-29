@@ -5,14 +5,7 @@
 .hourly-weather-point { display: grid; min-width: 0; grid-template-rows: 66px 33px minmax(137px, 1fr) 22px 26px; align-items: center; justify-items: center; gap: 3px; padding: 0 8px; color: #7187a0; text-align: center; }
 .hourly-weather-point time { grid-row: 4; color: #607a99; font-size: .93rem; font-variant-numeric: tabular-nums; }
 .hourly-weather-icon { display: grid; grid-row: 1; place-items: center; width: 68px; height: 56px; }
-.hourly-weather-symbol { width: 68px; height: 56px; overflow: visible; }
-.weather-cloud-back { fill: #b8c6d7; }
-.weather-cloud-light { fill: #d5deea; }
-.weather-sun { fill: #ffc227; stroke: #ffc227; stroke-width: 3.2; stroke-linecap: round; }
-.weather-sun path { fill: none; }
-.weather-rain { fill: none; stroke: #1b9cf0; stroke-width: 3.3; stroke-linecap: round; }
-.hourly-weather-symbol.rainy .weather-cloud-back { fill: #aebfd2; }
-.hourly-weather-symbol.rainy .weather-cloud-light { fill: #cbd7e4; }
+.hourly-weather-symbol { width: 68px; height: 56px; object-fit: contain; }
 .hourly-weather-point strong { grid-row: 2; color: #082a59; font-size: 1.48rem; line-height: 1; letter-spacing: -.045em; }
 .hourly-rain-chance { display: inline-flex; grid-row: 5; align-items: center; gap: 7px; color: #5d82ae; font-size: .97rem; font-weight: 500; }
 .hourly-rain-chance .icon { width: 21px; height: 21px; color: #22a9f1; fill: #22a9f1; }
