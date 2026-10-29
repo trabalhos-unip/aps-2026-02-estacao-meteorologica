@@ -184,6 +184,10 @@ html,body{background:#f1f2ef}
 .sidebar-section-label{margin-top:0}
 .nav-link .icon{stroke-width:1.5}
 
+/* A visão geral cresce com os gráficos adicionais e usa a rolagem da página. */
+body:has(.overview-grid){overflow-x:hidden;overflow-y:auto}
+.app-layout:has(.overview-grid) .workspace{overflow:visible}
+
 /* Histórico: um único conjunto de filtros, compacto e com leitura de pills. */
 #history-filter.history-filter-bar,.filter-bar#history-filter{grid-template-columns:minmax(300px,480px) minmax(210px,300px);justify-content:start;gap:16px;min-height:0;height:auto;padding:15px 20px}
 #history-filter .field{gap:7px}
