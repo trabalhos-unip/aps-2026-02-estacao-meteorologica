@@ -17,7 +17,7 @@ function localDay(date) {
   return `${year}-${month}-${day}`;
 }
 
-function calendarSlots(start, end, daily, readings) {
+function calendarSlots(start, end, daily) {
   if (daily) {
     const slots = [];
     const day = new Date(start.getFullYear(), start.getMonth(), start.getDate());
@@ -29,12 +29,10 @@ function calendarSlots(start, end, daily, readings) {
     return slots;
   }
 
-  const hours = readings.map(reading => parseDate(reading.dataHoraColeta)?.getHours()).filter(hour => hour !== undefined);
-  if (!hours.length) return [];
-  const first = Math.min(...hours);
-  const last = Math.max(...hours);
-  return Array.from({ length: last - first + 1 }, (_, index) => {
-    const hour = first + index;
+  // "Hoje" é uma janela de um dia completo: não deslocamos o primeiro ponto
+  // para o centro quando a coleta acabou de iniciar à meia-noite. As horas sem
+  // medição continuam vazias, sem criar valores artificiais.
+  return Array.from({ length: 24 }, (_, hour) => {
     return { key: `${localDay(start)}T${String(hour).padStart(2, "0")}`, label: `${String(hour).padStart(2, "0")}h` };
   });
 }
@@ -94,7 +92,7 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
   if (!target) return null;
   rendered.set(selector, [readings, field, suffix, color, domain]);
   const daily = Boolean(domain.daily);
-  const slots = calendarSlots(domain.start, domain.end, daily, readings);
+  const slots = calendarSlots(domain.start, domain.end, daily);
   const values = valuesBySlot(readings, field, daily);
   const available = slots.map((slot, index) => ({ ...slot, index, value: values.get(slot.key) }))
     .filter(slot => slot.value !== undefined);

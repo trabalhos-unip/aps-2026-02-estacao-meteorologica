@@ -67,7 +67,7 @@ Os status são `SUCESSO` e `ERRO`. Os tipos de erro são `TIMEOUT`, `REDE`, `LIM
 
 Os dois resumos recebem `estacao_id`, `tipo` (`HISTORICO` ou `PREVISAO`), a origem e o instante de atualização.
 O diário consolida mínima, máxima, média, umidade, precipitação, vento e código WMO por data. O horário mantém a
-série individual por hora. O coletor busca 15 dias anteriores e 7 dias futuros na Open-Meteo ao iniciar, a cada seis
+série individual por hora. O coletor busca 30 dias anteriores e 15 dias futuros na Open-Meteo ao iniciar, a cada seis
 horas e até 10 segundos após uma troca de estação; leituras locais continuam sendo o registro das condições atuais.
 
 ## Regras e validações

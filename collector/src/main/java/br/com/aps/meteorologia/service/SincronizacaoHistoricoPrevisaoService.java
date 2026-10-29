@@ -62,8 +62,8 @@ public class SincronizacaoHistoricoPrevisaoService {
                                                   @Value("${openmeteo.latitude}") double latitude,
                                                   @Value("${openmeteo.longitude}") double longitude,
                                                   @Value("${openmeteo.timezone}") String timezone,
-                                                  @Value("${sincronizacao.historico-dias:15}") int diasHistorico,
-                                                  @Value("${sincronizacao.previsao-dias:7}") int diasPrevisao) {
+                                                  @Value("${sincronizacao.historico-dias:30}") int diasHistorico,
+                                                  @Value("${sincronizacao.previsao-dias:15}") int diasPrevisao) {
         this.client = client;
         this.dao = dao;
         this.daoHorario = daoHorario;

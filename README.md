@@ -162,8 +162,8 @@ Para interromper uma aplicação iniciada pelo terminal, pressione `Ctrl+C`.
 Com o **webapp** e o **collector** em execução, abra **Configurações**, informe a cidade e selecione a UF. O país é
 fixado em Brasil. Ao salvar, o webapp obtém as coordenadas na Open-Meteo, cria ou atualiza a estação no banco e a
 ativa. A próxima coleta já usa a nova posição. Os dados históricos da cidade anterior continuam guardados, mas não
-são exibidos enquanto outra estação estiver ativa. Em instantes, o collector também carrega os 15 dias
-históricos e os 7 dias de previsão da nova cidade.
+são exibidos enquanto outra estação estiver ativa. Em instantes, o collector também carrega os 30 dias
+históricos e os 15 dias de previsão da nova cidade.
 
 ## Modos de coleta
 

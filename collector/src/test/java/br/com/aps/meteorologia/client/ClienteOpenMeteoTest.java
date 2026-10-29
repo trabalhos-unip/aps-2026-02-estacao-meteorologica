@@ -87,7 +87,7 @@ class ClienteOpenMeteoTest {
     void buscaSerieHorariaComPassadoEPrevisao() throws IOException {
         ClienteOpenMeteo cliente = criarClienteComResposta(200, JSON_SERIE);
 
-        RespostaSerieOpenMeteo serie = cliente.buscarSerieHoraria(15, 7);
+        RespostaSerieOpenMeteo serie = cliente.buscarSerieHoraria(30, 15);
 
         assertThat(serie.hourly().time()).containsExactly("2026-10-20T00:00", "2026-10-20T01:00");
         assertThat(serie.hourly().temperatura()).containsExactly(20.0, 21.0);
