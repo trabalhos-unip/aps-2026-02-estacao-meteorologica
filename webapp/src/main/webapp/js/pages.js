@@ -46,7 +46,7 @@ export function overviewPage() {
     </section>
     <section class="metrics-grid" aria-label="Variáveis meteorológicas">
       ${metricCard("Temperatura", "thermometer", "metric-temperature", "°C", "temperature-detail")}
-      ${metricCard("Umidade", "raindrop", "metric-humidity", "%", "humidity-detail")}
+      ${metricCard("Umidade", "humidity", "metric-humidity", "%", "humidity-detail")}
       ${metricCard("Chuva", "rain", "metric-rain-chance", "%", "rain-detail")}
       ${metricCard("Vento", "wind", "metric-wind", "km/h", "wind-detail")}
     </section>
