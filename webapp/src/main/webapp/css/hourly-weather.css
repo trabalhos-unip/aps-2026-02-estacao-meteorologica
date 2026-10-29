@@ -1,6 +1,9 @@
 /* Previsão horária: o desenho segue a leitura vertical de apps de clima. */
 .hourly-weather-chart { height: 368px; flex: none; }
 .hourly-weather-chart-canvas { position: relative; height: 280px; margin-top: 12px; overflow-x: auto; overflow-y: hidden; }
+.home-chart-toolbar { min-height: 34px; }
+.home-chart-toolbar small { color: #7187a0; font-size: .82rem; }
+.home-temporal-canvas { height: 280px !important; margin-top: 12px !important; }
 .hourly-weather-points { position: relative; z-index: 2; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(116px, 1fr); min-width: 930px; height: 100%; }
 .hourly-weather-point { display: grid; min-width: 0; grid-template-rows: 58px 32px minmax(90px, 1fr) 22px 26px; align-items: center; justify-items: center; gap: 3px; padding: 0 8px; color: #7187a0; text-align: center; }
 .hourly-weather-point time { grid-row: 4; color: #607a99; font-size: .93rem; font-variant-numeric: tabular-nums; }

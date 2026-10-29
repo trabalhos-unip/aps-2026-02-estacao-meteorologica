@@ -230,6 +230,8 @@ let historyStart = null;
 let historyEnd = null;
 let historyRequest = 0;
 let pageRefreshInProgress = false;
+let homeChartRange = "24h";
+let homeChartRequest = 0;
 
 function rangeDates(range, anchor = anchorDate(latestReading)) {
   const end = new Date(anchor);
@@ -529,6 +531,34 @@ async function renderGraficoClimaHorario() {
   }
 }
 
+async function renderHomeChart(range = homeChartRange) {
+  homeChartRange = range;
+  setRangeButtons(range, ["home-chart-range"]);
+  const hourlyCanvas = document.querySelector("#hourly-weather-rows");
+  const historicalCanvas = document.querySelector("#home-temporal-chart");
+  if (!hourlyCanvas || !historicalCanvas) return;
+  const hourly = range === "24h";
+  hourlyCanvas.hidden = !hourly;
+  historicalCanvas.hidden = hourly;
+  if (hourly) {
+    await renderGraficoClimaHorario();
+    return;
+  }
+  const request = ++homeChartRequest;
+  const [start, end] = rangeDates(range);
+  text("#hourly-weather-subtitle", `Últimos ${range === "7d" ? "7" : "30"} dias · média diária de temperatura`);
+  try {
+    const readings = readingsForPeriod(await buscarSerieDoPeriodo(start, end), start, end);
+    if (request !== homeChartRequest || homeChartRange !== range) return;
+    const summary = drawTemporalChart("#home-temporal-chart", readings, "temperatura", "°C", "#1299ed", { start, end, daily: true });
+    if (!summary.available) text("#hourly-weather-subtitle", `Últimos ${range === "7d" ? "7" : "30"} dias · sem dados históricos`);
+  } catch (error) {
+    if (request !== homeChartRequest || homeChartRange !== range) return;
+    clearTemporalChart("#home-temporal-chart", error.message);
+    text("#hourly-weather-subtitle", "Histórico indisponível");
+  }
+}
+
 function renderDemoForecast() {
   if (!simulated()) return;
   text("#forecast-source", "Exemplo de previsão simulada");
@@ -588,10 +618,14 @@ async function refreshHome() {
     renderHomeReading(latestReading, []);
     fillTable("#recent-rows", [], Array.from({ length: 5 }, () => ({})), error.message);
   }
-  await renderGraficoClimaHorario();
+  await renderHomeChart(homeChartRange);
 }
 
 async function initHome() {
+  document.querySelector("#home-chart-range").addEventListener("click", event => {
+    const button = event.target.closest("[data-range]");
+    if (button) renderHomeChart(button.dataset.range);
+  });
   await refreshHome();
 }
 
