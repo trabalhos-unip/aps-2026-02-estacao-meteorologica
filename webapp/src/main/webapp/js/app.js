@@ -448,7 +448,7 @@ function simboloClimaEstatico(tipo) {
   return `<img class="forecast-meteocon" src="https://cdn.meteocons.com/3.0.0-next.10/svg-static/fill/${assetMeteocon(tipo)}.svg" alt="" aria-hidden="true" decoding="async">`;
 }
 
-function graficoDeProbabilidadeChuva(previsoes) {
+function graficoDeProbabilidadeChuva(previsoes, largura) {
   const probabilidades = previsoes.map(item => Number(item.probabilidadeChuva)).filter(Number.isFinite);
   if (!probabilidades.length) return "";
   const pontos = previsoes.map((item, index) => {
@@ -463,7 +463,7 @@ function graficoDeProbabilidadeChuva(previsoes) {
   const area = `M ${pontos[0].x},84 L ${linha.replaceAll(" ", " L ")} L ${pontos.at(-1).x},84 Z`;
   const linhasHorizontais = [46, 57, 68, 79].map(y => `<line class="hourly-grid-line" x1="0" x2="100" y1="${y}" y2="${y}" />`).join("");
   const linhasVerticais = pontos.map(({ x }) => `<line class="hourly-grid-line hourly-grid-line-vertical" x1="${x}" x2="${x}" y1="43" y2="84" />`).join("");
-  return `<svg class="hourly-rain-probability-line" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="hourly-rain-probability-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#38a9f8" stop-opacity=".26"/><stop offset="1" stop-color="#38a9f8" stop-opacity=".015"/></linearGradient></defs>${linhasHorizontais}${linhasVerticais}<path class="hourly-rain-probability-area" d="${area}"/><polyline points="${linha}" /></svg><span class="hourly-rain-probability-dots" aria-hidden="true">${pontos.map(({ x, y }) => `<i style="left:${x}%;top:${y}%"></i>`).join("")}</span>`;
+  return `<svg class="hourly-rain-probability-line" style="width:${largura}px" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="hourly-rain-probability-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#38a9f8" stop-opacity=".26"/><stop offset="1" stop-color="#38a9f8" stop-opacity=".015"/></linearGradient></defs>${linhasHorizontais}${linhasVerticais}<path class="hourly-rain-probability-area" d="${area}"/><polyline points="${linha}" /></svg><span class="hourly-rain-probability-dots" style="width:${largura}px" aria-hidden="true">${pontos.map(({ x, y }) => `<i style="left:${x}%;top:${y}%"></i>`).join("")}</span>`;
 }
 
 function horarioEmFormato24h(value) {
@@ -490,7 +490,9 @@ function desenharGraficoClimaHorario(previsoes) {
   }
   atualizarCartaoChuva(previsoes);
   canvas.setAttribute("aria-label", "Previsão por hora com probabilidade de chuva");
-  canvas.innerHTML = `${graficoDeProbabilidadeChuva(previsoes)}<div class="hourly-weather-points">${previsoes.map(item => {
+  // Mantém cada hora legível e permite navegar pelo restante do dia sem comprimir ícones ou pontos.
+  const largura = Math.max(canvas.clientWidth, previsoes.length * 104);
+  canvas.innerHTML = `${graficoDeProbabilidadeChuva(previsoes, largura)}<div class="hourly-weather-points" style="--hourly-items:${previsoes.length};width:${largura}px">${previsoes.map(item => {
     const hora = horarioEmFormato24h(item.dataHora);
     const chance = Number(item.probabilidadeChuva);
     const tipo = iconeDoClimaHorario(item);
@@ -502,11 +504,12 @@ function previsaoHorariaDeExemplo() {
   const inicio = new Date();
   inicio.setMinutes(0, 0, 0);
   const chances = [10, 15, 20, 35, 50, 60, 45, 30];
-  return chances.map((probabilidadeChuva, indice) => ({
+  return Array.from({ length: 24 - inicio.getHours() }, (_, indice) => ({
+    probabilidadeChuva: chances[indice % chances.length],
     dataHora: new Date(inicio.getTime() + indice * 3_600_000).toISOString(),
-    temperatura: 25 - Math.min(indice, 6), probabilidadeChuva,
-    precipitacao: probabilidadeChuva >= 40 ? (probabilidadeChuva - 30) / 10 : 0,
-    codigoClima: probabilidadeChuva >= 40 ? 61 : indice < 2 ? 1 : 3,
+    temperatura: 25 - Math.min(indice, 6),
+    precipitacao: chances[indice % chances.length] >= 40 ? (chances[indice % chances.length] - 30) / 10 : 0,
+    codigoClima: chances[indice % chances.length] >= 40 ? 61 : indice < 2 ? 1 : 3,
   }));
 }
 
@@ -517,8 +520,9 @@ async function renderGraficoClimaHorario() {
   }
   const inicio = new Date();
   inicio.setMinutes(0, 0, 0);
-  // O painel foi desenhado para uma faixa legível de oito horas, incluindo a atual.
-  const fim = new Date(inicio.getTime() + 7 * 3_600_000);
+  // "Hoje" termina às 23:00: a previsão não é limitada às oito primeiras horas.
+  const fim = new Date(inicio);
+  fim.setHours(23, 0, 0, 0);
   try {
     const previsoes = await resumosHorariosApi.buscarPrevisoes(apiDate(inicio), apiDate(fim));
     desenharGraficoClimaHorario(previsoes);
