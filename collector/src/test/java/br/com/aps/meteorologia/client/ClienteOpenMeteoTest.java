@@ -31,7 +31,7 @@ class ClienteOpenMeteoTest {
     static final String JSON_SERIE = """
             {"timezone":"America/Sao_Paulo","hourly":{"time":["2026-10-20T00:00","2026-10-20T01:00"],
             "temperature_2m":[20.0,21.0],"relative_humidity_2m":[80,76],"precipitation":[0.0,0.4],
-            "rain":[0.0,0.4],"wind_speed_10m":[5.0,7.0],"weather_code":[3,61]}}
+            "rain":[0.0,0.4],"precipitation_probability":[20,70],"wind_speed_10m":[5.0,7.0],"weather_code":[3,61]}}
             """;
 
     private HttpServer servidor;
@@ -91,6 +91,8 @@ class ClienteOpenMeteoTest {
 
         assertThat(serie.hourly().time()).containsExactly("2026-10-20T00:00", "2026-10-20T01:00");
         assertThat(serie.hourly().temperatura()).containsExactly(20.0, 21.0);
+        assertThat(serie.hourly().probabilidadeChuva()).containsExactly(20, 70);
+        assertThat(ClienteOpenMeteo.VARIAVEIS_HORARIAS).contains("precipitation_probability");
     }
 
     @Test

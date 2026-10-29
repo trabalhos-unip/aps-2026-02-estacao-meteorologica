@@ -3,6 +3,7 @@ package br.com.aps.meteorologia.controller;
 import br.com.aps.meteorologia.dao.IEstacaoDAO;
 import br.com.aps.meteorologia.dao.ResumoDiarioMeteorologicoDAO;
 import br.com.aps.meteorologia.dao.ResumoHorarioMeteorologicoDAO;
+import br.com.aps.meteorologia.dto.ResumoHorarioMeteorologicoDTO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -42,9 +43,15 @@ public class ResumoMeteorologicoController {
     }
 
     @GetMapping("/api/resumos-horarios/historico")
-    public List<?> historicoHorario(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime inicio,
-                                    @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fim) {
-        return horarios.buscarHistorico(estacaoId(), inicio, fim);
+    public List<ResumoHorarioMeteorologicoDTO> historicoHorario(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime inicio,
+                                                                 @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fim) {
+        return horarios.buscarHistorico(estacaoId(), inicio, fim).stream().map(ResumoHorarioMeteorologicoDTO::de).toList();
+    }
+
+    @GetMapping("/api/resumos-horarios/previsoes")
+    public List<ResumoHorarioMeteorologicoDTO> previsoesHorarias(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime inicio,
+                                                                   @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fim) {
+        return horarios.buscarPrevisoes(estacaoId(), inicio, fim).stream().map(ResumoHorarioMeteorologicoDTO::de).toList();
     }
 
     private Long estacaoId() { return estacoes.buscarAtiva().orElseThrow(() -> new IllegalArgumentException("Nenhuma estação ativa")).getId(); }

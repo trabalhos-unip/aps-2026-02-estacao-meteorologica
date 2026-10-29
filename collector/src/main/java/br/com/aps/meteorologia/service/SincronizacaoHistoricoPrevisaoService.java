@@ -172,6 +172,7 @@ public class SincronizacaoHistoricoPrevisaoService {
                 resumo.setUmidadeRelativa(valor(horas.umidadeRelativa(), indice));
                 resumo.setPrecipitacao(valor(horas.precipitation(), indice));
                 resumo.setChuva(valor(horas.rain(), indice));
+                resumo.setProbabilidadeChuva(valor(horas.probabilidadeChuva(), indice));
                 resumo.setVelocidadeVento(valor(horas.velocidadeVento(), indice));
                 resumo.setCodigoClima(valor(horas.codigoClima(), indice));
                 resumo.setFonteDados(tipo == TipoResumoDiario.HISTORICO ? FONTE_HISTORICO : FONTE_PREVISAO);

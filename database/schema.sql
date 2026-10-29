@@ -124,6 +124,7 @@ CREATE TABLE IF NOT EXISTS resumo_horario_meteorologico (
     umidade_relativa      INT          NULL,
     precipitacao          DOUBLE       NULL,
     chuva                 DOUBLE       NULL,
+    probabilidade_chuva   INT          NULL,
     velocidade_vento      DOUBLE       NULL,
     codigo_clima          INT          NULL,
     fonte_dados           VARCHAR(100) NOT NULL,
@@ -133,6 +134,7 @@ CREATE TABLE IF NOT EXISTS resumo_horario_meteorologico (
         ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT uq_resumo_horario_estacao_momento_tipo UNIQUE (estacao_id, data_hora_referencia, tipo),
     CONSTRAINT ck_resumo_horario_tipo CHECK (tipo IN ('HISTORICO', 'PREVISAO')),
+    CONSTRAINT ck_resumo_horario_probabilidade_chuva CHECK (probabilidade_chuva BETWEEN 0 AND 100),
     INDEX idx_resumo_horario_estacao_momento_tipo (estacao_id, data_hora_referencia, tipo)
 ) ENGINE=InnoDB;
 

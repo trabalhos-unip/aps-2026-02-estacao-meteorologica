@@ -4,6 +4,8 @@ import br.com.aps.meteorologia.dao.IEstacaoDAO;
 import br.com.aps.meteorologia.dao.ResumoDiarioMeteorologicoDAO;
 import br.com.aps.meteorologia.dao.ResumoHorarioMeteorologicoDAO;
 import br.com.aps.meteorologia.model.Estacao;
+import br.com.aps.meteorologia.model.ResumoHorarioMeteorologico;
+import br.com.aps.meteorologia.model.TipoResumoDiario;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MockMvc;
@@ -25,13 +27,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ResumoMeteorologicoControllerTest {
 
     private final ResumoDiarioMeteorologicoDAO diarios = mock(ResumoDiarioMeteorologicoDAO.class);
+    private final ResumoHorarioMeteorologicoDAO horarios = mock(ResumoHorarioMeteorologicoDAO.class);
     private final IEstacaoDAO estacoes = mock(IEstacaoDAO.class);
     private MockMvc mvc;
 
     @BeforeEach
     void preparar() {
         mvc = MockMvcBuilders.standaloneSetup(new ResumoMeteorologicoController(
-                diarios, mock(ResumoHorarioMeteorologicoDAO.class), estacoes, "America/Sao_Paulo")).build();
+                diarios, horarios, estacoes, "America/Sao_Paulo")).build();
     }
 
     private void comEstacaoAtiva() {
@@ -62,5 +65,23 @@ class ResumoMeteorologicoControllerTest {
         mvc.perform(get("/api/resumos-diarios/previsoes"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.erro").value("Nenhuma estação ativa"));
+    }
+
+    @Test
+    void resumoHorarioRetornaProbabilidadeDeChuva() throws Exception {
+        comEstacaoAtiva();
+        ResumoHorarioMeteorologico resumo = new ResumoHorarioMeteorologico();
+        resumo.setDataHora(java.time.LocalDateTime.of(2026, 10, 28, 14, 0));
+        resumo.setTipo(TipoResumoDiario.PREVISAO);
+        resumo.setTemperatura(27.0);
+        resumo.setProbabilidadeChuva(50);
+        resumo.setFonteDados("Open-Meteo");
+        resumo.setAtualizadoEm(java.time.LocalDateTime.of(2026, 10, 28, 10, 0));
+        when(horarios.buscarPrevisoes(eq(1L), any(), any())).thenReturn(List.of(resumo));
+
+        mvc.perform(get("/api/resumos-horarios/previsoes")
+                        .param("inicio", "2026-10-28T00:00:00").param("fim", "2026-10-29T00:00:00"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].probabilidadeChuva").value(50));
     }
 }
