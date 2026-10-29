@@ -2,7 +2,7 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-6";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-11";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-12";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-2";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -240,6 +240,7 @@ const variables = {
 let latestReading = null;
 let historyReadings = [];
 let historyForecasts = [];
+let historicalDailyWeather = [];
 let historyStart = null;
 let historyEnd = null;
 let historyRequest = 0;
@@ -798,34 +799,33 @@ function renderSummary(readings) {
     <div class="summary-row"><span>Velocidade média do vento</span><strong>${unit(average(wind), "km/h")}</strong></div>`;
 }
 
-function renderCoverageAndExtremes(readings) {
-  const daily = isDailyPeriod(historyStart, historyEnd);
-  const slotKey = reading => {
-    const stamp = parseDate(reading.dataHoraColeta);
-    if (!stamp) return null;
-    const day = dateInput(stamp);
-    return daily ? day : `${day}T${String(stamp.getHours()).padStart(2, "0")}`;
-  };
-  const slots = new Set(readings.map(slotKey).filter(Boolean));
-  const divisor = daily ? 86_400_000 : 3_600_000;
-  const total = Math.max(1, Math.floor((historyEnd.getTime() - historyStart.getTime()) / divisor) + 1);
-  const coverage = Math.min(100, slots.size / total * 100);
-  const sorted = [...readings].filter(reading => parseDate(reading.dataHoraColeta)).sort((a, b) => parseDate(a.dataHoraColeta) - parseDate(b.dataHoraColeta));
-  const numericReading = (field, direction) => sorted
-    .filter(reading => Number.isFinite(Number(reading[field])))
-    .reduce((selected, reading) => !selected || direction * (Number(reading[field]) - Number(selected[field])) > 0 ? reading : selected, null);
-  const maxTemperature = numericReading("temperatura", 1);
-  const minTemperature = numericReading("temperatura", -1);
-  const maxWind = numericReading("velocidadeVento", 1);
-  text("#coverage-summary", `${slots.size} de ${total} ${daily ? "dias" : "horas"} com dados`);
-  const first = sorted[0];
-  const last = sorted.at(-1);
-  text("#coverage-period", first && last ? `${daily ? "Período disponível" : "Leituras disponíveis"}: ${readingMoment(first)}–${readingMoment(last)}` : "Nenhuma leitura disponível");
-  document.querySelector("#coverage-meter-bar")?.style.setProperty("--coverage", `${coverage}%`);
-  const extreme = (reading, field, suffix, digits = 1) => reading ? `${unit(reading[field], suffix, digits)} · ${readingMoment(reading)}` : "—";
-  text("#coverage-temperature-max", extreme(maxTemperature, "temperatura", "°C"));
-  text("#coverage-temperature-min", extreme(minTemperature, "temperatura", "°C"));
-  text("#coverage-wind-max", extreme(maxWind, "velocidadeVento", "km/h"));
+function renderHistoricalWeather() {
+  const container = document.querySelector("#historical-weather-list");
+  if (!container) return;
+  if (!historicalDailyWeather.length) {
+    container.innerHTML = '<div class="chart-empty">Ainda não há dias medidos para exibir.</div>';
+    return;
+  }
+  container.innerHTML = historicalDailyWeather.slice(-5).reverse().map(item => {
+    const data = dataDaPrevisao(item);
+    const label = data ? new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(data).replace(".", "") : "—";
+    const dataCurta = data ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(data) : "";
+    const chuva = Number(item.precipitacaoTotal);
+    const asset = iconeDoClimaHorario(item);
+    return `<div class="forecast-row historical-weather-row"><span><strong>${label}</strong><small>${dataCurta}</small></span><span class="forecast-weather">${simboloClimaEstatico(asset)}</span><span class="forecast-rain">${icon("drop")}${Number.isFinite(chuva) ? unit(chuva, "mm") : "—"}</span><span class="forecast-temperatures"><strong>${number(item.temperaturaMaxima, 0)}°</strong><small>${number(item.temperaturaMinima, 0)}°</small></span></div>`;
+  }).join("");
+}
+
+async function buscarClimaDosUltimosDias(end) {
+  if (simulated()) return [];
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const ultimoDiaCompleto = new Date(Math.min(end.getTime(), hoje.getTime() - 1));
+  ultimoDiaCompleto.setHours(0, 0, 0, 0);
+  const inicio = new Date(ultimoDiaCompleto);
+  inicio.setDate(inicio.getDate() - 4);
+  if (ultimoDiaCompleto < inicio) return [];
+  return resumosDiariosApi.buscarHistorico(dateInput(inicio), dateInput(ultimoDiaCompleto));
 }
 
 function redrawHistoryCharts() {
@@ -857,7 +857,7 @@ function redrawHistoryCharts() {
 function renderHistoryDetails() {
   text("#summary-period", `${dateTime(historyStart)} a ${dateTime(historyEnd)}`);
   renderSummary(historyReadings);
-  renderCoverageAndExtremes(historyReadings);
+  renderHistoricalWeather();
   const ordered = [...historyReadings].reverse();
   const totalPages = Math.max(1, Math.ceil(ordered.length / HISTORY_PAGE_SIZE));
   historyCurrentPage = Math.min(historyCurrentPage, totalPages);
@@ -891,23 +891,26 @@ async function loadHistory(start, end) {
   try {
     const hoje = dateInput(new Date());
     const incluirPrevisaoHoraria = !isDailyPeriod(start, end) && dateInput(start) === hoje && dateInput(end) === hoje;
-    const [readings, previsoes] = await Promise.all([
+    const [readings, previsoes, climaDosUltimosDias] = await Promise.all([
       buscarSerieDoPeriodo(start, end),
       incluirPrevisaoHoraria
         ? resumosHorariosApi.buscarPrevisoes(apiDate(start), apiDate(end))
             .then(itens => itens.map(resumoHorarioComoLeitura))
             .catch(() => [])
         : Promise.resolve([]),
+      buscarClimaDosUltimosDias(end).catch(() => []),
     ]);
     if (request !== historyRequest) return;
     historyReadings = readingsForPeriod(readings, start, end);
     historyForecasts = previsoes;
+    historicalDailyWeather = climaDosUltimosDias;
     renderHistoryDetails();
     if (historyReadings.length > 100) showToast("Mostrando os 100 registros mais recentes na tabela.");
   } catch (error) {
     if (request !== historyRequest) return;
     historyReadings = [];
     historyForecasts = [];
+    historicalDailyWeather = [];
     renderHistoryDetails();
     showToast(error.message);
   }

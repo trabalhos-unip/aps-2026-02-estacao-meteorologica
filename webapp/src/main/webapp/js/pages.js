@@ -97,7 +97,7 @@ export function historyPage() {
     </div>
     <aside class="history-side">
       <section class="card summary-card"><div class="card-title"><div><h2>Resumo do período</h2><small id="summary-period">—</small></div></div><div id="summary-rows" class="summary-rows"><p class="muted">Aguardando leituras…</p></div></section>
-      <section class="card coverage-card" aria-labelledby="coverage-title"><div class="card-title"><span class="title-icon blue-text">${icon("history")}</span><div><h2 id="coverage-title">Cobertura e extremos</h2><small id="coverage-summary">Aguardando leituras…</small></div></div><div class="coverage-meter" aria-hidden="true"><i id="coverage-meter-bar"></i></div><p class="coverage-period" id="coverage-period">—</p><dl class="coverage-extremes"><div><dt>Temperatura máx.</dt><dd id="coverage-temperature-max">—</dd></div><div><dt>Temperatura mín.</dt><dd id="coverage-temperature-min">—</dd></div><div><dt>Vento máximo</dt><dd id="coverage-wind-max">—</dd></div></dl></section>
+      <section class="card historical-weather-card" aria-labelledby="historical-weather-title"><div class="card-title">${icon("calendar")}<div><h2 id="historical-weather-title">Clima dos últimos dias</h2><small>Condições já medidas</small></div></div><div class="historical-weather-list" id="historical-weather-list"><div class="chart-empty">Carregando condições medidas…</div></div></section>
     </aside>
   </div>
   <section class="card records-card history-records-card">
