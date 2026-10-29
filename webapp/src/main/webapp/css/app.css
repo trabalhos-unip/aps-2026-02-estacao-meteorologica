@@ -151,14 +151,14 @@
 @media(max-width:1250px){.app-layout{grid-template-columns:230px minmax(0,1fr)}.sidebar{padding-left:14px;padding-right:14px}.nav-link{font-size:.78rem}}
 @media(max-width:760px){.sidebar{padding:10px 14px}.brand,.sidebar-section-label,.sidebar-foot{display:none}.sidebar-location-input{min-height:42px;margin-bottom:7px}.primary-nav{display:flex;justify-content:space-around}.nav-link{height:44px;padding:0 8px;gap:5px;font-size:.7rem}}
 
-/* Estrutura em dois painéis: superfície externa neutra e cards principais arredondados. */
-html,body{background:#eeeee9}
-.app-layout{min-height:100vh;grid-template-columns:258px minmax(0,1fr);gap:14px;padding:14px;align-items:start;background:#eeeee9}
-.sidebar{position:sticky;top:14px;height:calc(100vh - 28px);min-height:0;align-self:start;border:0;border-radius:27px;box-shadow:0 10px 32px #16283c0b;overflow:hidden}
-.workspace{min-height:calc(100vh - 28px);border-radius:27px;background:radial-gradient(circle at 42% 0%,#fff 0,#f9fcfe 45%,#f5faff 100%);box-shadow:0 10px 32px #16283c08;overflow:hidden}
+/* Estrutura contínua: navegação e conteúdo fazem parte do mesmo aplicativo. */
+html,body{background:#f6fbff}
+.app-layout{min-height:100vh;grid-template-columns:258px minmax(0,1fr);gap:0;padding:0;align-items:start;background:#f6fbff}
+.sidebar{position:sticky;top:0;height:100vh;min-height:0;align-self:start;border:0;border-right:1px solid #e7eef6;border-radius:0;box-shadow:none;overflow:hidden}
+.workspace{min-height:100vh;border-radius:0;background:radial-gradient(circle at 42% 0%,#fff 0,#f9fcfe 45%,#f5faff 100%);box-shadow:none;overflow:visible}
 .card{border-radius:18px}
 .weather-hero,.forecast-card,.recent-card,.home-chart,.primary-history-chart,.mini-chart-card,.summary-card,.records-card,.historical-weather-card{border-radius:18px}
-@media(max-width:1250px){.app-layout{grid-template-columns:230px minmax(0,1fr);gap:12px;padding:12px}.sidebar{top:12px;height:calc(100vh - 24px)}.workspace{min-height:calc(100vh - 24px)}.sidebar,.workspace{border-radius:24px}}
+@media(max-width:1250px){.app-layout{grid-template-columns:230px minmax(0,1fr)}.sidebar{top:0;height:100vh}.workspace{min-height:100vh}}
 @media(max-width:760px){html,body,.app-layout{background:#f6fbff}.app-layout{display:block;padding:0}.sidebar,.workspace{position:static;height:auto;min-height:0;border-radius:0;box-shadow:none}.workspace{overflow:visible}}
 
 /* A tabela ocupa a largura útil abaixo dos gráficos; o pager limita a dez linhas visíveis. */
