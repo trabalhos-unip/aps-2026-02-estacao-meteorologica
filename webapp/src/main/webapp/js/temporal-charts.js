@@ -152,19 +152,20 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
     return sections;
   };
   const measuredLines = groupedSections("measured").filter(group => group.length > 1).map(group => {
-    // O valor horário vale até a próxima virada de hora. Assim, às 11h a
-    // área azul termina exatamente em 12:00, onde a previsão passa a começar.
-    const end = group.at(-1);
-    const extendsToForecast = !daily && projected.some(slot => slot.index === end.index + 1);
-    const visualGroup = extendsToForecast ? [...group, { ...end, index: end.index + 1, virtual: true }] : group;
-    const line = visualGroup.map((slot, index) => `${index ? "L" : "M"}${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`).join(" ");
-    const points = visualGroup.map(slot => `L${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`).join(" ");
-    const area = `M${xAt(visualGroup[0].index).toFixed(2)} ${baseline.toFixed(2)} ${points} L${xAt(visualGroup.at(-1).index).toFixed(2)} ${baseline.toFixed(2)} Z`;
+    const line = group.map((slot, index) => `${index ? "L" : "M"}${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`).join(" ");
+    const points = group.map(slot => `L${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`).join(" ");
+    const area = `M${xAt(group[0].index).toFixed(2)} ${baseline.toFixed(2)} ${points} L${xAt(group.at(-1).index).toFixed(2)} ${baseline.toFixed(2)} Z`;
     return `<path d="${area}" fill="${color}" opacity=".10"/><path d="${line}" fill="none" stroke="${color}" stroke-width="${compact ? 2 : 2.5}" stroke-linecap="round" stroke-linejoin="round"/>`;
   }).join("");
   const forecastLines = groupedSections("forecast").filter(group => group.length > 1).map(group => {
-    const line = group.map((slot, index) => `${index ? "L" : "M"}${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`).join(" ");
-    return `<path d="${line}" fill="none" stroke="#8b9bae" stroke-width="${compact ? 2 : 2.5}" stroke-dasharray="6 5" stroke-linecap="round" stroke-linejoin="round"/>`;
+    // A projeção recebe o último ponto real como âncora. Isso deixa a curva e
+    // o preenchimento contínuos; em 12h muda apenas a cor da série.
+    const anchor = !daily && group[0].index === lastMeasuredIndex + 1 ? available.at(-1) : null;
+    const visualGroup = anchor ? [anchor, ...group] : group;
+    const line = visualGroup.map((slot, index) => `${index ? "L" : "M"}${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`).join(" ");
+    const points = visualGroup.map(slot => `L${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`).join(" ");
+    const area = `M${xAt(visualGroup[0].index).toFixed(2)} ${baseline.toFixed(2)} ${points} L${xAt(visualGroup.at(-1).index).toFixed(2)} ${baseline.toFixed(2)} Z`;
+    return `<path d="${area}" fill="#8b9bae" opacity=".08"/><path d="${line}" fill="none" stroke="#8b9bae" stroke-width="${compact ? 2 : 2.5}" stroke-linecap="round" stroke-linejoin="round"/>`;
   }).join("");
   const measuredDots = available.map(slot => `<circle cx="${xAt(slot.index)}" cy="${yAt(slot.value)}" r="${compact ? 3 : 4}" fill="${color}" stroke="#fff" stroke-width="1.5"/>`).join("");
   const forecastDots = projected.map(slot => `<circle cx="${xAt(slot.index)}" cy="${yAt(slot.value)}" r="${compact ? 3 : 4}" fill="#8b9bae" stroke="#fff" stroke-width="1.5"/>`).join("");
