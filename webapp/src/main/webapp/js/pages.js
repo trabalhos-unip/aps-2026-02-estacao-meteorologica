@@ -40,7 +40,7 @@ export function overviewPage() {
       ${metricCard("Vento", "wind", "teal", "metric-wind", "km/h", "wind-detail")}
     </section>
     <section class="card chart-card home-chart hourly-weather-chart" aria-labelledby="hourly-weather-title">
-      <div class="section-head"><div class="title-with-icon"><span class="title-icon blue-text">${icon("clock")}</span><div><h2 id="hourly-weather-title">Clima por hora</h2><small id="hourly-weather-subtitle">Previsão das próximas horas · Open-Meteo</small></div></div></div>
+      <div class="section-head"><div class="title-with-icon"><span class="title-icon blue-text">${icon("chart")}</span><div><h2 id="hourly-weather-title">Clima por hora</h2><small id="hourly-weather-subtitle">Previsão das próximas horas · Open-Meteo</small></div></div></div>
       <div class="hourly-weather-chart-canvas" id="hourly-weather-rows" aria-label="Carregando previsão por hora"><div class="chart-empty">Carregando previsão por hora…</div></div>
     </section></div><div class="overview-right">
     <aside class="card forecast-card" aria-labelledby="forecast-title">
