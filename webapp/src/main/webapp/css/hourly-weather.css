@@ -25,6 +25,29 @@
 .hourly-rain-probability-area { fill: url(#hourly-rain-probability-fill); }
 .hourly-rain-probability-line polyline { fill: none; stroke: #1299ed; stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; }
 @media (max-width: 760px) { .hourly-weather-chart { height: auto; } .hourly-weather-chart-canvas { height: 280px; } }
+/* No desktop a Visão geral ocupa uma única área de trabalho. Os cartões usam
+   a altura disponível e a previsão por hora cresce quando a janela cresce. */
+@media (min-width: 761px) {
+  .app-layout:has(.overview-grid) { height: 100vh; overflow: hidden; }
+  .app-layout:has(.overview-grid) .workspace { min-height: 0; overflow: hidden; }
+  .app-layout:has(.overview-grid) .page-content { height: calc(100vh - 118px); padding-bottom: 22px; overflow: hidden; }
+  .app-layout:has(.overview-grid) .overview-grid,
+  .app-layout:has(.overview-grid) .overview-left,
+  .app-layout:has(.overview-grid) .overview-right { height: 100%; min-height: 0; }
+  .app-layout:has(.overview-grid) .overview-left,
+  .app-layout:has(.overview-grid) .overview-right { gap: clamp(12px, 1.6vh, 20px); }
+  .app-layout:has(.overview-grid) .weather-hero { height: clamp(178px, 20.6vh, 222px); }
+  .app-layout:has(.overview-grid) .metric-card { height: clamp(158px, 20.5vh, 221px); }
+  .app-layout:has(.overview-grid) .home-chart.hourly-weather-chart { display: flex; flex: 1 1 0; flex-direction: column; height: auto; min-height: 0; }
+  .app-layout:has(.overview-grid) .hourly-weather-chart-canvas,
+  .app-layout:has(.overview-grid) .home-daily-forecast { flex: 1 1 0; height: auto; min-height: 0; }
+  .app-layout:has(.overview-grid) .forecast-card { flex: 1 1 0; height: auto; min-height: 330px; }
+  .app-layout:has(.overview-grid) .recent-card { flex: none; height: clamp(300px, 36vh, 380px); }
+}
+@media (min-width: 761px) and (max-height: 850px) {
+  .app-layout:has(.overview-grid) .forecast-card .card-title { height: 52px; }
+  .app-layout:has(.overview-grid) .forecast-row { min-height: 54px; }
+}
 html[data-theme="dark"] .hourly-weather-point strong { color: #edf7ff; }
 html[data-theme="dark"] .hourly-weather-point time { color: #a6bbd0; }
 html[data-theme="dark"] .hourly-grid-line { stroke: #294763; }

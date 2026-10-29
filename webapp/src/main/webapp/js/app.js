@@ -2,7 +2,7 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-6";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-8";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-9";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-2";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -250,7 +250,7 @@ let homeChartRange = "24h";
 let homeChartRequest = 0;
 let recentReadings = [];
 let recentCurrentPage = 1;
-const RECENT_PAGE_SIZE = 10;
+const RECENT_PAGE_SIZE = 5;
 // A coleta permanece em 10 s conforme o enunciado; a interface não precisa
 // repetir todas as consultas nessa mesma frequência.
 const UI_REFRESH_INTERVAL_MS = 30_000;
