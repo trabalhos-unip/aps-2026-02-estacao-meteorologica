@@ -84,14 +84,11 @@ export function historyPage() {
   return `<form class="card filter-bar" id="history-filter">
     <div class="field period-field"><label>Período</label>${tabs("history-range")}</div>
     <label class="field">Variável<select id="history-variable"><option value="temperatura">Temperatura</option><option value="umidadeRelativa">Umidade</option><option value="precipitacao">Precipitação</option><option value="velocidadeVento">Vento</option></select></label>
-    <label class="field">Data inicial<input type="date" id="history-start" required></label>
-    <label class="field">Data final<input type="date" id="history-end" required></label>
-    <button class="primary-button apply-button" type="submit">Aplicar</button>
   </form>
   <div class="history-grid">
     <div class="history-charts">
       <section class="card chart-card primary-history-chart">
-        <div class="section-head"><div class="title-with-icon"><span class="title-icon blue-text">${icon("chart")}</span><div><h2 id="history-chart-title">Histórico de temperatura</h2><small id="history-chart-subtitle">Carregando período…</small></div></div><div class="history-chart-actions"><div class="history-series-legend" id="history-series-legend" aria-label="Legenda das séries" hidden><span class="measured"><i></i>Medido</span><span class="forecast"><i></i>Previsão</span></div>${tabs("chart-range")}</div></div>
+        <div class="section-head"><div class="title-with-icon"><span class="title-icon blue-text">${icon("chart")}</span><div><h2 id="history-chart-title">Histórico de temperatura</h2><small id="history-chart-subtitle">Carregando período…</small></div></div><div class="history-chart-actions"><div class="history-series-legend" id="history-series-legend" aria-label="Legenda das séries" hidden><span class="measured"><i></i>Medido</span><span class="forecast"><i></i>Previsão</span></div></div></div>
         <div class="chart-canvas" id="history-chart-canvas"><div class="chart-empty">Carregando leituras…</div></div>
       </section>
       <div class="history-insights">
