@@ -2,7 +2,7 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-6";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-7";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-8";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-2";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -248,6 +248,9 @@ const HISTORY_PAGE_SIZE = 10;
 let pageRefreshInProgress = false;
 let homeChartRange = "24h";
 let homeChartRequest = 0;
+let recentReadings = [];
+let recentCurrentPage = 1;
+const RECENT_PAGE_SIZE = 10;
 // A coleta permanece em 10 s conforme o enunciado; a interface não precisa
 // repetir todas as consultas nessa mesma frequência.
 const UI_REFRESH_INTERVAL_MS = 30_000;
@@ -719,27 +722,50 @@ async function refreshHome() {
   await renderForecast();
   await fetchLatest();
   try {
-    const recent = await activeReadingsApi.buscarUltimas(5);
-    const lastValid = [...recent].reverse().find(reading => reading.temperatura != null || reading.umidadeRelativa != null || reading.precipitacao != null || reading.velocidadeVento != null);
-    renderHomeReading(lastValid || latestReading, recent);
-    fillTable("#recent-rows", [...recent].reverse(), [
+    recentReadings = await activeReadingsApi.buscarUltimas(100);
+    const lastValid = [...recentReadings].reverse().find(reading => reading.temperatura != null || reading.umidadeRelativa != null || reading.precipitacao != null || reading.velocidadeVento != null);
+    renderHomeReading(lastValid || latestReading, recentReadings);
+    renderRecentReadings();
+  } catch (error) {
+    recentReadings = [];
+    renderHomeReading(latestReading, []);
+    renderRecentReadings(error.message);
+  }
+  await renderHomeChart(homeChartRange);
+}
+
+function renderRecentReadings(errorMessage = null) {
+  const totalPages = Math.max(1, Math.ceil(recentReadings.length / RECENT_PAGE_SIZE));
+  recentCurrentPage = Math.min(recentCurrentPage, totalPages);
+  const start = (recentCurrentPage - 1) * RECENT_PAGE_SIZE;
+  const visible = [...recentReadings].reverse().slice(start, start + RECENT_PAGE_SIZE);
+  fillTable("#recent-rows", visible, [
       { value: reading => time(reading.dataHoraColeta) },
       { value: reading => unit(reading.temperatura, "°C") },
       { value: reading => unit(reading.umidadeRelativa, "%", 0) },
       { value: reading => unit(reading.precipitacao, "mm") },
       { value: reading => unit(reading.velocidadeVento, "km/h") },
-    ]);
-  } catch (error) {
-    renderHomeReading(latestReading, []);
-    fillTable("#recent-rows", [], Array.from({ length: 5 }, () => ({})), error.message);
+    ], errorMessage || undefined);
+  const pagination = document.querySelector("#recent-pagination");
+  const pageLabel = document.querySelector("#recent-page-label");
+  if (pagination) {
+    pagination.hidden = recentReadings.length <= RECENT_PAGE_SIZE;
+    pagination.querySelector('[data-recent-page="previous"]').disabled = recentCurrentPage === 1;
+    pagination.querySelector('[data-recent-page="next"]').disabled = recentCurrentPage === totalPages;
   }
-  await renderHomeChart(homeChartRange);
+  if (pageLabel) pageLabel.textContent = `Página ${recentCurrentPage} de ${totalPages}`;
 }
 
 async function initHome() {
   document.querySelector("#home-chart-range").addEventListener("click", event => {
     const button = event.target.closest("[data-range]");
     if (button) renderHomeChart(button.dataset.range, true);
+  });
+  document.querySelector("#recent-pagination").addEventListener("click", event => {
+    const direction = event.target.closest("[data-recent-page]")?.dataset.recentPage;
+    if (!direction) return;
+    recentCurrentPage += direction === "next" ? 1 : -1;
+    renderRecentReadings();
   });
   const previsaoDiaria = document.querySelector("#home-daily-forecast-scroll");
   const moverPrevisao = direcao => {

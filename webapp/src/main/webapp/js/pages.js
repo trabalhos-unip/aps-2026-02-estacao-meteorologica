@@ -68,9 +68,11 @@ export function overviewPage() {
     </aside>
     <section class="card recent-card" aria-labelledby="recent-title">
       <div class="section-head"><div class="title-with-icon">${icon("database")}<h2 id="recent-title">Últimas medições</h2></div><a class="text-link" href="/historico">Ver histórico ${icon("arrow")}</a></div>
-      <div class="table-scroll"><table><caption class="sr-only">Cinco últimas medições</caption><thead><tr><th>Horário</th><th>Temp.</th><th>Umidade</th><th>Precip.</th><th>Vento</th></tr></thead><tbody id="recent-rows"><tr><td colspan="5" class="empty-cell">Carregando…</td></tr></tbody></table></div>
-    </section></div>
+      <div class="table-scroll"><table><caption class="sr-only">Últimas medições da estação</caption><thead><tr><th>Horário</th><th>Temp.</th><th>Umidade</th><th>Precip.</th><th>Vento</th></tr></thead><tbody id="recent-rows"><tr><td colspan="5" class="empty-cell">Carregando…</td></tr></tbody></table></div>
+      <nav class="table-pagination recent-pagination" id="recent-pagination" aria-label="Paginação das últimas medições" hidden><button type="button" class="secondary-button" data-recent-page="previous">Anterior</button><span id="recent-page-label"></span><button type="button" class="secondary-button" data-recent-page="next">Próxima</button></nav>
+    </section>
     <div class="info-strip overview-info">${icon("info")}<span id="overview-data-note">Os dados apresentados são coletados da API <a href="https://open-meteo.com/" target="_blank" rel="noreferrer">Open-Meteo</a> e armazenados no MySQL. A previsão dos próximos dias depende de uma integração adicional.</span></div>
+    </div>
   </div>`;
 }
 
