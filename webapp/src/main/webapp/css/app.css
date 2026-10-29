@@ -151,6 +151,16 @@
 @media(max-width:1250px){.app-layout{grid-template-columns:230px minmax(0,1fr)}.sidebar{padding-left:14px;padding-right:14px}.nav-link{font-size:.78rem}}
 @media(max-width:760px){.sidebar{padding:10px 14px}.brand,.sidebar-section-label,.sidebar-station-status,.sidebar-foot{display:none}.sidebar-location-input{min-height:38px;margin-bottom:7px}.primary-nav{display:flex;justify-content:space-around}.nav-link{height:44px;padding:0 8px;gap:5px;font-size:.7rem}}
 
+/* Estrutura em dois painéis: superfície externa neutra e cards principais arredondados. */
+html,body{background:#eeeee9}
+.app-layout{min-height:100vh;grid-template-columns:258px minmax(0,1fr);gap:14px;padding:14px;background:#eeeee9}
+.sidebar{min-height:calc(100vh - 28px);border:0;border-radius:27px;box-shadow:0 10px 32px #16283c0b;overflow:hidden}
+.workspace{min-height:calc(100vh - 28px);border-radius:27px;background:radial-gradient(circle at 42% 0%,#fff 0,#f9fcfe 45%,#f5faff 100%);box-shadow:0 10px 32px #16283c08;overflow:hidden}
+.card{border-radius:18px}
+.weather-hero,.forecast-card,.recent-card,.home-chart,.primary-history-chart,.mini-chart-card,.summary-card,.records-card,.historical-weather-card{border-radius:18px}
+@media(max-width:1250px){.app-layout{grid-template-columns:230px minmax(0,1fr);gap:12px;padding:12px}.sidebar,.workspace{min-height:calc(100vh - 24px);border-radius:24px}}
+@media(max-width:760px){html,body,.app-layout{background:#f6fbff}.app-layout{display:block;padding:0}.sidebar,.workspace{min-height:0;border-radius:0;box-shadow:none}.workspace{overflow:visible}}
+
 /* A tabela ocupa a largura útil abaixo dos gráficos; o pager limita a dez linhas visíveis. */
 .history-records-card{height:auto;min-height:0;margin-top:14px;padding:18px 20px}.history-records-card .section-head{margin-bottom:12px}.history-records-card .section-head>small{color:#7189a6;font-size:.74rem}.history-records-card .table-scroll{max-height:none}.history-records-card td,.history-records-card th{padding:10px 12px}.table-pagination{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:14px;color:#67809f;font-size:.75rem}.table-pagination .secondary-button{min-height:32px;padding:0 13px}.table-pagination button:disabled{cursor:not-allowed;opacity:.5}@media(max-width:760px){.history-records-card{padding:16px 12px}.history-records-card .section-head{align-items:flex-start}.history-records-card .section-head>small{margin-top:5px}.history-records-card td,.history-records-card th{padding:9px 8px}.table-pagination{justify-content:center}}
 
