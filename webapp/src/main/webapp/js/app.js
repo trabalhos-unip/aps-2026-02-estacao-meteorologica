@@ -8,6 +8,19 @@ import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, pars
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
 const pages = { "/": overviewPage, "/historico": historyPage, "/simulacoes": simulationsPage, "/configuracoes": settingsPage };
 renderShell(path, pages[path]());
+function showInitialLoadingSkeleton() {
+  document.querySelector("#app").insertAdjacentHTML("beforeend", `
+    <div class="initial-page-skeleton" role="status" aria-live="polite" aria-label="Carregando dados">
+      <aside class="skeleton-sidebar"><i></i><i></i><i></i><i></i><i></i></aside>
+      <main class="skeleton-workspace"><div class="skeleton-heading"><i></i><i></i></div><div class="skeleton-hero"></div><div class="skeleton-metrics"><i></i><i></i><i></i><i></i></div><div class="skeleton-chart"></div><span>Carregando dados…</span></main>
+    </div>`);
+  document.querySelector("#app").setAttribute("aria-busy", "true");
+}
+function hideInitialLoadingSkeleton() {
+  document.querySelector(".initial-page-skeleton")?.remove();
+  document.querySelector("#app").removeAttribute("aria-busy");
+}
+showInitialLoadingSkeleton();
 const preferencesKey = "meteora-ui-preferences";
 function savedPreferences() {
   try {
@@ -795,12 +808,12 @@ function setHistoryPreset(range) {
   const [start, end] = rangeDates(range);
   document.querySelector("#history-start").value = dateInput(start);
   document.querySelector("#history-end").value = dateInput(end);
-  loadHistory(start, end);
+  return loadHistory(start, end);
 }
 
 async function initHistory() {
   await fetchLatest();
-  setHistoryPreset("24h");
+  await setHistoryPreset("24h");
   for (const id of ["history-range", "chart-range"]) {
     document.querySelector(`#${id}`).addEventListener("click", event => {
       const button = event.target.closest("[data-range]");
@@ -822,8 +835,8 @@ async function initHistory() {
   });
 }
 
-function initSimulations() {
-  fetchLatest();
+async function initSimulations() {
+  await fetchLatest();
   drawScenarioComparison("#comparison-chart", "Temperatura");
   const executions = [];
   function renderPreview() {
@@ -980,5 +993,14 @@ function startBackgroundRefresh() {
   });
 }
 
-({ "/": initHome, "/historico": initHistory, "/simulacoes": initSimulations, "/configuracoes": initSettings })[path]();
+async function initializeCurrentPage() {
+  try {
+    await ({ "/": initHome, "/historico": initHistory, "/simulacoes": initSimulations, "/configuracoes": initSettings })[path]();
+  } catch (error) {
+    showToast(error.message || "Não foi possível carregar os dados iniciais.");
+  } finally {
+    hideInitialLoadingSkeleton();
+  }
+}
+void initializeCurrentPage();
 startBackgroundRefresh();
