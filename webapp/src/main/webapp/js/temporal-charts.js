@@ -98,10 +98,11 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
   const available = slots.map((slot, index) => ({ ...slot, index, value: values.get(slot.key), source: "measured" }))
     .filter(slot => slot.value !== undefined);
   const forecastValues = valuesBySlot(forecasts, field, daily);
-  // A previsão ocupa o dia inteiro para permitir comparar, no mesmo horário,
-  // o que era previsto (cinza) com o que a estação efetivamente mediu (azul).
+  const lastMeasuredIndex = available.at(-1)?.index ?? -1;
+  // Horas/dias já medidos pertencem exclusivamente à série azul. A previsão
+  // começa no primeiro intervalo ainda não medido, sem voltar sobre o histórico.
   const projected = slots.map((slot, index) => ({ ...slot, index, value: forecastValues.get(slot.key), source: "forecast" }))
-    .filter(slot => slot.value !== undefined);
+    .filter(slot => slot.value !== undefined && index > lastMeasuredIndex);
   const plotted = [...available, ...projected].sort((a, b) => a.index - b.index);
   const total = daily ? slots.length : 24;
   const summary = { available: available.length, forecast: projected.length, total, daily,
@@ -163,9 +164,13 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
     return `<path d="${area}" fill="${color}" opacity=".10"/><path d="${line}" fill="none" stroke="${color}" stroke-width="${compact ? 2 : 2.5}" stroke-linecap="round" stroke-linejoin="round"/>`;
   }).join("");
   const forecastLines = groupedSections("forecast").filter(group => group.length > 1).map(group => {
-    const line = group.map((slot, index) => `${index ? "L" : "M"}${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`).join(" ");
-    const points = group.map(slot => `L${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`).join(" ");
-    const area = `M${xAt(group[0].index).toFixed(2)} ${baseline.toFixed(2)} ${points} L${xAt(group.at(-1).index).toFixed(2)} ${baseline.toFixed(2)} Z`;
+    // O primeiro traço cinza ancora visualmente na última medição quando as
+    // duas séries são consecutivas, mas não cria ponto de previsão sobre ela.
+    const anchor = available.find(slot => slot.index === group[0].index - 1);
+    const lineSlots = anchor ? [anchor, ...group] : group;
+    const line = lineSlots.map((slot, index) => `${index ? "L" : "M"}${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`).join(" ");
+    const points = lineSlots.map(slot => `L${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`).join(" ");
+    const area = `M${xAt(lineSlots[0].index).toFixed(2)} ${baseline.toFixed(2)} ${points} L${xAt(lineSlots.at(-1).index).toFixed(2)} ${baseline.toFixed(2)} Z`;
     return `<path d="${area}" fill="${forecastColor}" opacity=".065"/><path d="${line}" fill="none" stroke="${forecastColor}" stroke-width="${compact ? 2 : 2.5}" stroke-dasharray="6 5" stroke-linecap="round" stroke-linejoin="round"/>`;
   }).join("");
   const measuredDots = available.map(slot => `<circle cx="${xAt(slot.index)}" cy="${yAt(slot.value)}" r="${compact ? 3 : 4}" fill="${color}" stroke="#fff" stroke-width="1.5"/>`).join("");
