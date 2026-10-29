@@ -5,8 +5,15 @@ import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20
 import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-18";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261029-12";
 
-const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
+const routeFromLocation = () => ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
+let path = routeFromLocation();
 const pages = { "/": overviewPage, "/historico": historyPage, "/simulacoes": simulationsPage, "/configuracoes": settingsPage };
+const pageHeadings = {
+  "/": ["Visão geral", "Acompanhe em tempo real as condições meteorológicas"],
+  "/historico": ["Histórico e análises", "Visualize a evolução das variáveis meteorológicas"],
+  "/simulacoes": ["Simulações", "Exemplo de cenários meteorológicos para testes do sistema"],
+  "/configuracoes": ["Configurações", "Ajuste os parâmetros de coleta de dados e o comportamento do sistema."],
+};
 renderShell(path, pages[path]());
 function showInitialLoadingSkeleton() {
   document.querySelector("#app").insertAdjacentHTML("beforeend", `
@@ -1172,5 +1179,44 @@ async function initializeCurrentPage() {
     hideInitialLoadingSkeleton();
   }
 }
+
+function atualizarNavegacaoAtiva() {
+  const [title, subtitle] = pageHeadings[path];
+  document.title = `${title} · Meteora`;
+  text(".page-heading h1", title);
+  text("#page-subtitle", subtitle);
+  document.querySelectorAll(".nav-link, .bottom-nav-link").forEach(link => {
+    const active = link.getAttribute("href") === path;
+    link.classList.toggle("active", active);
+    if (active) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
+  });
+}
+
+async function navegarPara(nextPath, { push = true } = {}) {
+  if (!pages[nextPath]) return;
+  if (nextPath === path) {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+  path = nextPath;
+  if (push) window.history.pushState({}, "", nextPath);
+  document.querySelector("#conteudo").innerHTML = pages[path]();
+  atualizarNavegacaoAtiva();
+  window.scrollTo({ top: 0, behavior: "auto" });
+  await initializeCurrentPage();
+}
+
+document.addEventListener("click", event => {
+  const link = event.target.closest("a[href]");
+  if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  const target = new URL(link.href, window.location.href);
+  const nextPath = ({ "/": "/", "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[target.pathname.replace(/\/$/, "") || "/"];
+  if (!nextPath || target.origin !== window.location.origin) return;
+  event.preventDefault();
+  void navegarPara(nextPath);
+});
+
+window.addEventListener("popstate", () => { void navegarPara(routeFromLocation(), { push: false }); });
 void initializeCurrentPage();
 startBackgroundRefresh();
