@@ -451,14 +451,16 @@ function graficoDeTemperatura(previsoes) {
   const amplitude = Math.max(maximo - minimo, 2);
   const pontos = previsoes.map((item, index) => {
     const x = previsoes.length === 1 ? 50 : 4 + index * 92 / (previsoes.length - 1);
-    const y = Number.isFinite(Number(item.temperatura)) ? 72 - ((Number(item.temperatura) - minimo) / amplitude) * 27 : 78;
+    // A faixa visual é deliberadamente curta e central para leituras muito próximas
+    // não encostarem no topo ou na base do painel.
+    const y = Number.isFinite(Number(item.temperatura)) ? 56 - (((Number(item.temperatura) - minimo) / amplitude) - .5) * 12 : 56;
     return { x, y };
   });
   const linha = pontos.map(({ x, y }) => `${x},${y}`).join(" ");
   const area = `M ${pontos[0].x},84 L ${linha.replaceAll(" ", " L ")} L ${pontos.at(-1).x},84 Z`;
   const linhasHorizontais = [39, 50, 61, 72, 84].map(y => `<line class="hourly-grid-line" x1="0" x2="100" y1="${y}" y2="${y}" />`).join("");
   const linhasVerticais = pontos.map(({ x }) => `<line class="hourly-grid-line hourly-grid-line-vertical" x1="${x}" x2="${x}" y1="25" y2="84" />`).join("");
-  return `<svg class="hourly-temperature-line" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="hourly-temperature-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#38a9f8" stop-opacity=".26"/><stop offset="1" stop-color="#38a9f8" stop-opacity=".015"/></linearGradient></defs>${linhasHorizontais}${linhasVerticais}<path class="hourly-temperature-area" d="${area}"/><polyline points="${linha}" />${pontos.map(({ x, y }) => `<circle cx="${x}" cy="${y}" r="1.55" />`).join("")}</svg>`;
+  return `<svg class="hourly-temperature-line" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="hourly-temperature-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#38a9f8" stop-opacity=".26"/><stop offset="1" stop-color="#38a9f8" stop-opacity=".015"/></linearGradient></defs>${linhasHorizontais}${linhasVerticais}<path class="hourly-temperature-area" d="${area}"/><polyline points="${linha}" /></svg><span class="hourly-temperature-dots" aria-hidden="true">${pontos.map(({ x, y }) => `<i style="left:${x}%;top:${y}%"></i>`).join("")}</span>`;
 }
 
 function horarioEmFormato24h(value) {
