@@ -3,7 +3,7 @@ import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-6";
 import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-14";
-import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261029-5";
+import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261029-6";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
 const pages = { "/": overviewPage, "/historico": historyPage, "/simulacoes": simulationsPage, "/configuracoes": settingsPage };
@@ -29,6 +29,28 @@ function savedPreferences() {
   }
   catch { return {}; }
 }
+function applySidebarState(collapsed) {
+  document.querySelector(".app-layout")?.classList.toggle("sidebar-collapsed", collapsed);
+  const toggle = document.querySelector("#sidebar-collapse-toggle");
+  if (toggle) {
+    const label = collapsed ? "Expandir menu" : "Recolher menu";
+    toggle.setAttribute("aria-label", label);
+    toggle.title = label;
+  }
+}
+function setupSidebarCollapse() {
+  applySidebarState(Boolean(savedPreferences().sidebarCollapsed));
+  document.querySelector("#sidebar-collapse-toggle")?.addEventListener("click", () => {
+    const collapsed = !document.querySelector(".app-layout")?.classList.contains("sidebar-collapsed");
+    try {
+      localStorage.setItem(preferencesKey, JSON.stringify({ ...savedPreferences(), sidebarCollapsed: collapsed }));
+    } catch {
+      // A preferência é apenas visual; a navegação segue funcionando sem armazenamento local.
+    }
+    applySidebarState(collapsed);
+  });
+}
+setupSidebarCollapse();
 let activeReadingsApi = leiturasApi;
 function simulated() {
   return activeReadingsApi === demoApi;
@@ -398,9 +420,6 @@ async function fetchLatest() {
   try {
     latestReading = await activeReadingsApi.buscarUltima();
     updateCollectorCard(latestReading);
-    if (simulated()) {
-      text("#collector-title", "Dados simulados");
-    }
     return latestReading;
   } catch (error) {
     updateCollectorCard(null);

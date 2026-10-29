@@ -57,6 +57,7 @@ export function renderShell(path, content) {
           <span class="brand-mark" aria-hidden="true"><span class="brand-sun"></span><span class="brand-cloud"></span></span>
           <span class="brand-copy"><strong>Meteora</strong><span>Estação Meteorológica</span></span>
         </a>
+        <button class="sidebar-collapse-toggle" type="button" id="sidebar-collapse-toggle" aria-label="Recolher menu" title="Recolher menu">${icon("arrow")}</button>
         <button class="sidebar-location-input" type="button" data-open-location-modal title="Alterar cidade da estação">${icon("search")}<span data-location-label>Localização da estação</span></button>
         <p class="sidebar-section-label">NAVEGAÇÃO</p>
         <nav class="primary-nav" aria-label="Navegação principal">
@@ -64,10 +65,8 @@ export function renderShell(path, content) {
         </nav>
         <div class="sidebar-foot">
           <div class="collector-card" id="collector-card">
-            <div class="collector-title"><span class="status-dot neutral"></span><strong id="collector-title">Coleta não verificada</strong></div>
-            <span class="collector-update-label">Última atualização</span><strong id="sidebar-last-reading">Carregando…</strong>
+            <div class="collector-title"><span class="status-dot neutral"></span><strong id="collector-title">Offline</strong></div>
           </div>
-          <small>UNIP · APS 2026/2</small>
         </div>
       </aside>
       <div class="workspace">
@@ -145,8 +144,7 @@ export function anchorDate(latest) {
 
 export function updateCollectorCard(latest) {
   const stamp = parseDate(latest?.dataHoraColeta);
-  text("#sidebar-last-reading", stamp ? dateTime(stamp) : "Nenhuma leitura");
-  text("#collector-title", stamp ? "Leituras disponíveis" : "Sem leituras");
+  text("#collector-title", stamp ? "Ao vivo" : "Offline");
   document.querySelectorAll(".collector-title .status-dot")
     .forEach(dot => { dot.className = `status-dot ${stamp ? "success" : "neutral"}`; });
 }
