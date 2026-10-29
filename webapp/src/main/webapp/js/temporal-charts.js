@@ -87,19 +87,26 @@ function visibleTicks(count, compact, daily, availableWidth) {
 }
 
 /** SVG próprio: horas observadas em linha; dias do calendário em colunas independentes. */
-export function drawTemporalChart(selector, readings, field, suffix, color, domain) {
+export function drawTemporalChart(selector, readings, field, suffix, color, domain, forecasts = []) {
   const target = document.querySelector(selector);
   if (!target) return null;
-  rendered.set(selector, [readings, field, suffix, color, domain]);
+  rendered.set(selector, [readings, field, suffix, color, domain, forecasts]);
   const daily = Boolean(domain.daily);
   const slots = calendarSlots(domain.start, domain.end, daily);
   const values = valuesBySlot(readings, field, daily);
-  const available = slots.map((slot, index) => ({ ...slot, index, value: values.get(slot.key) }))
+  const available = slots.map((slot, index) => ({ ...slot, index, value: values.get(slot.key), source: "measured" }))
     .filter(slot => slot.value !== undefined);
+  const forecastValues = valuesBySlot(forecasts, field, daily);
+  const lastMeasuredIndex = available.at(-1)?.index ?? -1;
+  // Previsão nunca cobre um ponto que já foi observado pela estação.
+  const projected = slots.map((slot, index) => ({ ...slot, index, value: forecastValues.get(slot.key), source: "forecast" }))
+    .filter(slot => slot.value !== undefined && (lastMeasuredIndex < 0 || slot.index > lastMeasuredIndex));
+  const plotted = [...available, ...projected].sort((a, b) => a.index - b.index);
   const total = daily ? slots.length : 24;
-  const summary = { available: available.length, total, daily,
-    first: available[0]?.label || null, last: available.at(-1)?.label || null };
-  if (!available.length) {
+  const summary = { available: available.length, forecast: projected.length, total, daily,
+    first: available[0]?.label || null, last: available.at(-1)?.label || null,
+    forecastFirst: projected[0]?.label || null, forecastLast: projected.at(-1)?.label || null };
+  if (!plotted.length) {
     target.innerHTML = '<div class="chart-empty">Sem leituras válidas para este período.</div>';
     return summary;
   }
@@ -113,7 +120,7 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
   const bottom = compact ? 26 : 30;
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
-  const scale = yScale(available.map(slot => slot.value), field, daily);
+  const scale = yScale(plotted.map(slot => slot.value), field, daily);
   // Recuo nas pontas: os pontos não invadem os rótulos do eixo.
   const inset = compact ? 6 : 8;
   const xAt = index => left + inset + (slots.length === 1 ? (plotWidth - 2 * inset) / 2 : index * (plotWidth - 2 * inset) / (slots.length - 1));
@@ -131,27 +138,35 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
     return `<line x1="${x}" y1="${top}" x2="${x}" y2="${baseline}" class="grid-line temporal-grid-vertical"/><text x="${x}" y="${height - 7}" text-anchor="middle" class="axis-label">${slots[index].label}</text>`;
   }).join("");
 
-  const sections = [];
-  let section = [];
-  for (const slot of available) {
-    if (section.length && slot.index - section.at(-1).index > 1) {
-      sections.push(section);
-      section = [];
+  const groupedSections = source => {
+    const sections = [];
+    let section = [];
+    for (const slot of plotted.filter(item => item.source === source)) {
+      if (section.length && slot.index - section.at(-1).index > 1) {
+        sections.push(section);
+        section = [];
+      }
+      section.push(slot);
     }
-    section.push(slot);
-  }
-  if (section.length) sections.push(section);
-  const lines = sections.filter(group => group.length > 1).map(group => {
+    if (section.length) sections.push(section);
+    return sections;
+  };
+  const measuredLines = groupedSections("measured").filter(group => group.length > 1).map(group => {
     const line = group.map((slot, index) => `${index ? "L" : "M"}${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`).join(" ");
     const points = group.map(slot => `L${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`).join(" ");
     const area = `M${xAt(group[0].index).toFixed(2)} ${baseline.toFixed(2)} ${points} L${xAt(group.at(-1).index).toFixed(2)} ${baseline.toFixed(2)} Z`;
     return `<path d="${area}" fill="${color}" opacity=".10"/><path d="${line}" fill="none" stroke="${color}" stroke-width="${compact ? 2 : 2.5}" stroke-linecap="round" stroke-linejoin="round"/>`;
   }).join("");
-  const dots = available.map(slot => `<circle cx="${xAt(slot.index)}" cy="${yAt(slot.value)}" r="${compact ? 3 : 4}" fill="${color}" stroke="#fff" stroke-width="1.5"/>`).join("");
-  const shape = `${lines}${dots}`;
+  const forecastLines = groupedSections("forecast").filter(group => group.length > 1).map(group => {
+    const line = group.map((slot, index) => `${index ? "L" : "M"}${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`).join(" ");
+    return `<path d="${line}" fill="none" stroke="#8b9bae" stroke-width="${compact ? 2 : 2.5}" stroke-dasharray="6 5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  }).join("");
+  const measuredDots = available.map(slot => `<circle cx="${xAt(slot.index)}" cy="${yAt(slot.value)}" r="${compact ? 3 : 4}" fill="${color}" stroke="#fff" stroke-width="1.5"/>`).join("");
+  const forecastDots = projected.map(slot => `<circle cx="${xAt(slot.index)}" cy="${yAt(slot.value)}" r="${compact ? 3 : 4}" fill="#8b9bae" stroke="#fff" stroke-width="1.5"/>`).join("");
+  const shape = `${measuredLines}${forecastLines}${measuredDots}${forecastDots}`;
 
   const axisTitle = `${field === "precipitacao" ? "Maior valor" : "Média"} por ${daily ? "dia" : "hora"}`;
-  target.innerHTML = `<svg class="plot temporal-plot" viewBox="0 0 ${width} ${height}" role="img" aria-label="${axisTitle}: ${available.length} ${daily ? "dias" : "horas"} com dados de ${total}; ${suffix}"><text x="2" y="12" class="axis-label">${suffix}</text>${horizontal}${vertical}${shape}<line class="temporal-guide" x1="0" x2="0" y1="${top}" y2="${baseline}" stroke="${color}" stroke-dasharray="4 4"/><circle class="temporal-selected" cx="0" cy="0" r="${compact ? 4 : 6}" fill="${color}" stroke="#fff" stroke-width="2"/></svg><div class="temporal-tooltip" aria-hidden="true"><small></small><strong></strong></div>`;
+  target.innerHTML = `<svg class="plot temporal-plot" viewBox="0 0 ${width} ${height}" role="img" aria-label="${axisTitle}: ${available.length} ${daily ? "dias" : "horas"} medidos${projected.length ? ` e ${projected.length} previstos` : ""} de ${total}; ${suffix}"><text x="2" y="12" class="axis-label">${suffix}</text>${horizontal}${vertical}${shape}<line class="temporal-guide" x1="0" x2="0" y1="${top}" y2="${baseline}" stroke="${color}" stroke-dasharray="4 4"/><circle class="temporal-selected" cx="0" cy="0" r="${compact ? 4 : 6}" fill="${color}" stroke="#fff" stroke-width="2"/></svg><div class="temporal-tooltip" aria-hidden="true"><small></small><strong></strong><em></em></div>`;
   const guide = target.querySelector(".temporal-guide");
   const marker = target.querySelector(".temporal-selected");
   const tooltip = target.querySelector(".temporal-tooltip");
@@ -161,18 +176,28 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
     guide.setAttribute("x2", x);
     marker.setAttribute("cx", x);
     marker.setAttribute("cy", yAt(slot.value));
-    tooltip.querySelector("small").textContent = `${slot.label} · ${axisTitle.toLowerCase()}`;
+    const lastMeasured = available.at(-1);
+    const projectionInfo = summary.forecast
+      ? `Previsão: ${summary.forecastFirst}–${summary.forecastLast}`
+      : "Sem previsão disponível";
+    tooltip.querySelector("small").textContent = slot.source === "forecast"
+      ? `Previsão · ${slot.label}`
+      : slot.index === lastMeasured?.index ? `Última medição · ${slot.label}` : `Medição · ${slot.label}`;
     tooltip.querySelector("strong").textContent = `${number(slot.value)} ${suffix}`;
+    tooltip.querySelector("em").textContent = slot.source === "forecast" && lastMeasured
+      ? `Após medição de ${lastMeasured.label}` : projectionInfo;
+    guide.setAttribute("stroke", slot.source === "forecast" ? "#8b9bae" : color);
+    marker.setAttribute("fill", slot.source === "forecast" ? "#8b9bae" : color);
     // Mantém a dica inteira dentro do gráfico (ela é centralizada no ponto com translateX(-50%)).
     const box = target.clientWidth;
     const half = Math.min(tooltip.offsetWidth / 2, box / 2);
     tooltip.style.left = `${Math.min(box - half, Math.max(half, x / width * box))}px`;
   }
-  select(available.at(-1));
+  select(available.at(-1) || projected.at(-1));
   target.onpointermove = event => {
     const bounds = target.getBoundingClientRect();
     const x = (event.clientX - bounds.left) / bounds.width * width;
-    select(available.reduce((best, slot) => Math.abs(xAt(slot.index) - x) < Math.abs(xAt(best.index) - x) ? slot : best));
+    select(plotted.reduce((best, slot) => Math.abs(xAt(slot.index) - x) < Math.abs(xAt(best.index) - x) ? slot : best));
   };
   return summary;
 }

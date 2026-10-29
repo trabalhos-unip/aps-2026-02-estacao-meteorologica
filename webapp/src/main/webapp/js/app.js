@@ -239,6 +239,7 @@ const variables = {
 };
 let latestReading = null;
 let historyReadings = [];
+let historyForecasts = [];
 let historyStart = null;
 let historyEnd = null;
 let historyRequest = 0;
@@ -774,9 +775,9 @@ function redrawHistoryCharts() {
     const measure = field === "precipitacao" ? "Maior valor" : "Média";
     return domain.daily
       ? `${measure} por dia · ${summary.available} de ${summary.total} dias com dados`
-      : `${measure} por hora · ${summary.available} de 24 horas com dados${summary.first ? ` · ${summary.first}–${summary.last}` : ""}`;
+      : `${measure} por hora · ${summary.available} de 24 horas medidas${summary.first ? ` · ${summary.first}–${summary.last}` : ""}${summary.forecast ? ` · previsão ${summary.forecastFirst}–${summary.forecastLast}` : ""}`;
   };
-  const summary = drawTemporalChart("#history-chart-canvas", historyReadings, variable, settings.suffix, settings.color, domain);
+  const summary = drawTemporalChart("#history-chart-canvas", historyReadings, variable, settings.suffix, settings.color, domain, historyForecasts);
   text("#history-chart-subtitle", periodSubtitle(summary, variable));
   const miniCharts = [
     ["#humidity-chart", "umidadeRelativa", "%", "#269ceb"],
@@ -784,7 +785,7 @@ function redrawHistoryCharts() {
     ["#wind-chart", "velocidadeVento", "km/h", "#18b979"],
   ];
   miniCharts.forEach(([selector, field, suffix, color], index) => {
-    const miniSummary = drawTemporalChart(selector, historyReadings, field, suffix, color, domain);
+    const miniSummary = drawTemporalChart(selector, historyReadings, field, suffix, color, domain, historyForecasts);
     document.querySelectorAll(".mini-chart-card .title-with-icon small")[index].textContent = periodSubtitle(miniSummary, field);
   });
 }
@@ -809,14 +810,25 @@ async function loadHistory(start, end) {
   historyStart = start;
   historyEnd = end;
   try {
-    const readings = await buscarSerieDoPeriodo(start, end);
+    const hoje = dateInput(new Date());
+    const incluirPrevisaoHoraria = !isDailyPeriod(start, end) && dateInput(start) === hoje && dateInput(end) === hoje;
+    const [readings, previsoes] = await Promise.all([
+      buscarSerieDoPeriodo(start, end),
+      incluirPrevisaoHoraria
+        ? resumosHorariosApi.buscarPrevisoes(apiDate(start), apiDate(end))
+            .then(itens => itens.map(resumoHorarioComoLeitura))
+            .catch(() => [])
+        : Promise.resolve([]),
+    ]);
     if (request !== historyRequest) return;
     historyReadings = readingsForPeriod(readings, start, end);
+    historyForecasts = previsoes;
     renderHistoryDetails();
     if (historyReadings.length > 100) showToast("Mostrando os 100 registros mais recentes na tabela.");
   } catch (error) {
     if (request !== historyRequest) return;
     historyReadings = [];
+    historyForecasts = [];
     renderHistoryDetails();
     showToast(error.message);
   }
