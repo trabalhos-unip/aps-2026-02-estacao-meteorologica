@@ -479,6 +479,10 @@ function simboloClimaEstatico(asset) {
   return `<img class="forecast-meteocon" src="https://cdn.meteocons.com/3.0.0-next.10/svg-static/fill/${asset}.svg" alt="" aria-hidden="true" decoding="async">`;
 }
 
+function iconeResumo(asset) {
+  return `<span class="summary-meteocon"><img src="https://cdn.meteocons.com/3.0.0-next.10/svg-static/fill/${asset}.svg" alt="" aria-hidden="true" decoding="async"></span>`;
+}
+
 function graficoDeProbabilidadeChuva(previsoes, largura) {
   const probabilidades = previsoes.map(item => Number(item.probabilidadeChuva)).filter(Number.isFinite);
   if (!probabilidades.length) return "";
@@ -799,10 +803,10 @@ function renderSummary(readings) {
   const precipitation = numericValues(readings, "precipitacao");
   const wind = numericValues(readings, "velocidadeVento");
   rows.innerHTML = `
-    <div class="summary-row"><span>Temperatura média</span><strong>${unit(average(values), "°C")}</strong></div>
-    <div class="summary-row"><span>Umidade média</span><strong>${unit(average(humidity), "%", 0)}</strong></div>
-    <div class="summary-row"><span>Precipitação total</span><strong>${unit(precipitation.length ? precipitation.reduce((sum, value) => sum + value, 0) : null, "mm")}</strong></div>
-    <div class="summary-row"><span>Velocidade média do vento</span><strong>${unit(average(wind), "km/h")}</strong></div>`;
+    <div class="summary-row">${iconeResumo("thermometer")}<span>Temperatura média</span><strong>${unit(average(values), "°C")}</strong></div>
+    <div class="summary-row">${iconeResumo("humidity")}<span>Umidade média</span><strong>${unit(average(humidity), "%", 0)}</strong></div>
+    <div class="summary-row">${iconeResumo("rain")}<span>Precipitação total</span><strong>${unit(precipitation.length ? precipitation.reduce((sum, value) => sum + value, 0) : null, "mm")}</strong></div>
+    <div class="summary-row">${iconeResumo("wind")}<span>Velocidade média do vento</span><strong>${unit(average(wind), "km/h")}</strong></div>`;
 }
 
 function renderHistoricalWeather() {
@@ -863,7 +867,8 @@ function redrawHistoryCharts() {
 }
 
 function renderHistoryDetails() {
-  text("#summary-period", `${dateTime(historyStart)} a ${dateTime(historyEnd)}`);
+  const dateFormatter = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  text("#summary-period", `Medido de ${dateFormatter.format(historyStart)} até ${dateFormatter.format(historyEnd)}`);
   renderSummary(historyReadings);
   renderHistoricalWeather();
   const ordered = [...historyReadings].reverse();
