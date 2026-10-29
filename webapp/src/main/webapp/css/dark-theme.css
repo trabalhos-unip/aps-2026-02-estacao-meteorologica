@@ -212,3 +212,51 @@
 :where([data-theme="dark"]) .select2-results__option{color:var(--text-2)}
 :where([data-theme="dark"]) .select2-container--default .select2-results__option[aria-selected=true]{background:var(--surface-3)}
 :where([data-theme="dark"]) .select2-container--default .select2-results__option--highlighted[aria-selected]{background:#168fec;color:#fff}
+
+/* Ajustes finais do shell atual: no modo escuro, controles e superfícies não
+   podem herdar nenhum fundo claro das regras do tema padrão. */
+:where([data-theme="dark"]) .app-layout,
+:where([data-theme="dark"]) .workspace,
+:where([data-theme="dark"]) .page-content{background:#000;color:var(--text)}
+:where([data-theme="dark"]) .sidebar{background:#0d0d0f;border-color:#24262b}
+:where([data-theme="dark"]) .primary-nav>.sidebar-location-input,
+:where([data-theme="dark"]) .sidebar-location-input{background:#17191e;border-color:#30343c;color:#e3e9f2}
+:where([data-theme="dark"]) .sidebar-location-input .icon{color:#9fcaee}
+:where([data-theme="dark"]) .primary-nav>.sidebar-location-input:hover,
+:where([data-theme="dark"]) .primary-nav>.sidebar-location-input:focus-visible,
+:where([data-theme="dark"]) .sidebar-location-input:hover,
+:where([data-theme="dark"]) .sidebar-location-input:focus-visible{background:#20252d;border-color:#4d91c7;box-shadow:0 0 0 3px #2799ed20}
+:where([data-theme="dark"]) .nav-link{color:#c5d0df}
+:where([data-theme="dark"]) .nav-link .icon{color:#a9bbd0}
+:where([data-theme="dark"]) .nav-link:hover{background:#1a2634;color:#9bd3ff}
+:where([data-theme="dark"]) .nav-link.active{background:#123b62;color:#b3e0ff;box-shadow:inset 0 0 0 1px #237ab9}
+:where([data-theme="dark"]) .nav-link.active .icon{color:#72c5ff}
+:where([data-theme="dark"]) .sidebar-collapse-toggle{background:#1a2028;border-color:#374352;color:#b9c9dc;box-shadow:0 3px 10px #00000066}
+:where([data-theme="dark"]) .sidebar-collapse-toggle:hover{background:#22354a;color:#9ed5ff}
+:where([data-theme="dark"]) .sidebar-foot{border-top-color:#2d3440}
+:where([data-theme="dark"]) .collector-update-label,
+:where([data-theme="dark"]) .collector-card>#sidebar-last-reading{color:#aabbd0}
+
+/* Os filtros em pill recebem seu próprio fundo para manter contraste mesmo
+   onde o tema claro usa seletores mais específicos. */
+:where([data-theme="dark"]) .home-chart-toolbar #home-chart-range,
+:where([data-theme="dark"]) #history-filter .period-field .segmented,
+:where([data-theme="dark"]) .segmented{background:#151c26;border-color:#303c4b}
+:where([data-theme="dark"]) .home-chart-toolbar #home-chart-range .segment,
+:where([data-theme="dark"]) #history-filter .period-field .segment,
+:where([data-theme="dark"]) .segment{background:transparent;color:#b7c7db}
+:where([data-theme="dark"]) .home-chart-toolbar #home-chart-range .segment.selected,
+:where([data-theme="dark"]) #history-filter .period-field .segment.selected,
+:where([data-theme="dark"]) .segment.selected{background:linear-gradient(120deg,#167dcc,#2a9ee9);color:#fff;box-shadow:0 2px 8px #00000070}
+:where([data-theme="dark"]) .home-chart-toolbar #home-chart-range .segment:hover:not(.selected),
+:where([data-theme="dark"]) #history-filter .period-field .segment:hover:not(.selected),
+:where([data-theme="dark"]) .segment:hover:not(.selected){background:#202b39;color:#e8f4ff}
+:where([data-theme="dark"]) .secondary-button{background:#171e28;border-color:#344353;color:#b6d9f5}
+:where([data-theme="dark"]) .secondary-button:hover{background:#202e3e;border-color:#599bd0;color:#e4f3ff}
+:where([data-theme="dark"]) .home-insight-card .mini-series-legend,
+:where([data-theme="dark"]) .history-series-legend{color:#aab9cb}
+:where([data-theme="dark"]) .initial-page-skeleton{background:#090d13;color:#b4c1d1}
+:where([data-theme="dark"]) .skeleton-sidebar{background:#101722;border-right-color:#273241}
+:where([data-theme="dark"]) .initial-page-skeleton i,
+:where([data-theme="dark"]) .initial-page-skeleton .skeleton-hero,
+:where([data-theme="dark"]) .initial-page-skeleton .skeleton-chart{background:linear-gradient(100deg,#172230 20%,#223143 38%,#172230 55%);background-size:220% 100%}

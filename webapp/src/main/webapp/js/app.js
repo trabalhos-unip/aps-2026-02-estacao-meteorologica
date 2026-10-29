@@ -2,7 +2,7 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-8";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-17";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-18";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261029-9";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -764,15 +764,20 @@ async function refreshHome() {
     inicioDoDia.setHours(0, 0, 0, 0);
     const fimDoDia = new Date(inicioDoDia);
     fimDoDia.setHours(23, 59, 59, 999);
-    const [leiturasRecentes, leiturasDoDia] = await Promise.all([
+    const [leiturasRecentes, leiturasDoDia, previsoesDoDia] = await Promise.all([
       activeReadingsApi.buscarUltimas(100),
       buscarSerieDoPeriodo(inicioDoDia, fimDoDia).catch(() => []),
+      simulated()
+        ? Promise.resolve(previsaoHorariaDeExemplo().map(resumoHorarioComoLeitura))
+        : resumosHorariosApi.buscarPrevisoes(apiDate(inicioDoDia), apiDate(fimDoDia))
+          .then(itens => itens.map(resumoHorarioComoLeitura))
+          .catch(() => []),
     ]);
     recentReadings = leiturasRecentes;
     const lastValid = [...recentReadings].reverse().find(reading => reading.temperatura != null || reading.umidadeRelativa != null || reading.precipitacao != null || reading.velocidadeVento != null);
     renderHomeReading(lastValid || latestReading, recentReadings);
     renderRecentReadings();
-    renderHomeInsights(leiturasDoDia.length ? leiturasDoDia : recentReadings);
+    renderHomeInsights(leiturasDoDia.length ? leiturasDoDia : recentReadings, previsoesDoDia);
   } catch (error) {
     recentReadings = [];
     renderHomeReading(latestReading, []);
@@ -782,21 +787,23 @@ async function refreshHome() {
   await renderHomeChart(homeChartRange);
 }
 
-function renderHomeInsights(readings = recentReadings) {
+function renderHomeInsights(readings = recentReadings, forecasts = []) {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   const end = new Date(start);
   end.setHours(23, 59, 59, 999);
   const domain = { start, end, daily: false };
   const charts = [
-    ["#home-humidity-chart", "#home-humidity-subtitle", "umidadeRelativa", "%", "#269ceb", "Umidade relativa do ar"],
-    ["#home-rain-chart", "#home-rain-subtitle", "precipitacao", "mm", "#6a95ed", "Chuva registrada hoje"],
-    ["#home-wind-chart", "#home-wind-subtitle", "velocidadeVento", "km/h", "#18b979", "Vento registrado hoje"],
+    ["#home-humidity-chart", "#home-humidity-subtitle", "umidadeRelativa", "%", "#269ceb", "Umidade relativa do ar", "#home-humidity-series-legend"],
+    ["#home-rain-chart", "#home-rain-subtitle", "precipitacao", "mm", "#6a95ed", "Chuva registrada hoje", "#home-rain-series-legend"],
+    ["#home-wind-chart", "#home-wind-subtitle", "velocidadeVento", "km/h", "#18b979", "Vento registrado hoje", "#home-wind-series-legend"],
   ];
-  charts.forEach(([selector, subtitle, field, suffix, color, description]) => {
-    const summary = drawTemporalChart(selector, readings, field, suffix, color, domain);
+  charts.forEach(([selector, subtitle, field, suffix, color, description, legendSelector]) => {
+    const summary = drawTemporalChart(selector, readings, field, suffix, color, domain, forecasts);
     const period = summary?.available ? `${summary.available} horas medidas hoje` : "Sem leituras medidas hoje";
     text(subtitle, `${description} · ${period}`);
+    const legend = document.querySelector(legendSelector);
+    if (legend) legend.hidden = !summary?.forecast;
   });
 }
 
