@@ -576,7 +576,9 @@ async function renderHomeChart(range = homeChartRange, resetarNavegacao = false)
   } catch (error) {
     if (request !== homeChartRequest || homeChartRange !== range) return;
     const scroller = document.querySelector("#home-daily-forecast-scroll");
+    scroller.dataset.itemCount = "0";
     scroller.dataset.allowNavigation = "false";
+    scroller.classList.remove("fit-seven-days");
     scroller.innerHTML = `<div class="chart-empty">${error.message}</div>`;
     atualizarNavegacaoPrevisaoDiaria();
   }
@@ -621,14 +623,15 @@ function renderPrevisaoDiariaNoPainel(previsoes, limite, resetarNavegacao = fals
   const scroller = document.querySelector("#home-daily-forecast-scroll");
   if (!scroller) return;
   if (!previsoes.length) {
+    scroller.dataset.itemCount = "0";
     scroller.dataset.allowNavigation = "false";
+    scroller.classList.remove("fit-seven-days");
     scroller.innerHTML = '<div class="chart-empty">A previsão diária ainda não está disponível.</div>';
     atualizarNavegacaoPrevisaoDiaria();
     return;
   }
   scroller.setAttribute("aria-label", `Previsão para os próximos ${Math.min(limite, previsoes.length)} dias`);
-  scroller.dataset.allowNavigation = String(limite > 7);
-  scroller.classList.toggle("fit-seven-days", limite === 7 && previsoes.length <= 7);
+  scroller.dataset.itemCount = String(Math.min(limite, previsoes.length));
   const posicaoAnterior = resetarNavegacao ? 0 : scroller.scrollLeft;
   scroller.innerHTML = previsoes.slice(0, limite).map((item, indice) => {
     const data = dataDaPrevisao(item);
@@ -647,7 +650,13 @@ function atualizarNavegacaoPrevisaoDiaria() {
   const anterior = document.querySelector("#daily-forecast-previous");
   const proximo = document.querySelector("#daily-forecast-next");
   if (!scroller || !anterior || !proximo) return;
-  const podeNavegar = scroller.dataset.allowNavigation === "true" && scroller.children.length > 7 && scroller.scrollWidth > scroller.clientWidth + 1;
+  const quantidade = Number(scroller.dataset.itemCount || scroller.children.length);
+  // Sete dias ficam fixos apenas quando a largura preserva uma coluna legível por dia.
+  // Em telas menores, a mesma faixa volta a ser navegável.
+  const semanaCabeNoPainel = quantidade <= 7 && scroller.clientWidth >= 720;
+  scroller.classList.toggle("fit-seven-days", semanaCabeNoPainel);
+  scroller.dataset.allowNavigation = String(quantidade > 0 && !semanaCabeNoPainel);
+  const podeNavegar = scroller.dataset.allowNavigation === "true" && scroller.scrollWidth > scroller.clientWidth + 1;
   anterior.hidden = !podeNavegar || scroller.scrollLeft <= 1;
   proximo.hidden = !podeNavegar || scroller.scrollLeft >= scroller.scrollWidth - scroller.clientWidth - 1;
 }
