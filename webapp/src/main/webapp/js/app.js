@@ -2,7 +2,7 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261028-3";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261028-6";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261028-7";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-1";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -431,7 +431,7 @@ function iconeDoClimaHorario(item) {
   return "cloud";
 }
 
-// Meteocons Fill (MIT): SVGs estáticos, para não adicionar animações ao gráfico.
+// Meteocons Fill (MIT): o recorte de Hoje usa a variante animada; os demais são estáticos.
 function assetMeteocon(tipo) {
   return {
     sun: "partly-cloudy-day",
@@ -441,11 +441,11 @@ function assetMeteocon(tipo) {
 }
 
 function simboloClimaHorario(tipo) {
-  return `<img class="hourly-weather-symbol" src="https://cdn.meteocons.com/3.0.0-next.10/svg-static/fill/${assetMeteocon(tipo)}.svg" alt="" aria-hidden="true" decoding="async">`;
+  return `<img class="hourly-weather-symbol" src="https://cdn.meteocons.com/3.0.0-next.10/svg/fill/${assetMeteocon(tipo)}.svg" alt="" aria-hidden="true" decoding="async">`;
 }
 
-function simboloClimaAnimado(tipo) {
-  return `<img class="forecast-meteocon" src="https://cdn.meteocons.com/3.0.0-next.10/svg/fill/${assetMeteocon(tipo)}.svg" alt="" aria-hidden="true" decoding="async">`;
+function simboloClimaEstatico(tipo) {
+  return `<img class="forecast-meteocon" src="https://cdn.meteocons.com/3.0.0-next.10/svg-static/fill/${assetMeteocon(tipo)}.svg" alt="" aria-hidden="true" decoding="async">`;
 }
 
 function graficoDeProbabilidadeChuva(previsoes) {
@@ -607,7 +607,7 @@ function renderPrevisaoDiariaNoPainel(previsoes, limite) {
     const data = dataDaPrevisao(item);
     const { chance, mm } = detalhesChuvaDaPrevisao(item);
     const tipo = iconeDoClimaHorario(item);
-    return `<article class="daily-forecast-item"><time>${rotuloDaPrevisao(item, indice)}<small>${data ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(data) : ""}</small></time>${simboloClimaAnimado(tipo)}<strong>${number(item.temperaturaMaxima, 0)}° <small>${number(item.temperaturaMinima, 0)}°</small></strong><span class="daily-forecast-rain">${icon("drop")}${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span></article>`;
+    return `<article class="daily-forecast-item"><time>${rotuloDaPrevisao(item, indice)}<small>${data ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(data) : ""}</small></time>${simboloClimaEstatico(tipo)}<strong>${number(item.temperaturaMaxima, 0)}° <small>${number(item.temperaturaMinima, 0)}°</small></strong><span class="daily-forecast-rain">${icon("drop")}${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span></article>`;
   }).join("");
 }
 
@@ -627,7 +627,7 @@ function renderLinhaPrevisaoDiaria(item, indice) {
   const { chance } = detalhesChuvaDaPrevisao(item);
   const tipo = iconeDoClimaHorario(item);
   const dataCurta = data ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(data) : "";
-  return `<div class="forecast-row"><span><strong>${rotuloDaPrevisao(item, indice)}</strong><small>${dataCurta}</small></span><span class="forecast-weather">${simboloClimaAnimado(tipo)}</span><span>${number(item.temperaturaMaxima, 0)}°</span><span>${number(item.temperaturaMinima, 0)}°</span><span class="forecast-rain">${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span></div>`;
+  return `<div class="forecast-row"><span><strong>${rotuloDaPrevisao(item, indice)}</strong><small>${dataCurta}</small></span><span class="forecast-weather">${simboloClimaEstatico(tipo)}</span><span class="forecast-rain">${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span><span class="forecast-temperatures"><strong>${number(item.temperaturaMaxima, 0)}°</strong><small>${number(item.temperaturaMinima, 0)}°</small></span></div>`;
 }
 
 async function renderForecast() {

@@ -12,9 +12,15 @@ function tabs(id, selected = "24h") {
   </div>`;
 }
 
-function metricCard(label, iconName, tone, id, suffix, detailId) {
+const METEOCONS_STATIC = "https://cdn.meteocons.com/3.0.0-next.10/svg-static/fill";
+
+function meteocon(asset, className = "metric-meteocon") {
+  return `<img class="${className}" src="${METEOCONS_STATIC}/${asset}.svg" alt="" aria-hidden="true" decoding="async">`;
+}
+
+function metricCard(label, asset, id, suffix, detailId) {
   return `<article class="card metric-card">
-    <div class="metric-heading"><span class="icon-disc ${tone}">${icon(iconName)}</span><strong>${label}</strong></div>
+    <div class="metric-heading">${meteocon(asset)}<strong>${label}</strong></div>
     <p class="metric-reading"><span id="${id}">—</span><span class="metric-suffix">${suffix}</span></p>
     <p class="metric-detail" id="${detailId}">Aguardando leitura</p>
     <p class="metric-trend" id="${detailId}-trend">—</p>
@@ -27,7 +33,7 @@ function forecastRows() {
     date.setDate(date.getDate() + index);
     const label = index === 0 ? "Hoje" : new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(date).replace(".", "");
     const compactDate = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(date);
-    return `<div class="forecast-row"><span><strong>${label}</strong><small>${compactDate}</small></span><span class="forecast-weather">${icon("cloud")}</span><span>—°</span><span>—°</span><span class="forecast-rain">—</span></div>`;
+    return `<div class="forecast-row"><span><strong>${label}</strong><small>${compactDate}</small></span><span class="forecast-weather">${meteocon("overcast-day", "forecast-meteocon")}</span><span class="forecast-rain">—</span><span class="forecast-temperatures"><strong>—°</strong><small>—°</small></span></div>`;
   }).join("");
 }
 
@@ -39,10 +45,10 @@ export function overviewPage() {
       <p class="hero-description" id="hero-description">Aguardando dados da estação</p>
     </section>
     <section class="metrics-grid" aria-label="Variáveis meteorológicas">
-      ${metricCard("Temperatura", "thermometer", "red", "metric-temperature", "°C", "temperature-detail")}
-      ${metricCard("Umidade", "drop", "blue", "metric-humidity", "%", "humidity-detail")}
-      ${metricCard("Chuva", "rain", "purple", "metric-rain-chance", "%", "rain-detail")}
-      ${metricCard("Vento", "wind", "teal", "metric-wind", "km/h", "wind-detail")}
+      ${metricCard("Temperatura", "thermometer", "metric-temperature", "°C", "temperature-detail")}
+      ${metricCard("Umidade", "raindrop", "metric-humidity", "%", "humidity-detail")}
+      ${metricCard("Chuva", "rain", "metric-rain-chance", "%", "rain-detail")}
+      ${metricCard("Vento", "wind", "metric-wind", "km/h", "wind-detail")}
     </section>
     <section class="card chart-card home-chart hourly-weather-chart" aria-label="Clima e histórico de temperatura">
       <div class="section-head home-chart-toolbar"><small id="hourly-weather-subtitle">Hoje · previsão por hora da Open-Meteo</small>${tabs("home-chart-range")}</div>
