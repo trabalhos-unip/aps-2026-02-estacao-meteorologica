@@ -97,15 +97,14 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
   const available = slots.map((slot, index) => ({ ...slot, index, value: values.get(slot.key), source: "measured" }))
     .filter(slot => slot.value !== undefined);
   const forecastValues = valuesBySlot(forecasts, field, daily);
-  const lastMeasuredIndex = available.at(-1)?.index ?? -1;
-  // Previsão nunca cobre um ponto que já foi observado pela estação.
+  // A previsão ocupa o dia inteiro para permitir comparar, no mesmo horário,
+  // o que era previsto (cinza) com o que a estação efetivamente mediu (azul).
   const projected = slots.map((slot, index) => ({ ...slot, index, value: forecastValues.get(slot.key), source: "forecast" }))
-    .filter(slot => slot.value !== undefined && (lastMeasuredIndex < 0 || slot.index > lastMeasuredIndex));
+    .filter(slot => slot.value !== undefined);
   const plotted = [...available, ...projected].sort((a, b) => a.index - b.index);
   const total = daily ? slots.length : 24;
   const summary = { available: available.length, forecast: projected.length, total, daily,
-    first: available[0]?.label || null, last: available.at(-1)?.label || null,
-    forecastFirst: projected[0]?.label || null, forecastLast: projected.at(-1)?.label || null };
+    first: available[0]?.label || null, last: available.at(-1)?.label || null };
   if (!plotted.length) {
     target.innerHTML = '<div class="chart-empty">Sem leituras válidas para este período.</div>';
     return summary;
@@ -158,18 +157,16 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
     return `<path d="${area}" fill="${color}" opacity=".10"/><path d="${line}" fill="none" stroke="${color}" stroke-width="${compact ? 2 : 2.5}" stroke-linecap="round" stroke-linejoin="round"/>`;
   }).join("");
   const forecastLines = groupedSections("forecast").filter(group => group.length > 1).map(group => {
-    // A projeção recebe o último ponto real como âncora. Isso deixa a curva e
-    // o preenchimento contínuos; em 12h muda apenas a cor da série.
-    const anchor = !daily && group[0].index === lastMeasuredIndex + 1 ? available.at(-1) : null;
-    const visualGroup = anchor ? [anchor, ...group] : group;
-    const line = visualGroup.map((slot, index) => `${index ? "L" : "M"}${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`).join(" ");
-    const points = visualGroup.map(slot => `L${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`).join(" ");
-    const area = `M${xAt(visualGroup[0].index).toFixed(2)} ${baseline.toFixed(2)} ${points} L${xAt(visualGroup.at(-1).index).toFixed(2)} ${baseline.toFixed(2)} Z`;
+    const line = group.map((slot, index) => `${index ? "L" : "M"}${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`).join(" ");
+    const points = group.map(slot => `L${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`).join(" ");
+    const area = `M${xAt(group[0].index).toFixed(2)} ${baseline.toFixed(2)} ${points} L${xAt(group.at(-1).index).toFixed(2)} ${baseline.toFixed(2)} Z`;
     return `<path d="${area}" fill="#8b9bae" opacity=".08"/><path d="${line}" fill="none" stroke="#8b9bae" stroke-width="${compact ? 2 : 2.5}" stroke-linecap="round" stroke-linejoin="round"/>`;
   }).join("");
   const measuredDots = available.map(slot => `<circle cx="${xAt(slot.index)}" cy="${yAt(slot.value)}" r="${compact ? 3 : 4}" fill="${color}" stroke="#fff" stroke-width="1.5"/>`).join("");
   const forecastDots = projected.map(slot => `<circle cx="${xAt(slot.index)}" cy="${yAt(slot.value)}" r="${compact ? 3 : 4}" fill="#8b9bae" stroke="#fff" stroke-width="1.5"/>`).join("");
-  const shape = `${measuredLines}${forecastLines}${measuredDots}${forecastDots}`;
+  // A medição vem por cima da previsão, para permanecer legível no trecho em
+  // que as duas séries existem para o mesmo horário.
+  const shape = `${forecastLines}${measuredLines}${forecastDots}${measuredDots}`;
 
   const axisTitle = `${field === "precipitacao" ? "Maior valor" : "Média"} por ${daily ? "dia" : "hora"}`;
   target.innerHTML = `<svg class="plot temporal-plot" viewBox="0 0 ${width} ${height}" role="img" aria-label="${axisTitle}: ${available.length} ${daily ? "dias" : "horas"} medidos${projected.length ? ` e ${projected.length} previstos` : ""} de ${total}; ${suffix}"><text x="2" y="12" class="axis-label">${suffix}</text>${horizontal}${vertical}${shape}<line class="temporal-guide" x1="0" x2="0" y1="${top}" y2="${baseline}" stroke="${color}" stroke-dasharray="4 4"/><circle class="temporal-selected" cx="0" cy="0" r="${compact ? 4 : 6}" fill="${color}" stroke="#fff" stroke-width="2"/></svg><div class="temporal-tooltip" aria-hidden="true"><small></small><strong></strong><em></em></div>`;
@@ -183,15 +180,14 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
     marker.setAttribute("cx", x);
     marker.setAttribute("cy", yAt(slot.value));
     const lastMeasured = available.at(-1);
-    const projectionInfo = summary.forecast
-      ? `Previsão: ${summary.forecastFirst}–${summary.forecastLast}`
-      : "Sem previsão disponível";
+    const previsaoDoHorario = projected.find(item => item.index === slot.index);
     tooltip.querySelector("small").textContent = slot.source === "forecast"
       ? `Previsão · ${slot.label}`
       : slot.index === lastMeasured?.index ? `Última medição · ${slot.label}` : `Medição · ${slot.label}`;
     tooltip.querySelector("strong").textContent = `${number(slot.value)} ${suffix}`;
-    tooltip.querySelector("em").textContent = slot.source === "forecast" && lastMeasured
-      ? `Após medição de ${lastMeasured.label}` : projectionInfo;
+    tooltip.querySelector("em").textContent = slot.source === "forecast"
+      ? (available.some(item => item.index === slot.index) ? "Há medição real neste horário" : "Sem medição real neste horário")
+      : previsaoDoHorario ? `Previsão: ${number(previsaoDoHorario.value)} ${suffix}` : "Sem previsão disponível";
     guide.setAttribute("stroke", slot.source === "forecast" ? "#8b9bae" : color);
     marker.setAttribute("fill", slot.source === "forecast" ? "#8b9bae" : color);
     // Mantém a dica inteira dentro do gráfico (ela é centralizada no ponto com translateX(-50%)).

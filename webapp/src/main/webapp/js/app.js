@@ -1,7 +1,7 @@
 import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js?v=20261028-6";
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawScenarioComparison } from "./charts.js?v=20261028-1";
-import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-4";
+import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-5";
 import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261029-5";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-2";
 
@@ -775,7 +775,7 @@ function redrawHistoryCharts() {
     const measure = field === "precipitacao" ? "Maior valor" : "Média";
     return domain.daily
       ? `${measure} por dia · ${summary.available} de ${summary.total} dias com dados`
-      : `${measure} por hora · ${summary.available} de 24 horas medidas${summary.first ? ` · ${summary.first}–${summary.last}` : ""}${summary.forecast ? ` · previsão ${summary.forecastFirst}–${summary.forecastLast}` : ""}`;
+      : `${measure} por hora · ${summary.available} de 24 horas medidas${summary.first ? ` · ${summary.first}–${summary.last}` : ""}${summary.forecast ? ` · previsão para 24 horas` : ""}`;
   };
   const summary = drawTemporalChart("#history-chart-canvas", historyReadings, variable, settings.suffix, settings.color, domain, historyForecasts);
   text("#history-chart-subtitle", periodSubtitle(summary, variable));
