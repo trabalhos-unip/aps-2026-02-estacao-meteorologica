@@ -547,15 +547,18 @@ async function renderHomeChart(range = homeChartRange, resetarNavegacao = false)
   }
   const request = ++homeChartRequest;
   const limite = range === "7d" ? 7 : 15;
-  text("#hourly-weather-subtitle", `Próximos ${limite} dias · previsão diária da Open-Meteo`);
+  text("#hourly-weather-subtitle", "Previsão do tempo · dados da Open-Meteo");
   try {
     const previsoes = await buscarPrevisoesDiarias(limite);
     if (request !== homeChartRequest || homeChartRange !== range) return;
     renderPrevisaoDiariaNoPainel(previsoes, limite, resetarNavegacao);
-    if (!previsoes.length) text("#hourly-weather-subtitle", `Próximos ${limite} dias · previsão ainda indisponível`);
+    if (!previsoes.length) text("#hourly-weather-subtitle", "Previsão do tempo ainda indisponível");
   } catch (error) {
     if (request !== homeChartRequest || homeChartRange !== range) return;
-    document.querySelector("#home-daily-forecast-scroll").innerHTML = `<div class="chart-empty">${error.message}</div>`;
+    const scroller = document.querySelector("#home-daily-forecast-scroll");
+    scroller.dataset.allowNavigation = "false";
+    scroller.innerHTML = `<div class="chart-empty">${error.message}</div>`;
+    atualizarNavegacaoPrevisaoDiaria();
     text("#hourly-weather-subtitle", "Previsão indisponível");
   }
 }
@@ -599,10 +602,13 @@ function renderPrevisaoDiariaNoPainel(previsoes, limite, resetarNavegacao = fals
   const scroller = document.querySelector("#home-daily-forecast-scroll");
   if (!scroller) return;
   if (!previsoes.length) {
+    scroller.dataset.allowNavigation = "false";
     scroller.innerHTML = '<div class="chart-empty">A previsão diária ainda não está disponível.</div>';
+    atualizarNavegacaoPrevisaoDiaria();
     return;
   }
   scroller.setAttribute("aria-label", `Previsão para os próximos ${Math.min(limite, previsoes.length)} dias`);
+  scroller.dataset.allowNavigation = String(limite > 7);
   const posicaoAnterior = resetarNavegacao ? 0 : scroller.scrollLeft;
   scroller.innerHTML = previsoes.slice(0, limite).map((item, indice) => {
     const data = dataDaPrevisao(item);
@@ -621,7 +627,7 @@ function atualizarNavegacaoPrevisaoDiaria() {
   const anterior = document.querySelector("#daily-forecast-previous");
   const proximo = document.querySelector("#daily-forecast-next");
   if (!scroller || !anterior || !proximo) return;
-  const podeNavegar = scroller.children.length > 7 && scroller.scrollWidth > scroller.clientWidth + 1;
+  const podeNavegar = scroller.dataset.allowNavigation === "true" && scroller.children.length > 7 && scroller.scrollWidth > scroller.clientWidth + 1;
   anterior.hidden = !podeNavegar || scroller.scrollLeft <= 1;
   proximo.hidden = !podeNavegar || scroller.scrollLeft >= scroller.scrollWidth - scroller.clientWidth - 1;
 }
