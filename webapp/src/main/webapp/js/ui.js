@@ -66,6 +66,7 @@ export function renderShell(path, content) {
         <div class="sidebar-foot">
           <div class="collector-card" id="collector-card">
             <div class="collector-title"><span class="status-dot neutral"></span><strong id="collector-title">Offline</strong></div>
+            <span class="collector-update-label">Última atualização</span><strong id="sidebar-last-reading">—</strong>
           </div>
         </div>
       </aside>
@@ -145,6 +146,7 @@ export function anchorDate(latest) {
 export function updateCollectorCard(latest) {
   const stamp = parseDate(latest?.dataHoraColeta);
   text("#collector-title", stamp ? "Ao vivo" : "Offline");
+  text("#sidebar-last-reading", stamp ? dateTime(stamp) : "—");
   document.querySelectorAll(".collector-title .status-dot")
     .forEach(dot => { dot.className = `status-dot ${stamp ? "success" : "neutral"}`; });
 }
