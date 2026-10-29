@@ -1,9 +1,9 @@
 import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js";
 import { demoApi, demoForecast } from "./demo-data.js?v=20261026-4";
-import { drawScenarioComparison } from "./charts.js?v=20261026-4";
-import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261026-4";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261027-4";
-import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261027-4";
+import { drawScenarioComparison } from "./charts.js?v=20261028-1";
+import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261028-3";
+import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261028-2";
+import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-1";
 
 const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
 const pages = { "/": overviewPage, "/historico": historyPage, "/simulacoes": simulationsPage, "/configuracoes": settingsPage };
@@ -40,6 +40,39 @@ function applyMode(mode) {
     : "Histórico reconstituído e previsão vêm da Open-Meteo; leituras atuais são registradas separadamente no MySQL.");
 }
 applyMode(savedPreferences().mode);
+// Tema: "auto" segue o sistema; "claro"/"escuro" ficam fixos. O index.html já aplica antes da pintura.
+const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
+function themeChoice() {
+  const theme = savedPreferences().theme;
+  return theme === "claro" || theme === "escuro" ? theme : "auto";
+}
+function applyTheme(choice = themeChoice()) {
+  const dark = choice === "escuro" || (choice === "auto" && systemDark.matches);
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#000000" : "#f6fbff");
+  const toggle = document.querySelector("#theme-toggle");
+  if (toggle) {
+    const label = dark ? "Ativar tema claro" : "Ativar tema escuro";
+    toggle.setAttribute("aria-label", label);
+    toggle.title = label;
+    toggle.innerHTML = icon(dark ? "sun" : "moon");
+  }
+  const radio = document.querySelector(`input[name="settings-theme"][value="${choice}"]`);
+  if (radio) radio.checked = true;
+}
+function saveTheme(choice) {
+  try {
+    localStorage.setItem(preferencesKey, JSON.stringify({ ...savedPreferences(), theme: choice }));
+  } catch {
+    showToast("Não foi possível guardar o tema neste navegador.");
+  }
+  applyTheme(choice);
+}
+applyTheme();
+systemDark.addEventListener("change", () => { if (themeChoice() === "auto") applyTheme(); });
+document.querySelector("#theme-toggle").addEventListener("click", () => {
+  saveTheme(document.documentElement.dataset.theme === "dark" ? "claro" : "escuro");
+});
 function showLocation(preferences) {
   const city = String(preferences.city || "").trim();
   const state = String(preferences.state || "").trim();
@@ -351,7 +384,20 @@ async function fetchLatest() {
   }
 }
 
+const rainCodes = [51, 53, 55, 61, 63, 65, 80, 81, 82, 95, 96, 99];
+
+// Fundo do card "Condições atuais": chuva vem da leitura; dia/noite vem do horário atual.
+function updateHeroScene(reading) {
+  const hero = document.querySelector(".weather-hero");
+  if (!hero) return;
+  const hour = new Date().getHours();
+  const night = hour < 6 || hour >= 18;
+  const rainy = Boolean(reading) && (reading.presencaPrecipitacao === true || rainCodes.includes(Number(reading.codigoClima)));
+  hero.dataset.scene = `${rainy ? "chuva" : "limpo"}-${night ? "noite" : "dia"}`;
+}
+
 function renderHomeReading(reading, recent) {
+  updateHeroScene(reading);
   if (!reading) {
     text("#hero-description", "Ainda não há leituras disponíveis");
     text("#current-date", "Inicie o coletor para registrar dados");
@@ -430,7 +476,7 @@ async function renderForecast() {
       const day = parseDate(`${item.data}T12:00:00`);
       const label = index === 0 ? "Hoje" : new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(day).replace(".", "");
       const date = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(day);
-      const rainy = Number(item.precipitacaoTotal || 0) > 0 || [51, 53, 55, 61, 63, 65, 80, 81, 82, 95, 96, 99].includes(item.codigoClima);
+      const rainy = Number(item.precipitacaoTotal || 0) > 0 || rainCodes.includes(item.codigoClima);
       return `<div class="forecast-row"><span><strong>${label}</strong><small>${date}</small></span><span class="forecast-weather">${icon(rainy ? "rain" : "sun")}</span><span>${number(item.temperaturaMaxima, 0)}°</span><span>${number(item.temperaturaMinima, 0)}°</span><span>${number(item.precipitacaoTotal)} mm</span>${icon("chevron")}</div>`;
     }).join("");
   } catch (error) {
@@ -668,6 +714,10 @@ async function initSettings() {
         showToast("Não foi possível guardar o modo neste navegador.");
       }
     });
+  });
+  applyTheme();
+  document.querySelectorAll('input[name="settings-theme"]').forEach(radio => {
+    radio.addEventListener("change", () => { if (radio.checked) saveTheme(radio.value); });
   });
   document.querySelector("#save-settings").addEventListener("click", async () => {
     const preferences = {

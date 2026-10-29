@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2172 724" width="2172" height="724">
+  <defs>
+    <radialGradient id="glow" cx="1373" cy="289" r="330" gradientUnits="userSpaceOnUse">
+      <stop offset=".28" stop-color="#fff6c8" stop-opacity=".55"/>
+      <stop offset=".55" stop-color="#ffe9a0" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#ffe9a0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="rayfade" cx="1373" cy="289" r="313" gradientUnits="userSpaceOnUse">
+      <stop offset=".45" stop-color="#fff" stop-opacity="1"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+    <mask id="raymask"><rect width="2172" height="724" fill="url(#rayfade)"/></mask>
+  </defs>
+  <circle cx="1373" cy="289" r="330" fill="url(#glow)">
+    <animate attributeName="opacity" values=".45;1;.45" dur="7s" repeatCount="indefinite" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1"/>
+    <animate attributeName="r" values="315;345;315" dur="7s" repeatCount="indefinite" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1"/>
+  </circle>
+  <g mask="url(#raymask)" opacity=".22">
+    <g fill="#fff4c2">
+      <path d="M1493.9 285.5 L1684.8 261.7 L1684.8 316.3 L1493.9 292.5Z M1485.6 333.2 L1611.8 372.6 L1601.0 398.7 L1483.9 337.4Z M1461.0 372.0 L1612.8 490.2 L1574.2 528.8 L1456.0 377.0Z M1421.4 399.9 L1482.7 517.0 L1456.6 527.8 L1417.2 401.6Z M1376.5 409.9 L1400.3 600.8 L1345.7 600.8 L1369.5 409.9Z M1328.8 401.6 L1289.4 527.8 L1263.3 517.0 L1324.6 399.9Z M1290.0 377.0 L1171.8 528.8 L1133.2 490.2 L1285.0 372.0Z M1262.1 337.4 L1145.0 398.7 L1134.2 372.6 L1260.4 333.2Z M1252.1 292.5 L1061.2 316.3 L1061.2 261.7 L1252.1 285.5Z M1260.4 244.8 L1134.2 205.4 L1145.0 179.3 L1262.1 240.6Z M1285.0 206.0 L1133.2 87.8 L1171.8 49.2 L1290.0 201.0Z M1324.6 178.1 L1263.3 61.0 L1289.4 50.2 L1328.8 176.4Z M1369.5 168.1 L1345.7 -22.8 L1400.3 -22.8 L1376.5 168.1Z M1417.2 176.4 L1456.6 50.2 L1482.7 61.0 L1421.4 178.1Z M1456.0 201.0 L1574.2 49.2 L1612.8 87.8 L1461.0 206.0Z M1483.9 240.6 L1601.0 179.3 L1611.8 205.4 L1485.6 244.8Z"/>
+      <animateTransform attributeName="transform" type="rotate" from="0 1373 289" to="360 1373 289" dur="120s" repeatCount="indefinite"/>
+    </g>
+    <animate attributeName="opacity" values=".12;.26;.12" dur="7s" repeatCount="indefinite" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1"/>
+  </g>
+</svg>

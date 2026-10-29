@@ -6,15 +6,25 @@
   <meta name="theme-color" content="#f6fbff">
   <meta name="description" content="Meteora: painel da estação meteorológica da APS 2026/2.">
   <title>Meteora — Estação Meteorológica</title>
-  <link rel="stylesheet" href="/css/app.css?v=20261027-4">
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <script>
+    // Aplica o tema antes de desenhar a página, para não piscar o tema claro.
+    try {
+      const theme = JSON.parse(localStorage.getItem("meteora-ui-preferences") || "{}").theme;
+      const dark = theme === "escuro" || (theme !== "claro" && matchMedia("(prefers-color-scheme: dark)").matches);
+      document.documentElement.dataset.theme = dark ? "dark" : "light";
+    } catch { document.documentElement.dataset.theme = "light"; }
+  </script>
+  <link rel="stylesheet" href="/css/app.css?v=20261028-2">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
   <link rel="stylesheet" href="/css/location-select.css?v=20261027-4">
+  <link rel="stylesheet" href="/css/dark-theme.css?v=20261028-2">
 </head>
 <body>
   <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
   <div id="app"></div>
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-  <script type="module" src="/js/app.js?v=20261027-4"></script>
+  <script type="module" src="/js/app.js?v=20261028-5"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-import { number, parseDate } from "./ui.js?v=20261026-4";
+import { number, parseDate } from "./ui.js?v=20261028-1";
 
 const rendered = new Map();
 let resizeFrame = 0;
@@ -74,12 +74,18 @@ function yScale(values, field, daily) {
   return { minimum: bottom, maximum: top === bottom ? bottom + step : top };
 }
 
-function visibleTicks(count, compact, daily) {
-  const maximum = compact ? 5 : daily ? 8 : 9;
+function visibleTicks(count, compact, daily, availableWidth) {
+  // Limita pela largura também, para as datas do eixo X não ficarem coladas em gráficos estreitos.
+  const byWidth = Math.floor(availableWidth / (compact ? 40 : 52)) + 1;
+  const maximum = Math.max(2, Math.min(compact ? 5 : daily ? 8 : 9, byWidth));
   if (count <= maximum) return Array.from({ length: count }, (_, index) => index);
-  const ticks = new Set([0, count - 1]);
-  for (let index = 1; index < maximum - 1; index++) ticks.add(Math.round(index * (count - 1) / (maximum - 1)));
-  return [...ticks].sort((a, b) => a - b);
+  // Passo fixo: rótulos igualmente espaçados; o último só entra se não encostar no anterior.
+  const step = Math.ceil((count - 1) / (maximum - 1));
+  const ticks = [];
+  for (let index = 0; index < count - 1; index += step) ticks.push(index);
+  if (count - 1 - ticks.at(-1) < step / 2) ticks.pop();
+  ticks.push(count - 1);
+  return ticks;
 }
 
 /** SVG próprio: horas observadas em linha; dias do calendário em colunas independentes. */
@@ -110,7 +116,10 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
   const scale = yScale(available.map(slot => slot.value), field, daily);
-  const xAt = index => left + (slots.length === 1 ? plotWidth / 2 : index * plotWidth / (slots.length - 1));
+  const barWidth = Math.min(compact ? 15 : 22, plotWidth / Math.max(slots.length, 2) * .65);
+  // Recuo nas pontas: as barras (ou pontos) do primeiro e do último horário não invadem os rótulos do eixo.
+  const inset = daily ? barWidth / 2 + (compact ? 6 : 10) : compact ? 6 : 8;
+  const xAt = index => left + inset + (slots.length === 1 ? (plotWidth - 2 * inset) / 2 : index * (plotWidth - 2 * inset) / (slots.length - 1));
   const yAt = value => top + (scale.maximum - value) / (scale.maximum - scale.minimum) * plotHeight;
   const baseline = top + plotHeight;
   const horizontal = Array.from({ length: 5 }, (_, index) => {
@@ -120,14 +129,13 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
     const digits = tickStep < 1 ? 2 : Number.isInteger(tickStep) ? 0 : 1;
     return `<line x1="${left}" y1="${y}" x2="${width - right}" y2="${y}" class="grid-line"/><text x="${left - 9}" y="${y + 4}" text-anchor="end" class="axis-label">${number(value, digits)}</text>`;
   }).join("");
-  const vertical = visibleTicks(slots.length, compact, daily).map(index => {
+  const vertical = visibleTicks(slots.length, compact, daily, plotWidth - 2 * inset).map(index => {
     const x = xAt(index);
     return `<line x1="${x}" y1="${top}" x2="${x}" y2="${baseline}" class="grid-line temporal-grid-vertical"/><text x="${x}" y="${height - 7}" text-anchor="middle" class="axis-label">${slots[index].label}</text>`;
   }).join("");
 
   let shape;
   if (daily) {
-    const barWidth = Math.min(compact ? 15 : 22, plotWidth / Math.max(slots.length, 2) * .65);
     const zeroY = yAt(0);
     shape = available.map(slot => {
       const x = xAt(slot.index);
@@ -166,7 +174,10 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
     marker.setAttribute("cy", yAt(slot.value));
     tooltip.querySelector("small").textContent = `${slot.label} · ${axisTitle.toLowerCase()}`;
     tooltip.querySelector("strong").textContent = `${number(slot.value)} ${suffix}`;
-    tooltip.style.left = `${Math.min(90, Math.max(10, x / width * 100))}%`;
+    // Mantém a dica inteira dentro do gráfico (ela é centralizada no ponto com translateX(-50%)).
+    const box = target.clientWidth;
+    const half = Math.min(tooltip.offsetWidth / 2, box / 2);
+    tooltip.style.left = `${Math.min(box - half, Math.max(half, x / width * box))}px`;
   }
   select(available.at(-1));
   target.onpointermove = event => {

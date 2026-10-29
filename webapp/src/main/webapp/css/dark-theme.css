@@ -1,0 +1,214 @@
+/* Tema escuro do Meteora.
+   O tema claro continua em app.css; aqui só entram as cores do tema escuro.
+   :where() zera a especificidade do prefixo, então cada regra tem o mesmo peso
+   da original e estados como .selected e :checked continuam valendo. */
+
+/* Botão de alternar tema (usado nos dois temas). */
+.theme-toggle{width:39px;height:39px;display:grid;place-items:center;flex:none;border:1px solid #e1eaf2;border-radius:50%;background:#fff;color:#4d6a8f;box-shadow:0 2px 7px #37618a0b;transition:color .15s ease,border-color .15s ease,transform .15s ease}
+.theme-toggle:hover,.theme-toggle:focus-visible{color:#096dbb;border-color:#82c8f5;transform:translateY(-1px)}
+.theme-toggle .icon{width:19px;height:19px}
+.theme-options{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:760px){.theme-options{grid-template-columns:1fr}}
+
+/* Paleta: fundo preto (#000) e cartões em cinza quase preto; o azul fica só nos destaques. */
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#000;--surface:#101010;--surface-2:#181818;--surface-3:#222;
+  --line:#262626;--line-soft:#1b1b1b;
+  --text:#f5f5f5;--text-2:#c8c8c8;--muted:#929292;--faint:#6e6e6e;
+  --accent:#4db5ff;--accent-soft:#4db5ff1f;--accent-line:#4db5ff66;
+  --teal:#35d4b4;--amber:#ffc44f;--red:#ff7d8a;--purple:#a2aeff;--green:#43d891;
+  --info-bg:#101010;--info-text:#c8c8c8;
+  color:var(--text);background:var(--bg);
+}
+:where([data-theme="dark"]) body{background:var(--bg)}
+
+/* Estrutura */
+:where([data-theme="dark"]) .sidebar{background:var(--bg);border-right-color:var(--line);box-shadow:none}
+:where([data-theme="dark"]) .brand{color:var(--text)}
+:where([data-theme="dark"]) .brand span:not(.brand-mark):not(.brand-sun):not(.brand-cloud){color:var(--muted)}
+:where([data-theme="dark"]) .brand small{color:var(--faint)}
+:where([data-theme="dark"]) .brand-sun{box-shadow:0 0 0 3px #00000099}
+:where([data-theme="dark"]) .nav-link{color:var(--text-2)}
+:where([data-theme="dark"]) .nav-link:hover{background:var(--surface-2);color:var(--accent)}
+:where([data-theme="dark"]) .nav-link.active{background:var(--accent-soft);color:var(--accent)}
+:where([data-theme="dark"]) .sidebar-foot>small{color:var(--faint)}
+:where([data-theme="dark"]) .collector-card{background:var(--surface);border-color:var(--line);color:var(--text-2)}
+:where([data-theme="dark"]) .collector-card strong{color:var(--text)}
+:where([data-theme="dark"]) .collector-card>span:not(.status-dot){color:var(--muted)}
+:where([data-theme="dark"]) .status-dot{box-shadow:0 0 0 3px var(--surface)}
+:where([data-theme="dark"]) .status-dot.success{background:var(--green);box-shadow:0 0 0 3px var(--surface),0 0 10px #43d89166}
+:where([data-theme="dark"]) .workspace{background:var(--bg)}
+:where([data-theme="dark"]) .page-heading h1{color:var(--text)}
+:where([data-theme="dark"]) .page-heading p{color:var(--muted)}
+:where([data-theme="dark"]) .top-actions{color:var(--muted)}
+:where([data-theme="dark"]) .location-pill,
+:where([data-theme="dark"]) .theme-toggle{background:var(--surface);border-color:var(--line);color:var(--text-2);box-shadow:none}
+:where([data-theme="dark"]) .location-pill:hover,:where([data-theme="dark"]) .location-pill:focus-visible,
+:where([data-theme="dark"]) .theme-toggle:hover,:where([data-theme="dark"]) .theme-toggle:focus-visible{color:var(--accent);border-color:var(--accent-line);box-shadow:0 4px 13px #4db5ff1f}
+:where([data-theme="dark"]) .theme-toggle{color:var(--amber)}
+:where([data-theme="dark"]) .top-action-divider{background:var(--line)}
+
+/* Cartões e elementos comuns */
+:where([data-theme="dark"]) .card{background:var(--surface);border-color:var(--line);box-shadow:none}
+:where([data-theme="dark"]) .card-title>.icon,:where([data-theme="dark"]) .title-with-icon>.icon{color:var(--accent)}
+:where([data-theme="dark"]) .card-title small,:where([data-theme="dark"]) .title-with-icon small{color:var(--muted)}
+:where([data-theme="dark"]) .blue-text{color:var(--accent)}
+:where([data-theme="dark"]) .purple-text{color:var(--purple)}
+:where([data-theme="dark"]) .teal-text{color:var(--teal)}
+:where([data-theme="dark"]) .muted{color:var(--muted)}
+:where([data-theme="dark"]) .icon-disc{background:var(--accent-soft);color:var(--accent)}
+:where([data-theme="dark"]) .icon-disc.red{background:#ff7d8a1f;color:var(--red)}
+:where([data-theme="dark"]) .icon-disc.blue{background:var(--accent-soft);color:var(--accent)}
+:where([data-theme="dark"]) .icon-disc.purple{background:#a2aeff1f;color:var(--purple)}
+:where([data-theme="dark"]) .icon-disc.teal{background:#35d4b41f;color:var(--teal)}
+:where([data-theme="dark"]) .icon-disc.amber{background:#ffc44f1f;color:var(--amber)}
+:where([data-theme="dark"]) .icon-disc.pale{background:var(--accent-soft);color:var(--accent)}
+:where([data-theme="dark"]) .text-link{color:var(--accent)}
+:where([data-theme="dark"]) .primary-button{box-shadow:0 3px 12px #1e8fe640}
+:where([data-theme="dark"]) .segmented{background:var(--surface-2);border-color:var(--line)}
+:where([data-theme="dark"]) .segment{color:var(--text-2)}
+:where([data-theme="dark"]) .segment+.segment{border-left-color:var(--line)}
+:where([data-theme="dark"]) .toast{background:#1c1c1c;border:1px solid #333;box-shadow:0 12px 30px #00000066}
+:where([data-theme="dark"]) .info-strip{background:var(--info-bg);border:1px solid var(--line);color:var(--info-text)}
+:where([data-theme="dark"]) .info-strip .icon,:where([data-theme="dark"]) .info-strip a{color:var(--accent)}
+:where([data-theme="dark"]) .mode-badge{background:#ffc44f24;color:#ffc96e}
+:where([data-theme="dark"]) .simulated-mode .source-chip{background:#1f1a0c;border-color:#ffc44f40;color:#ffc96e}
+
+/* Card "Condições atuais": os fundos de dia ficam um pouco mais suaves para não ofuscar,
+   mas continuam mostrando o tempo real; o texto acompanha a cena, não o tema. */
+:where([data-theme="dark"]) .weather-hero{border-color:var(--line);box-shadow:none}
+:where([data-theme="dark"]) .weather-hero:not([data-scene$="-noite"]){color:#0b2a55}
+:where([data-theme="dark"]) .weather-hero:not([data-scene]),
+:where([data-theme="dark"]) .weather-hero[data-scene="limpo-dia"]{background:linear-gradient(#00000024,#00000024),linear-gradient(90deg,#f5fbf277 0%,#ffffff00 60%),url("/img/weather-hero-v2.png") center 58%/cover}
+:where([data-theme="dark"]) .weather-hero[data-scene="chuva-dia"]{background:linear-gradient(#00000024,#00000024),linear-gradient(90deg,#eef4f899 0%,#ffffff00 60%),url("/img/weather-hero-rain.png") center 58%/cover}
+:where([data-theme="dark"]) .weather-hero[data-scene$="-noite"]{border-color:var(--line)}
+
+/* Ilustrações decorativas usam a versão noturna no tema escuro. */
+:where([data-theme="dark"]) .scenario-hero{background:linear-gradient(90deg,#000000cc,#00000000 63%),url("/img/weather-hero-night.png") center 58%/cover;color:var(--text)}
+:where([data-theme="dark"]) .scenario-hero p{color:#b8c9e4}
+:where([data-theme="dark"]) .scenario-hero .source-chip{background:#ffffff1f;border-color:#ffffff38;color:#eef5ff}
+:where([data-theme="dark"]) .attribution-card{background:url("/img/weather-hero-night.png") 72% 68%/cover}
+:where([data-theme="dark"]) .attribution-card>div{background:#101010e6;color:var(--text-2)}
+:where([data-theme="dark"]) .attribution-card .icon{color:var(--accent)}
+:where([data-theme="dark"]) .about-card{background:linear-gradient(90deg,var(--surface) 0%,var(--surface) 62%,#101010b8 82%,#10101066 100%),url("/img/weather-hero-night.png") right bottom/220px auto no-repeat var(--surface)}
+:where([data-theme="dark"]) .about-card p{color:var(--muted)}
+
+/* Visão geral */
+:where([data-theme="dark"]) .forecast-card .card-title{border-bottom-color:var(--line)}
+:where([data-theme="dark"]) .forecast-unavailable{color:var(--muted)}
+:where([data-theme="dark"]) .forecast-unavailable strong{color:var(--text)}
+:where([data-theme="dark"]) .forecast-row{border-bottom-color:var(--line-soft);color:var(--muted)}
+:where([data-theme="dark"]) .forecast-row strong{color:var(--text)}
+:where([data-theme="dark"]) .forecast-row small{color:var(--faint)}
+:where([data-theme="dark"]) .forecast-weather .icon{color:#8fd0ff}
+:where([data-theme="dark"]) .forecast-row>.icon{color:var(--faint)}
+:where([data-theme="dark"]) .forecast-note{color:var(--muted)}
+:where([data-theme="dark"]) .metric-reading{color:#fff}
+:where([data-theme="dark"]) .metric-detail{color:var(--muted)}
+:where([data-theme="dark"]) .metric-trend{color:var(--teal)}
+:where([data-theme="dark"]) .metric-card:nth-child(2) .metric-trend,:where([data-theme="dark"]) .metric-card:nth-child(3) .metric-trend{color:var(--muted)}
+
+/* Gráficos (as cores das séries vêm do JS e já funcionam no escuro) */
+:where([data-theme="dark"]) .grid-line,
+:where([data-theme="dark"]) .primary-history-chart .grid-line,:where([data-theme="dark"]) .mini-chart-card .grid-line{stroke:#232323}
+:where([data-theme="dark"]) .axis-label,
+:where([data-theme="dark"]) .primary-history-chart .axis-label,:where([data-theme="dark"]) .mini-chart-card .axis-label{fill:var(--muted)}
+:where([data-theme="dark"]) .chart-marker,:where([data-theme="dark"]) .temporal-selected,
+:where([data-theme="dark"]) .scenario-marker,:where([data-theme="dark"]) .temporal-plot circle{stroke:var(--surface)}
+:where([data-theme="dark"]) .chart-empty{color:var(--muted)}
+:where([data-theme="dark"]) .chart-tooltip,
+:where([data-theme="dark"]) .primary-history-chart .chart-tooltip,
+:where([data-theme="dark"]) .temporal-tooltip,
+:where([data-theme="dark"]) .scenario-chart-tip{background:var(--surface-3);border:1px solid #333;color:var(--text);box-shadow:0 6px 18px #000000b3}
+:where([data-theme="dark"]) .chart-tooltip small,:where([data-theme="dark"]) .primary-history-chart .chart-tooltip small,
+:where([data-theme="dark"]) .temporal-tooltip small,:where([data-theme="dark"]) .scenario-chart-tip{color:var(--text-2)}
+:where([data-theme="dark"]) .scenario-chart-tip strong{color:var(--text)}
+:where([data-theme="dark"]) .scenario-legend{color:var(--muted)}
+
+/* Tabelas */
+:where([data-theme="dark"]) thead{background:var(--surface-2);color:var(--muted)}
+:where([data-theme="dark"]) td,:where([data-theme="dark"]) th{border-bottom-color:var(--line-soft)}
+:where([data-theme="dark"]) td{color:#cfdbea}
+:where([data-theme="dark"]) .empty-cell{color:var(--muted)}
+:where([data-theme="dark"]) .table-badge{color:var(--green)}
+
+/* Histórico */
+:where([data-theme="dark"]) .field{color:var(--muted)}
+:where([data-theme="dark"]) .field input,:where([data-theme="dark"]) .field select,
+:where([data-theme="dark"]) .settings-fields input,:where([data-theme="dark"]) .settings-fields select,
+:where([data-theme="dark"]) .settings-section textarea{background:var(--surface-2);border-color:var(--line);color:var(--text)}
+:where([data-theme="dark"]) .field input:focus,:where([data-theme="dark"]) .field select:focus{outline-color:#2f8fd8}
+:where([data-theme="dark"]) .summary-card .card-title{border-bottom-color:var(--line)}
+:where([data-theme="dark"]) .summary-row{border-bottom-color:var(--line-soft);color:var(--muted)}
+:where([data-theme="dark"]) .summary-row strong{color:var(--text)}
+:where([data-theme="dark"]) .summary-row strong.positive{color:var(--green)}
+:where([data-theme="dark"]) .summary-row strong.negative{color:var(--red)}
+:where([data-theme="dark"]) .summary-value small{color:var(--faint)}
+:where([data-theme="dark"]) .selected-period dl>div{border-bottom-color:var(--line-soft)}
+:where([data-theme="dark"]) .selected-period dt{color:var(--muted)}
+:where([data-theme="dark"]) .selected-period dd{color:var(--text-2)}
+:where([data-theme="dark"]) .primary-history-chart .title-with-icon small{color:var(--muted)}
+
+/* Simulações */
+:where([data-theme="dark"]) .scenario-card.amber{background:linear-gradient(165deg,#1f1a0c,var(--surface) 48%)}
+:where([data-theme="dark"]) .scenario-card.blue{background:linear-gradient(165deg,#0c1824,var(--surface) 48%)}
+:where([data-theme="dark"]) .scenario-card.teal{background:linear-gradient(165deg,#0b1d1a,var(--surface) 48%)}
+:where([data-theme="dark"]) .scenario-head{border-bottom-color:var(--line)}
+:where([data-theme="dark"]) .scenario-head p{color:var(--muted)}
+:where([data-theme="dark"]) .scenario-card.amber .scenario-icon{color:var(--amber)}
+:where([data-theme="dark"]) .scenario-card.blue .scenario-icon{color:var(--accent)}
+:where([data-theme="dark"]) .scenario-card.teal .scenario-icon{color:var(--teal)}
+:where([data-theme="dark"]) .scenario-card dt{color:var(--accent)}
+:where([data-theme="dark"]) .scenario-metric-tabs button{background:var(--surface-2);border-color:var(--line);color:var(--text-2)}
+:where([data-theme="dark"]) .empty-feature{color:var(--muted)}
+:where([data-theme="dark"]) .empty-feature strong{color:var(--text)}
+:where([data-theme="dark"]) .simulation-result-head{border-bottom-color:var(--line)}
+:where([data-theme="dark"]) .simulation-result-head small{color:var(--muted)}
+:where([data-theme="dark"]) .simulation-result dl>div{color:var(--muted)}
+:where([data-theme="dark"]) .simulation-result dd{color:var(--text)}
+:where([data-theme="dark"]) .simulation-result-note{background:var(--surface-2);color:var(--info-text)}
+
+/* Configurações */
+:where([data-theme="dark"]) .settings-title,:where([data-theme="dark"]) .settings-section{border-bottom-color:var(--line)}
+:where([data-theme="dark"]) .settings-title p,:where([data-theme="dark"]) .settings-section p{color:var(--muted)}
+:where([data-theme="dark"]) .settings-fields input:disabled,:where([data-theme="dark"]) .settings-fields select:disabled,
+:where([data-theme="dark"]) .settings-section textarea:disabled{background:#0a0a0a;color:var(--muted)}
+:where([data-theme="dark"]) .settings-note{color:var(--muted)}
+:where([data-theme="dark"]) .mode-option{border-color:var(--line)}
+:where([data-theme="dark"]) .mode-option small{color:var(--muted)}
+:where([data-theme="dark"]) .mode-option:has(input:checked){border-color:var(--accent);background:#4db5ff12;box-shadow:0 0 0 1px #4db5ff40}
+:where([data-theme="dark"]) .mode-option input{border-color:#4a4a4a}
+:where([data-theme="dark"]) .mode-option input:checked{border-color:var(--accent)}
+:where([data-theme="dark"]) .mode-option .icon,:where([data-theme="dark"]) .mode-option>.icon{color:var(--accent)}
+:where([data-theme="dark"]) .tech-row{border-bottom-color:var(--line-soft)}
+:where([data-theme="dark"]) .tech-row small{color:var(--muted)}
+:where([data-theme="dark"]) .pill,:where([data-theme="dark"]) .neutral-pill{background:var(--surface-3);color:var(--text-2)}
+:where([data-theme="dark"]) .blue-pill{background:var(--accent-soft);color:#7ccbff}
+:where([data-theme="dark"]) .purple-pill{background:#a2aeff1f;color:#b9c1ff}
+:where([data-theme="dark"]) .green-pill{background:#43d8911f;color:#5be4a6}
+
+/* Seletor de cidade (location-select.css e Select2) */
+:where([data-theme="dark"]) .secondary-button{background:var(--surface-2);border-color:var(--line);color:var(--text-2)}
+:where([data-theme="dark"]) .secondary-button:hover{background:var(--surface-3);border-color:var(--accent-line)}
+:where([data-theme="dark"]) .location-modal{background:#000000b8}
+:where([data-theme="dark"]) .location-modal-card{background:var(--surface);border-color:var(--line);box-shadow:0 24px 55px #000000cc}
+:where([data-theme="dark"]) .location-modal-heading,:where([data-theme="dark"]) .location-modal-footer{border-color:var(--line)}
+:where([data-theme="dark"]) .location-modal-heading small{color:var(--accent)}
+:where([data-theme="dark"]) .location-modal-heading h2{color:var(--text)}
+:where([data-theme="dark"]) .location-modal-heading p,:where([data-theme="dark"]) .location-modal-footer,
+:where([data-theme="dark"]) .location-modal-section>span{color:var(--muted)}
+:where([data-theme="dark"]) .location-modal-close{background:var(--surface-2);border-color:var(--line);color:var(--text-2)}
+:where([data-theme="dark"]) .location-modal-close:hover{background:var(--surface-3);color:var(--accent)}
+:where([data-theme="dark"]) .location-search-label{color:var(--text-2)}
+:where([data-theme="dark"]) .location-shortcuts button,:where([data-theme="dark"]) .location-recent button{background:var(--surface-2);border-color:var(--line);color:var(--text-2)}
+:where([data-theme="dark"]) .location-shortcuts button:hover,:where([data-theme="dark"]) .location-recent button:hover{background:var(--accent-soft);border-color:var(--accent-line);color:#8fd0ff}
+:where([data-theme="dark"]) .select2-container--default .select2-selection--single{background:var(--surface-2);border-color:var(--line)}
+:where([data-theme="dark"]) .location-modal .select2-container--default .select2-selection--single{border-color:var(--accent-line)}
+:where([data-theme="dark"]) .select2-container--default .select2-selection--single .select2-selection__rendered{color:var(--text)}
+:where([data-theme="dark"]) .select2-container--default .select2-selection--single .select2-selection__placeholder{color:var(--faint)}
+:where([data-theme="dark"]) .select2-dropdown{background:var(--surface-2);border-color:var(--line);box-shadow:0 8px 20px #000000b3}
+:where([data-theme="dark"]) .select2-container--default .select2-search--dropdown .select2-search__field{background:var(--bg);border-color:var(--line);color:var(--text)}
+:where([data-theme="dark"]) .select2-results__option{color:var(--text-2)}
+:where([data-theme="dark"]) .select2-container--default .select2-results__option[aria-selected=true]{background:var(--surface-3)}
+:where([data-theme="dark"]) .select2-container--default .select2-results__option--highlighted[aria-selected]{background:#168fec;color:#fff}

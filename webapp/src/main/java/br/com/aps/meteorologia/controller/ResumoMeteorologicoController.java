@@ -5,14 +5,18 @@ import br.com.aps.meteorologia.dao.ResumoDiarioMeteorologicoDAO;
 import br.com.aps.meteorologia.dao.ResumoHorarioMeteorologicoDAO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 
 /** APIs de histórico e previsão da estação configurada; nunca combinam cidades. */
 @RestController
@@ -44,4 +48,11 @@ public class ResumoMeteorologicoController {
     }
 
     private Long estacaoId() { return estacoes.buscarAtiva().orElseThrow(() -> new IllegalArgumentException("Nenhuma estação ativa")).getId(); }
+
+    /** Parâmetro fora do intervalo ou estação ausente: 400 com a mensagem, em vez de 500. */
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(IllegalArgumentException.class)
+    public Map<String, String> erro(IllegalArgumentException e) {
+        return Map.of("erro", e.getMessage());
+    }
 }
