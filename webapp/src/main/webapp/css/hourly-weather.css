@@ -1,6 +1,10 @@
 /* Previsão horária: o desenho segue a leitura vertical de apps de clima. */
 .hourly-weather-chart { height: 368px; flex: none; }
-.hourly-weather-chart-canvas { position: relative; height: 280px; margin-top: 12px; overflow-x: auto; overflow-y: hidden; }
+.hourly-weather-chart-canvas { position: relative; height: 280px; margin-top: 12px; padding: 0 4px 16px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-inline: contain; scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: #279eea #edf5fb; }
+.hourly-weather-chart-canvas::-webkit-scrollbar { height: 10px; }
+.hourly-weather-chart-canvas::-webkit-scrollbar-track { margin: 0 14px; border: 3px solid transparent; border-radius: 999px; background: #edf5fb; background-clip: padding-box; }
+.hourly-weather-chart-canvas::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 999px; background: linear-gradient(90deg, #1595e8, #45b7fb); background-clip: padding-box; }
+.hourly-weather-chart-canvas::-webkit-scrollbar-thumb:hover { background: linear-gradient(90deg, #087ed1, #22a7f5); background-clip: padding-box; }
 .hourly-weather-chart.daily-forecast-mode { height: 318px; }
 .home-chart-toolbar { min-height: 34px; }
 .home-chart-toolbar small { color: #7187a0; font-size: .82rem; }
@@ -24,6 +28,8 @@
 html[data-theme="dark"] .hourly-weather-point strong { color: #edf7ff; }
 html[data-theme="dark"] .hourly-weather-point time { color: #a6bbd0; }
 html[data-theme="dark"] .hourly-grid-line { stroke: #294763; }
+html[data-theme="dark"] .hourly-weather-chart-canvas { scrollbar-color: #52b8f4 #1c344c; }
+html[data-theme="dark"] .hourly-weather-chart-canvas::-webkit-scrollbar-track { background: #1c344c; background-clip: padding-box; }
 
 /* Faixa de previsão diária navegável no mesmo cartão principal. */
 .home-daily-forecast { position: relative; height: 230px; margin-top: 8px; }
