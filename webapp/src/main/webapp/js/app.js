@@ -246,6 +246,9 @@ let historyRequest = 0;
 let pageRefreshInProgress = false;
 let homeChartRange = "24h";
 let homeChartRequest = 0;
+// A coleta permanece em 10 s conforme o enunciado; a interface não precisa
+// repetir todas as consultas nessa mesma frequência.
+const UI_REFRESH_INTERVAL_MS = 30_000;
 
 function rangeDates(range, anchor = anchorDate(latestReading)) {
   const end = new Date(anchor);
@@ -1017,7 +1020,7 @@ function refreshAfterCityChange() {
 }
 
 function startBackgroundRefresh() {
-  window.setInterval(() => { void refreshCurrentPage(); }, 10_000);
+  window.setInterval(() => { void refreshCurrentPage(); }, UI_REFRESH_INTERVAL_MS);
   window.addEventListener("focus", () => { void refreshCurrentPage(); });
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) void refreshCurrentPage();
