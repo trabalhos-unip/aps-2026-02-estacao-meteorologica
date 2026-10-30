@@ -534,14 +534,11 @@ function graficoDeTemperaturaHoraria(previsoes, largura) {
     const temperatura = Number(item.temperatura);
     const desvioNormalizado = Number.isFinite(temperatura)
       ? Math.max(-1, Math.min(1, (temperatura - media) / semiAmplitude)) : 0;
-    const y = 53 - desvioNormalizado * 11;
+    const y = 53 - desvioNormalizado * 7;
     return { x, y };
   });
   const linha = pontos.map(({ x, y }) => `${x},${y}`).join(" ");
-  const area = `M ${pontos[0].x},70 L ${linha.replaceAll(" ", " L ")} L ${pontos.at(-1).x},70 Z`;
-  const linhasHorizontais = [42, 49, 56, 63].map(y => `<line class="hourly-grid-line" x1="0" x2="100" y1="${y}" y2="${y}" />`).join("");
-  const linhasVerticais = pontos.map(({ x }) => `<line class="hourly-grid-line hourly-grid-line-vertical" x1="${x}" x2="${x}" y1="40" y2="70" />`).join("");
-  return `<svg class="hourly-temperature-line" style="width:${largura}px" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="hourly-temperature-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#38a9f8" stop-opacity=".26"/><stop offset="1" stop-color="#38a9f8" stop-opacity=".015"/></linearGradient></defs>${linhasHorizontais}${linhasVerticais}<path class="hourly-temperature-area" d="${area}"/><polyline points="${linha}" /></svg><span class="hourly-temperature-dots" style="width:${largura}px" aria-hidden="true">${pontos.map(({ x, y }) => `<i style="left:${x}%;top:${y}%"></i>`).join("")}</span>`;
+  return `<svg class="hourly-temperature-line" style="width:${largura}px" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polyline points="${linha}" /></svg><span class="hourly-temperature-dots" style="width:${largura}px" aria-hidden="true">${pontos.map(({ x, y }) => `<i style="left:${x}%;top:${y}%"></i>`).join("")}</span>`;
 }
 
 function horarioEmFormato24h(value) {
@@ -834,7 +831,10 @@ function renderHomeInsights(readings = recentReadings, forecasts = []) {
     const period = summary?.available ? `${summary.available} horas medidas hoje` : "Sem leituras medidas hoje";
     text(subtitle, `${description} · ${period}`);
     const legend = document.querySelector(legendSelector);
-    if (legend) legend.hidden = !summary?.forecast;
+    if (legend) {
+      legend.hidden = !summary?.forecast;
+      legend.style.setProperty("--measured-series-color", color);
+    }
   });
 }
 
@@ -944,7 +944,10 @@ function redrawHistoryCharts() {
   const summary = drawTemporalChart("#history-chart-canvas", historyReadings, variable, settings.suffix, settings.color, domain, historyForecasts);
   text("#history-chart-subtitle", periodSubtitle(summary, variable));
   const legend = document.querySelector("#history-series-legend");
-  if (legend) legend.hidden = summary.forecast === 0;
+  if (legend) {
+    legend.hidden = summary.forecast === 0;
+    legend.style.setProperty("--measured-series-color", settings.color);
+  }
   const miniCharts = [
     ["#humidity-chart", "umidadeRelativa", "%", "#269ceb", "#humidity-series-legend"],
     ["#rain-chart", "precipitacao", "mm", "#6a95ed", "#rain-series-legend"],
@@ -954,7 +957,10 @@ function redrawHistoryCharts() {
     const miniSummary = drawTemporalChart(selector, historyReadings, field, suffix, color, domain, historyForecasts);
     document.querySelectorAll(".mini-chart-card .title-with-icon small")[index].textContent = periodSubtitle(miniSummary, field);
     const miniLegend = document.querySelector(legendSelector);
-    if (miniLegend) miniLegend.hidden = miniSummary.forecast === 0;
+    if (miniLegend) {
+      miniLegend.hidden = miniSummary.forecast === 0;
+      miniLegend.style.setProperty("--measured-series-color", color);
+    }
   });
 }
 
