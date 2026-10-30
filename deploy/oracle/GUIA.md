@@ -54,6 +54,8 @@ getent ahostsv4 meteora.normaflowapp.com.br
 
 O Caddy solicitará e renovará o certificado TLS automaticamente. Certificados
 confiáveis não podem ser emitidos para um IPv4 puro; o domínio é indispensável.
+O proxy consulta o DNS interno do Docker periodicamente; assim um reinício do
+`webapp` não deixa o endereço público preso a um IP antigo do contêiner.
 
 ## 3. Instalar Docker e baixar o projeto
 
