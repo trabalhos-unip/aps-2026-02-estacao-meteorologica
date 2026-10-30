@@ -1107,7 +1107,7 @@ async function initSettings() {
       width: "100%",
       placeholder: citySelect.dataset.placeholder,
       minimumInputLength: 2,
-      dropdownParent: $(document.body),
+      dropdownParent: $settingsCity.closest(".settings-location-card"),
       language: { inputTooShort: () => "Digite ao menos 2 letras", searching: () => "Buscando cidades…", noResults: () => "Nenhuma cidade brasileira encontrada" },
       ajax: {
         delay: 200,

@@ -300,6 +300,14 @@
 :where([data-theme="dark"]) .settings-city-label .select2-container--default .select2-selection__rendered{color:var(--text)}
 :where([data-theme="dark"]) .settings-location-card .select2-dropdown{background:var(--surface-2);border-color:var(--line)}
 
+/* Configurações: neutros escuros nas superfícies e azul somente como destaque. */
+:where([data-theme="dark"]) .settings-block-heading>.icon{background:#1a1f25;color:var(--accent)}
+:where([data-theme="dark"]) .theme-preview{background:#171c22;border-color:#2a3038;color:var(--accent)}
+:where([data-theme="dark"]) .theme-preview-auto{background:#1a2027}
+:where([data-theme="dark"]) .theme-preview-light{background:#f7f9fc}
+:where([data-theme="dark"]) .theme-preview-dark{background:#101419;border-color:#303844}
+:where([data-theme="dark"]) .interval-options button.selected{background:#12314a;border-color:#278fdb;color:#eaf6ff;box-shadow:0 0 0 1px #278fdb55}
+
 /* Mantém controles selecionados escuros e legíveis no modo escuro. */
 :where([data-theme="dark"]) .settings-main .mode-option:has(input:checked){background:#12314a;border-color:#278fdb;box-shadow:0 0 0 1px #278fdb55}
 :where([data-theme="dark"]) .settings-main .mode-option:has(input:checked) strong,:where([data-theme="dark"]) .settings-main .mode-option:has(input:checked) small{color:var(--text)}
