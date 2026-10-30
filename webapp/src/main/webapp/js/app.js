@@ -40,19 +40,24 @@ function mountPage(route) {
 
 function showInitialLoadingSkeleton() {
   const overview = `
-    <div class="skeleton-overview">
-      <div class="skeleton-overview-main"><div class="skeleton-hero skeleton-block"></div><div class="skeleton-metrics">${"<i></i>".repeat(4)}</div><div class="skeleton-chart skeleton-block"></div><div class="skeleton-insights">${"<i></i>".repeat(3)}</div></div>
-      <div class="skeleton-overview-side"><i></i><i></i></div>
+    <div class="skeleton-overview skeleton-real-overview">
+      <div class="skeleton-overview-main">
+        <div class="skeleton-hero skeleton-block"><i class="sk-line sk-city"></i><i class="sk-line sk-date"></i><i class="sk-line sk-temperature"></i><i class="sk-line sk-condition"></i></div>
+        <div class="skeleton-metrics skeleton-real-metrics"><div class="sk-temperature-card skeleton-block"><i class="sk-line sk-label"></i><i class="sk-line sk-big-value"></i><i class="sk-line sk-chip"></i><i class="sk-progress"></i></div><div class="sk-ring-card skeleton-block"><i class="sk-ring"></i><i class="sk-line sk-label"></i><i class="sk-line sk-detail"></i></div><div class="sk-ring-card skeleton-block"><i class="sk-ring"></i><i class="sk-line sk-label"></i><i class="sk-line sk-detail"></i></div><div class="sk-wind-card skeleton-block"><i class="sk-line sk-label"></i><i class="sk-line sk-value"></i><i class="sk-progress"></i></div></div>
+        <div class="skeleton-chart skeleton-block skeleton-weather-chart"><div class="sk-chart-title"><i class="sk-icon"></i><i class="sk-line"></i><i class="sk-tabs"></i></div><div class="sk-weather-columns">${"<i></i>".repeat(8)}</div><i class="sk-chart-line"></i></div>
+        <div class="skeleton-insights">${["", "", ""].map(() => `<div class="skeleton-block sk-mini-chart"><i class="sk-line"></i><i class="sk-mini-plot"></i></div>`).join("")}</div>
+      </div>
+      <div class="skeleton-overview-side"><div class="skeleton-block sk-forecast-side">${"<i></i>".repeat(6)}</div><div class="skeleton-block sk-table-side"><i class="sk-line"></i>${"<i></i>".repeat(8)}</div></div>
     </div>`;
   const history = `
-    <div class="skeleton-filter skeleton-block"></div><div class="skeleton-history"><div><div class="skeleton-chart skeleton-block"></div><div class="skeleton-insights">${"<i></i>".repeat(3)}</div></div><div class="skeleton-history-side"><i></i><i></i></div></div><div class="skeleton-table skeleton-block"></div>`;
+    <div class="skeleton-filter skeleton-block"><i class="sk-line"></i><i class="sk-tabs"></i></div><div class="skeleton-history"><div><div class="skeleton-chart skeleton-block skeleton-history-plot"><div class="sk-chart-title"><i class="sk-icon"></i><i class="sk-line"></i></div><i class="sk-history-grid"></i></div><div class="skeleton-insights">${["", "", ""].map(() => `<div class="skeleton-block sk-mini-chart"><i class="sk-line"></i><i class="sk-mini-plot"></i></div>`).join("")}</div></div><div class="skeleton-history-side"><div class="skeleton-block sk-summary-side">${"<i></i>".repeat(5)}</div><div class="skeleton-block sk-forecast-side">${"<i></i>".repeat(5)}</div></div></div><div class="skeleton-table skeleton-block">${"<i></i>".repeat(8)}</div>`;
   const settings = `
-    <div class="skeleton-settings"><div><i></i><i></i></div><div><i></i><i></i></div></div><div class="skeleton-settings-action skeleton-block"></div>`;
+    <div class="skeleton-settings"><div><div class="skeleton-block sk-settings-card">${"<i></i>".repeat(4)}</div><div class="skeleton-block sk-settings-card">${"<i></i>".repeat(3)}</div></div><div><div class="skeleton-block sk-settings-card">${"<i></i>".repeat(4)}</div><div class="skeleton-block sk-settings-card">${"<i></i>".repeat(3)}</div></div></div><div class="skeleton-settings-action skeleton-block"><i class="sk-line"></i><i class="sk-button"></i></div>`;
   const content = path === "/historico" ? history : path === "/configuracoes" ? settings : overview;
   document.querySelector("#app").insertAdjacentHTML("beforeend", `
     <div class="initial-page-skeleton" role="status" aria-live="polite" aria-label="Carregando dados">
-      <aside class="skeleton-sidebar"><i></i><i></i><i></i><i></i><i></i></aside>
-      <main class="skeleton-workspace"><div class="skeleton-heading"><i></i><i></i></div>${content}<span>Carregando dados…</span></main>
+      <aside class="skeleton-sidebar"><i class="sk-brand"></i><i class="sk-collapse"></i><i class="sk-nav active"></i><i class="sk-nav"></i><i class="sk-nav"></i><i class="sk-refresh"></i></aside>
+      <main class="skeleton-workspace"><div class="skeleton-heading"><div><i></i><i></i></div><i class="sk-location"></i></div>${content}<span>Carregando dados…</span><div class="skeleton-mobile-nav"><i></i><i></i><i></i><i></i></div></main>
     </div>`);
   document.querySelector("#app").setAttribute("aria-busy", "true");
 }
@@ -1411,24 +1416,19 @@ async function navegarPara(nextPath, { push = true } = {}) {
     window.scrollTo({ top: 0, behavior: "smooth" });
     return;
   }
-  // Navegações já aquecidas normalmente terminam em poucos milissegundos.
-  // Só cubra a tela se a API realmente demorar, evitando o clarão entre abas.
-  let loadingTimer = window.setTimeout(showDataRefreshOverlay, 220);
-  try {
-    if (push) window.history.pushState({}, "", nextPath);
-    const cached = mountPage(nextPath);
-    path = nextPath;
-    atualizarNavegacaoAtiva();
-    window.scrollTo({ top: 0, behavior: "auto" });
-    if (!cached || !initializedPages.has(path)) {
-      await initializePage(path);
-      return;
-    }
-    await refreshCurrentPage();
-  } finally {
-    window.clearTimeout(loadingTimer);
-    hideDataRefreshOverlay();
+  // Trocar de aba mantém a interface já montada; não é uma ação de recarga e
+  // não deve cobrir a página com a animação. A animação fica reservada para
+  // troca de cidade, botão Atualizar e primeira carga.
+  if (push) window.history.pushState({}, "", nextPath);
+  const cached = mountPage(nextPath);
+  path = nextPath;
+  atualizarNavegacaoAtiva();
+  window.scrollTo({ top: 0, behavior: "auto" });
+  if (!cached || !initializedPages.has(path)) {
+    await initializePage(path);
+    return;
   }
+  await refreshCurrentPage();
 }
 
 document.addEventListener("click", event => {
