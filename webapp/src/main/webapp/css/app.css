@@ -255,3 +255,6 @@ body:has(.overview-grid){overflow-x:hidden;overflow-y:auto}
 
 /* Configuração em uma coluna, alinhada ao início do conteúdo. */
 .settings-main{max-width:760px;margin:0}.settings-board{grid-template-columns:1fr!important;max-width:760px}.settings-column{display:contents!important}.settings-column>.settings-block{border:0;box-shadow:0 8px 20px #1d40510a}.settings-actions{border:0;box-shadow:0 8px 20px #1d40510a}.settings-main .mode-option:has(input:checked){border-color:#269cf0;background:#f0f9ff;box-shadow:0 0 0 1px #269cf033}.settings-main .mode-option input:checked{border-color:#168fec}.select2-container--open{z-index:80}.select2-container--open .select2-dropdown{max-width:calc(100vw - 32px)}
+
+/* Fluxo vertical da configuração: sem grid e sem rolagem horizontal. */
+.settings-board{display:block!important;width:100%;max-width:760px}.settings-column{display:block!important;width:100%}.settings-column>.settings-block{display:block;width:100%;margin:0 0 16px}.settings-column>.settings-block:last-child{margin-bottom:0}.theme-preview{height:100px}.settings-appearance .theme-option{min-height:157px}.app-layout:has(.settings-main),.app-layout:has(.settings-main) .workspace{overflow-x:hidden}.app-layout:has(.settings-main) .page-content{overflow-x:clip}
