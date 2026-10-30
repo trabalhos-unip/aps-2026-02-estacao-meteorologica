@@ -205,39 +205,3 @@ reinicia nada. A compilação do módulo `compartilhado` fica em cache e os test
 não são compilados durante o deploy, reduzindo o tempo de alterações apenas no
 front-end. Acompanhe o resultado na aba **Actions** do GitHub. Nunca coloque a
 chave privada, senhas MySQL ou o arquivo `.env.oracle` no Git.
-
-### Imagem pronta da webapp
-
-Em alterações do `webapp`, o GitHub Actions agora compila a imagem em um runner
-próprio e a publica no GitHub Container Registry (GHCR). A VM apenas baixa essa
-imagem pronta; se o download falhar, o contêiner em produção não é recriado.
-O pacote `meteora-webapp` permanece **Private**. Para a VM baixá-lo, crie no
-GitHub um **Personal access token (classic)** somente com o escopo
-`read:packages` e uma expiração curta (por exemplo, 90 dias). Não selecione
-`repo`, `write:packages` nem `delete:packages`. O token precisa pertencer a uma
-pessoa que tenha acesso de leitura ao pacote na organização.
-
-Na VM, crie o arquivo de credenciais fora do projeto:
-
-```bash
-mkdir -p ~/.config/meteora
-chmod 700 ~/.config/meteora
-nano ~/.config/meteora/ghcr-pull.env
-```
-
-Conteúdo, substituindo os valores e sem aspas:
-
-```text
-GHCR_USERNAME=SEU_USUARIO_GITHUB
-GHCR_READ_TOKEN=github_pat_SEU_TOKEN_AQUI
-```
-
-Proteja-o e nunca o envie ao Git:
-
-```bash
-chmod 600 ~/.config/meteora/ghcr-pull.env
-```
-
-Se precisar testar ou repetir a atualização, abra **Actions > Deploy na Oracle
-> Run workflow**, marque **force_webapp** e execute. Essa opção aceita somente
-a atualização da webapp e não concede um terminal à chave da automação.
