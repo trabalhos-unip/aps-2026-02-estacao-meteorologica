@@ -1,8 +1,8 @@
 /* Previsão horária: o desenho segue a leitura vertical de apps de clima. */
 .hourly-weather-chart { height: 368px; flex: none; }
-.hourly-weather-chart-canvas { position: relative; height: 280px; margin-top: 12px; padding: 0 4px 20px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-inline: contain; scrollbar-gutter: stable; scrollbar-width: auto; scrollbar-color: #279eea transparent; }
+.hourly-weather-chart-canvas { position: relative; height: 280px; margin-top: 12px; padding: 0 4px 20px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-inline: contain; scrollbar-gutter: stable; scrollbar-width: auto; scrollbar-color: transparent; }
 .hourly-weather-chart-canvas::-webkit-scrollbar { height: 15px; }
-.hourly-weather-chart-canvas::-webkit-scrollbar-track { margin: 0 14px; background: transparent; }
+.hourly-weather-chart-canvas::-webkit-scrollbar-track { margin: 0 28px; background: transparent; }
 .hourly-weather-chart-canvas::-webkit-scrollbar-thumb { min-width: 48px; border: 2px solid transparent; border-radius: 999px; background: linear-gradient(90deg, #1595e8, #45b7fb); background-clip: padding-box; }
 .hourly-weather-chart-canvas::-webkit-scrollbar-thumb:hover { background: linear-gradient(90deg, #087ed1, #22a7f5); background-clip: padding-box; }
 .hourly-weather-chart.daily-forecast-mode { height: 318px; }
@@ -73,14 +73,14 @@
 html[data-theme="dark"] .hourly-weather-point strong { color: #edf7ff; }
 html[data-theme="dark"] .hourly-weather-point time { color: #a6bbd0; }
 html[data-theme="dark"] .hourly-grid-line { stroke: #294763; }
-html[data-theme="dark"] .hourly-weather-chart-canvas { scrollbar-color: #52b8f4 transparent; }
+html[data-theme="dark"] .hourly-weather-chart-canvas { scrollbar-color: transparent; }
 
 /* Faixa de previsão diária navegável no mesmo cartão principal. */
 .home-daily-forecast { position: relative; height: 230px; min-width: 0; margin-top: 8px; overflow: hidden; }
-.home-daily-forecast-scroll { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(142px, calc((100% - 48px) / 7)); gap: 8px; width: 100%; height: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-inline: contain; padding: 0 4px 16px; scroll-behavior: smooth; scroll-snap-type: x mandatory; scrollbar-gutter: stable; scrollbar-width: auto; scrollbar-color: #279eea transparent; }
+.home-daily-forecast-scroll { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(142px, calc((100% - 48px) / 7)); gap: 8px; width: 100%; height: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-inline: contain; padding: 0 4px 16px; scroll-behavior: smooth; scroll-snap-type: x mandatory; scrollbar-gutter: stable; scrollbar-width: auto; scrollbar-color: transparent; }
 .home-daily-forecast-scroll.fit-seven-days { grid-auto-flow: initial; grid-auto-columns: auto; grid-template-columns: repeat(7, minmax(0, 1fr)); overflow-x: hidden; overscroll-behavior-inline: auto; scroll-snap-type: none; }
 .home-daily-forecast-scroll::-webkit-scrollbar { height: 15px; }
-.home-daily-forecast-scroll::-webkit-scrollbar-track { margin: 0 14px; background: transparent; }
+.home-daily-forecast-scroll::-webkit-scrollbar-track { margin: 0 28px; background: transparent; }
 .home-daily-forecast-scroll::-webkit-scrollbar-thumb { min-width: 48px; border: 2px solid transparent; border-radius: 999px; background: linear-gradient(90deg, #1595e8, #45b7fb); background-clip: padding-box; }
 .home-daily-forecast-scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(90deg, #087ed1, #22a7f5); background-clip: padding-box; }
 .daily-forecast-item { display: grid; min-width: 0; min-height: 198px; align-content: center; justify-items: center; gap: 7px; padding: 6px 8px; scroll-snap-align: start; text-align: center; }

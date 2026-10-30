@@ -1,8 +1,8 @@
-import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js?v=20261028-6";
+import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js?v=20261030-7";
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261030-10";
-import { overviewPage, historyPage, settingsPage } from "./pages.js?v=20261030-37";
-import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261030-23";
+import { overviewPage, historyPage, settingsPage } from "./pages.js?v=20261030-40";
+import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261030-27";
 
 const routeFromLocation = () => ({ "/historico": "/historico", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
 let path = routeFromLocation();
@@ -91,7 +91,9 @@ function setupSidebarCollapse() {
   });
 }
 setupSidebarCollapse();
+document.querySelector("#collector-refresh-button")?.addEventListener("click", () => { void refreshCurrentPage({ showLoading: true }); });
 let activeReadingsApi = leiturasApi;
+let currentRefreshPromise = null;
 function simulated() {
   return activeReadingsApi === demoApi;
 }
@@ -248,8 +250,8 @@ function setupLocationSelector() {
       delete document.querySelector("#hourly-weather-rows")?.dataset.hourlyFocusedDate;
       hideBottomSuggestions();
       if (closeModal) close();
-      showToast("Cidade atualizada. Os dados começam a ser carregados em instantes.");
-      refreshAfterCityChange();
+      await refreshAfterCityChange();
+      showToast("Cidade atualizada e dados recarregados.");
     } catch (error) {
       showToast(error.message || "Não foi possível atualizar a cidade.");
       throw error;
@@ -383,7 +385,11 @@ const RECENT_PAGE_SIZE = 15;
 // A coleta permanece independente no Java. Este intervalo controla somente
 // quando a interface consulta novamente os dados, sem recarregar a página.
 const DEFAULT_UI_REFRESH_INTERVAL_SECONDS = 900;
+// A coleta grava uma leitura nova a cada 10 s. Esta verificação leve só faz a
+// tela redesenhar quando o banco realmente recebeu uma leitura diferente.
+const COLLECTOR_POLL_INTERVAL_MS = 10_000;
 let backgroundRefreshTimer = null;
+let collectorRefreshTimer = null;
 
 function refreshIntervalMs() {
   const seconds = Number(savedPreferences().interval);
@@ -393,6 +399,23 @@ function refreshIntervalMs() {
 function restartBackgroundRefresh() {
   if (backgroundRefreshTimer) window.clearInterval(backgroundRefreshTimer);
   backgroundRefreshTimer = window.setInterval(() => { void refreshCurrentPage(); }, refreshIntervalMs());
+}
+
+function wait(milliseconds) {
+  return new Promise(resolve => window.setTimeout(resolve, milliseconds));
+}
+
+async function refreshWhenCollectorChanges() {
+  if (document.hidden || pageRefreshInProgress || simulated()) return;
+  try {
+    const reading = await activeReadingsApi.buscarUltima();
+    if (!reading || reading.id === latestReading?.id) return;
+    latestReading = reading;
+    await refreshCurrentPage();
+  } catch {
+    // A troca de estação pode acontecer entre a consulta e a próxima coleta.
+    // O próximo ciclo fará a tentativa novamente, sem interromper a interface.
+  }
 }
 
 function rangeDates(range, anchor = anchorDate(latestReading)) {
@@ -575,15 +598,35 @@ function renderHomeReading(reading, recent) {
   text("#metric-humidity", number(reading.umidadeRelativa, 0));
   // O cartão de chuva conserva a última previsão válida enquanto a nova consulta carrega.
   text("#metric-wind", number(reading.velocidadeVento));
+  setMetricProgress(".metric-card--temperature", Number(reading.temperatura), 40);
+  setMetricProgress(".metric-card--humidity", Number(reading.umidadeRelativa), 100);
+  setMetricProgress(".metric-card--wind", Number(reading.velocidadeVento), 30);
   const first = recent.at(0);
   const temperatures = numericValues(recent, "temperatura");
   text("#temperature-detail", temperatures.length ? `Mín. ${number(Math.min(...temperatures))}° · Máx. ${number(Math.max(...temperatures))}°` : "Sem histórico comparável");
-  text("#humidity-detail", "");
+  text("#humidity-detail", humidityCondition(reading.umidadeRelativa));
   text("#wind-detail", "");
   const delta = first && first.temperatura !== null && reading.temperatura !== null ? Number(reading.temperatura) - Number(first.temperatura) : null;
   text("#temperature-detail-trend", delta === null ? "Sem tendência disponível" : `${delta >= 0 ? "↗ +" : "↘ "}${number(delta)} °C nas últimas leituras`);
   text("#humidity-detail-trend", simulated() ? "Dados simulados" : "Dados da estação");
   text("#wind-detail-trend", simulated() ? "Dados simulados" : "Dados da estação");
+}
+
+function humidityCondition(value) {
+  const humidity = Number(value);
+  if (!Number.isFinite(humidity)) return "Condição: indisponível";
+  if (humidity < 12) return "Condição: emergência · ar extremamente seco";
+  if (humidity <= 20) return "Condição: alerta · ar muito seco";
+  if (humidity <= 30) return "Condição: atenção · ar seco";
+  if (humidity <= 59) return "Condição: umidade adequada";
+  return "Condição: umidade confortável";
+}
+
+function setMetricProgress(selector, value, maximum) {
+  const card = document.querySelector(selector);
+  if (!card) return;
+  const ratio = Number.isFinite(value) && maximum > 0 ? Math.max(0, Math.min(100, (value / maximum) * 100)) : 0;
+  card.style.setProperty("--metric-progress", `${ratio}%`);
 }
 
 function previsaoNoturna(item) {
@@ -656,6 +699,7 @@ function atualizarCartaoChuva(previsoes) {
   const chance = Number(proximaPrevisao?.probabilidadeChuva);
   const precipitacao = Number(proximaPrevisao?.precipitacao);
   text("#metric-rain-chance", Number.isFinite(chance) ? number(chance, 0) : "—");
+  setMetricProgress(".metric-card--rain", chance, 100);
   text("#rain-detail", `Previsto: ${Number.isFinite(precipitacao) ? unit(precipitacao, "mm") : "—"}`);
   text("#rain-detail-trend", proximaPrevisao ? `Previsão para ${horarioEmFormato24h(proximaPrevisao.dataHora)}` : "Previsão horária indisponível");
 }
@@ -1235,7 +1279,8 @@ async function initSettings() {
       showLocation({ city: station.cidade, state: station.estado });
       showLocationCoordinates(station);
       selectStation(station);
-      showToast("Cidade atualizada. Os dados começam a ser carregados em instantes.");
+      await refreshCurrentPage({ showLoading: true });
+      showToast("Cidade atualizada e dados recarregados.");
     } catch (error) {
       showToast(error.message || "Não foi possível atualizar a cidade.");
     }
@@ -1265,10 +1310,26 @@ async function initSettings() {
   await fetchLatest();
 }
 
-async function refreshCurrentPage() {
-  if (document.hidden || pageRefreshInProgress) return;
+function showDataRefreshOverlay() {
+  const overlay = document.querySelector("#data-refresh-overlay");
+  if (overlay) overlay.hidden = false;
+}
+
+function hideDataRefreshOverlay() {
+  const overlay = document.querySelector("#data-refresh-overlay");
+  if (overlay) overlay.hidden = true;
+}
+
+async function refreshCurrentPage({ showLoading = false } = {}) {
+  if (document.hidden) return false;
+  if (pageRefreshInProgress) {
+    if (showLoading) showDataRefreshOverlay();
+    try { return await currentRefreshPromise; }
+    finally { if (showLoading) hideDataRefreshOverlay(); }
+  }
   pageRefreshInProgress = true;
-  try {
+  if (showLoading) showDataRefreshOverlay();
+  currentRefreshPromise = (async () => {
     if (path === "/") {
       await refreshHome();
     } else if (path === "/historico") {
@@ -1281,20 +1342,39 @@ async function refreshCurrentPage() {
     } else {
       await fetchLatest();
     }
+    return true;
+  })();
+  try {
+    return await currentRefreshPromise;
   } finally {
     pageRefreshInProgress = false;
+    currentRefreshPromise = null;
+    if (showLoading) hideDataRefreshOverlay();
   }
 }
 
-function refreshAfterCityChange() {
-  // Atualiza somente os dados da tela aberta. Não recria o shell, nem repete
-  // renderizações em sequência após a troca de cidade; o ciclo normal cuida
-  // das leituras posteriores do coletor.
-  void refreshCurrentPage();
+async function refreshAfterCityChange() {
+  // O coletor detecta uma estação nova em até 1 s e persiste a leitura. Não
+  // escondemos a animação antes de a API poder devolver dados daquela cidade.
+  showDataRefreshOverlay();
+  try {
+    const limite = Date.now() + 15_000;
+    let leituraNova = null;
+    while (Date.now() < limite && !leituraNova) {
+      try { leituraNova = await activeReadingsApi.buscarUltima(); }
+      catch { await wait(750); }
+    }
+    if (leituraNova) latestReading = leituraNova;
+    await refreshCurrentPage();
+  } finally {
+    hideDataRefreshOverlay();
+  }
 }
 
 function startBackgroundRefresh() {
   restartBackgroundRefresh();
+  if (collectorRefreshTimer) window.clearInterval(collectorRefreshTimer);
+  collectorRefreshTimer = window.setInterval(() => { void refreshWhenCollectorChanges(); }, COLLECTOR_POLL_INTERVAL_MS);
   window.addEventListener("focus", () => { void refreshCurrentPage(); });
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) void refreshCurrentPage();
@@ -1331,17 +1411,21 @@ async function navegarPara(nextPath, { push = true } = {}) {
     window.scrollTo({ top: 0, behavior: "smooth" });
     return;
   }
-  if (push) window.history.pushState({}, "", nextPath);
-  const cached = mountPage(nextPath);
-  path = nextPath;
-  atualizarNavegacaoAtiva();
-  window.scrollTo({ top: 0, behavior: "auto" });
-  if (!cached || !initializedPages.has(path)) {
-    await initializePage(path);
-    return;
+  showDataRefreshOverlay();
+  try {
+    if (push) window.history.pushState({}, "", nextPath);
+    const cached = mountPage(nextPath);
+    path = nextPath;
+    atualizarNavegacaoAtiva();
+    window.scrollTo({ top: 0, behavior: "auto" });
+    if (!cached || !initializedPages.has(path)) {
+      await initializePage(path);
+      return;
+    }
+    await refreshCurrentPage();
+  } finally {
+    hideDataRefreshOverlay();
   }
-  // A tela armazenada aparece já; dados novos chegam sem bloquear a navegação.
-  void refreshCurrentPage();
 }
 
 document.addEventListener("click", event => {

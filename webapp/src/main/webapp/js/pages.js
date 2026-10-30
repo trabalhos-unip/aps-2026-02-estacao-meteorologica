@@ -18,14 +18,20 @@ function meteocon(asset, className = "metric-meteocon") {
   return `<img class="${className}" src="${METEOCONS_STATIC}/${asset}.svg" alt="" aria-hidden="true" decoding="async">`;
 }
 
-function metricCard(label, asset, id, suffix, detailId) {
-  return `<article class="card metric-card">
-    <div class="metric-leading">${meteocon(asset)}</div>
-    <div class="metric-copy">
+function metricCard(label, asset, id, suffix, detailId, kind) {
+  const gauge = kind === "humidity" || kind === "rain";
+  return `<article class="card metric-card metric-card--${kind}" style="--metric-progress:0%">
+    <header class="metric-header">
+      <div class="metric-leading">${meteocon(asset)}</div>
       <div class="metric-heading"><strong>${label}</strong></div>
-      <p class="metric-reading"><span id="${id}">—</span><span class="metric-suffix">${suffix}</span></p>
-      <p class="metric-detail" id="${detailId}">Aguardando leitura</p>
-    </div>
+      ${gauge ? "" : `<p class="metric-reading"><span id="${id}">—</span><span class="metric-suffix">${suffix}</span></p>`}
+    </header>
+    ${gauge
+      ? `<div class="metric-gauge"><p class="metric-reading"><span id="${id}">—</span><span class="metric-suffix">${suffix}</span></p></div>
+         <p class="metric-detail" id="${detailId}">Aguardando leitura</p>`
+      : `<p class="metric-detail" id="${detailId}">Aguardando leitura</p>
+         <div class="metric-linear" aria-hidden="true"><i></i></div>
+         <div class="metric-scale" aria-hidden="true"><span>0°</span><span>${kind === "temperature" ? "40°" : "30 km/h"}</span></div>`}
     <p class="metric-trend" id="${detailId}-trend">—</p>
   </article>`;
 }
@@ -53,10 +59,10 @@ export function overviewPage() {
       <p class="hero-description" id="hero-description">Aguardando dados da estação</p>
     </section>
     <section class="metrics-grid" aria-label="Variáveis meteorológicas">
-      ${metricCard("Temperatura", "thermometer", "metric-temperature", "°C", "temperature-detail")}
-      ${metricCard("Umidade", "humidity", "metric-humidity", "%", "humidity-detail")}
-      ${metricCard("Chuva", "rain", "metric-rain-chance", "%", "rain-detail")}
-      ${metricCard("Vento", "wind", "metric-wind", "km/h", "wind-detail")}
+      ${metricCard("Temperatura", "thermometer", "metric-temperature", "°C", "temperature-detail", "temperature")}
+      ${metricCard("Umidade", "humidity", "metric-humidity", "%", "humidity-detail", "humidity")}
+      ${metricCard("Chuva", "rain", "metric-rain-chance", "%", "rain-detail", "rain")}
+      ${metricCard("Vento", "wind", "metric-wind", "km/h", "wind-detail", "wind")}
     </section>
     <section class="card chart-card home-chart hourly-weather-chart" aria-label="Previsão do tempo">
       <div class="section-head home-chart-toolbar"><div class="title-with-icon">${meteocon("partly-cloudy-day", "forecast-meteocon home-forecast-title-icon")}<h2 id="hourly-weather-title">Previsão do tempo</h2></div>${tabs("home-chart-range")}</div>

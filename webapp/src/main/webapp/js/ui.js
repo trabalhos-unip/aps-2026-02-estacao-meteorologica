@@ -63,7 +63,8 @@ export function renderShell(path, content) {
         </nav>
         <div class="sidebar-foot">
           <div class="collector-card" id="collector-card">
-            <span class="collector-update-label">Última atualização</span><strong id="sidebar-last-reading">—</strong>
+            <button class="collector-refresh-button" id="collector-refresh-button" type="button" title="Atualizar dados" aria-label="Atualizar dados">${icon("refresh", "collector-refresh")}</button>
+            <div><span class="collector-update-label">Última atualização</span><strong id="sidebar-last-reading">—</strong></div>
           </div>
         </div>
       </aside>
@@ -100,7 +101,10 @@ export function renderShell(path, content) {
         <div class="location-modal-footer"><div><button type="button" class="secondary-button" data-close-location-modal>Cancelar</button><button type="button" class="primary-button" id="location-confirm" disabled>Usar esta cidade</button></div></div>
       </div>
     </div>
-    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>`;
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    <div id="data-refresh-overlay" class="data-refresh-overlay" role="status" aria-live="polite" hidden>
+      <div class="data-refresh-overlay-card"><span class="data-refresh-icons" aria-hidden="true"><img src="https://cdn.meteocons.com/3.0.0-next.10/svg/fill/partly-cloudy-day.svg" alt=""><img src="https://cdn.meteocons.com/3.0.0-next.10/svg/fill/rain.svg" alt=""><img src="https://cdn.meteocons.com/3.0.0-next.10/svg/fill/wind.svg" alt=""></span><strong>Atualizando dados…</strong><span>Consultando as condições da estação</span></div>
+    </div>`;
 }
 
 export function text(selector, value) {

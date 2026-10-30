@@ -103,7 +103,7 @@
 @media(min-width:1051px){body:has(.history-grid) .topbar{min-height:116px}body:has(.history-grid) .page-content{padding-right:21px}body:has(.history-grid) .filter-bar{height:93px;min-height:93px}}
 .records-card .section-head{margin-bottom:8px}.records-card{padding-top:15px;padding-bottom:15px}.records-card td,.records-card th{padding:7px 8px}.records-card .table-scroll{max-height:208px}
 .summary-value{display:grid;text-align:right}.summary-value small{font-size:.68rem;color:#8a9eb2;font-weight:400}
-.app-layout:has(.overview-grid) .sidebar-foot{margin-bottom:62px}.app-layout:has(.overview-grid) .collector-card{margin-left:15px;width:170px}
+.app-layout:has(.overview-grid) .sidebar-foot{}.app-layout:has(.overview-grid) .collector-card{margin-left:15px;width:170px}
 @media(max-width:760px){.app-layout:has(.overview-grid) .sidebar-foot{display:none}}
 
 /* Gráficos: plotagem responsiva e acabamento do wireframe do histórico. */
@@ -284,6 +284,39 @@ html:has(.select2-container--open),body:has(.select2-container--open){overflow-x
   .settings-appearance .theme-option input{top:12px;right:12px;transform:none;z-index:1}
 }
 
+/* Painel de medidores em telas largas. */
+@media(min-width:761px){
+  .metrics-grid{
+    grid-template-columns:minmax(290px,1.35fr) minmax(190px,.9fr) minmax(190px,.9fr);
+    grid-template-rows:180px 140px;
+    gap:16px;
+  }
+  .metric-card{position:relative;min-height:0;padding:26px;border-radius:22px;overflow:hidden}
+  .metric-card--temperature{grid-column:1;grid-row:1/3}
+  .metric-card--humidity{grid-column:2;grid-row:1}
+  .metric-card--rain{grid-column:3;grid-row:1}
+  .metric-card--wind{grid-column:2/4;grid-row:2}
+  .metric-card .metric-header .metric-meteocon{width:30px;height:30px}
+  .metric-card .metric-heading{font-size:1rem}
+  .metric-source{margin-left:auto;padding:4px 10px;border:1px solid var(--line,#dce7f2);border-radius:999px;color:var(--muted,#71839a);font-size:.68rem;font-weight:500;white-space:nowrap}
+  .metric-card--temperature .metric-header>.metric-reading{
+    position:absolute;top:75px;left:28px;margin:0;font-size:clamp(4.2rem,6vw,6rem);line-height:.85;letter-spacing:-.08em;
+  }
+  .metric-card--temperature .metric-detail{position:absolute;top:190px;bottom:auto;left:28px;margin:0;padding:8px 13px;border-radius:999px;background:var(--surface-2,#f2f6fa);font-size:.77rem}
+  .metric-card--temperature .metric-linear{position:absolute;right:28px;bottom:74px;left:28px;margin:0}
+  .metric-card--temperature .metric-scale{position:absolute;right:28px;bottom:51px;left:28px;margin:0}
+  .metric-card--humidity,.metric-card--rain{display:grid;grid-template-columns:132px minmax(0,1fr);grid-template-rows:auto auto auto;align-items:center;column-gap:12px}
+  .metric-card--humidity .metric-header,.metric-card--rain .metric-header{grid-column:2;grid-row:1;align-self:end}
+  .metric-card--humidity .metric-gauge,.metric-card--rain .metric-gauge{grid-column:1;grid-row:1/4;width:120px;height:120px;margin:0;align-self:center}
+  .metric-card--humidity .metric-detail,.metric-card--rain .metric-detail{grid-column:2;grid-row:2;margin:5px 0 0;text-align:left;font-size:.75rem;line-height:1.35}
+  .metric-card--humidity .metric-trend,.metric-card--rain .metric-trend{grid-column:2;grid-row:3;display:block;margin:7px 0 0;color:var(--muted,#71839a);font-size:.7rem}
+  .metric-card--humidity .metric-source{display:none}
+  .metric-card--wind .metric-header>.metric-reading{margin-left:auto;font-size:2.25rem;line-height:1}
+  .metric-card--wind .metric-source{margin-left:8px;margin-right:auto}
+  .metric-card--wind .metric-detail{display:none}
+  .metric-card--wind .metric-linear{margin-top:19px}
+}
+
 /* Condições atuais: cartões horizontais compactos para a leitura no celular. */
 @media(max-width:760px){
   .app-layout:has(.overview-grid) .metrics-grid{gap:10px}
@@ -423,3 +456,161 @@ html:has(.select2-container--open),body:has(.select2-container--open){overflow-x
   .bottom-city-composer{height:74px;margin-top:-20px;padding-top:26px;border-radius:0 0 32px 32px}
   .page-content{padding-bottom:158px}
 }
+
+/* Barra mobile: ações equidistantes, superfícies circulares e painel azul sólido. */
+@media(max-width:760px){
+  .bottom-nav{
+    width:min(calc(100% - 12px),380px);
+    box-sizing:border-box;
+    border:5px solid rgba(255,255,255,.4);
+    border-radius:34px;
+    background:#3187d7;
+    box-shadow:0 10px 24px #0a4b853d,inset 0 1px 0 rgba(255,255,255,.28);
+  }
+  .bottom-nav-links{
+    height:64px;
+    padding:4px 8px;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    border:0;
+    border-radius:999px;
+    background:#fffffff5;
+    box-shadow:0 7px 18px #12395f1f,inset 0 1px 0 #fff;
+  }
+  .bottom-nav-link,.bottom-theme-button{
+    width:52px;
+    height:52px;
+    margin:auto;
+    border-radius:50%;
+  }
+  .bottom-nav-link .icon,.bottom-theme-button .icon{width:23px;height:23px}
+  .bottom-city-composer{
+    height:68px;
+    margin-top:-16px;
+    padding:22px 24px 0;
+    border-radius:0 0 28px 28px;
+  }
+}
+@media(max-width:365px){
+  .bottom-nav{width:calc(100% - 8px)}
+  .bottom-nav-links{height:60px}
+  .bottom-nav-link,.bottom-theme-button{width:48px;height:48px}
+  .bottom-city-composer{height:64px;padding-top:20px}
+}
+
+/* A moldura branca é da cápsula de navegação; os botões são pílulas horizontais. */
+@media(max-width:760px){
+  .bottom-nav{
+    width:min(calc(100% - 44px),340px);
+    border:0;
+    border-radius:32px;
+    background:#3187d7;
+  }
+  .bottom-nav-links{
+    height:68px;
+    padding:4px 8px;
+    border:5px solid rgba(255,255,255,.4);
+    border-radius:999px;
+    box-sizing:border-box;
+    background:#fffffff5;
+    box-shadow:0 8px 20px #12395f22,inset 0 1px 0 #fff;
+  }
+  .bottom-nav-link,.bottom-theme-button{
+    width:68px;
+    height:50px;
+    margin:auto;
+    border-radius:25px;
+  }
+  .bottom-nav-link.active{
+    background:#edf3f8;
+    box-shadow:0 3px 9px #263f581c,inset 0 0 0 1px #d4e1eb;
+  }
+  .bottom-city-composer{height:68px;margin-top:-20px;padding-top:26px}
+}
+@media(max-width:365px){
+  .bottom-nav{width:calc(100% - 30px)}
+  .bottom-nav-links{height:64px;border-width:4px}
+  .bottom-nav-link,.bottom-theme-button{width:60px;height:48px;border-radius:24px}
+}
+
+@media(max-width:760px){.bottom-nav{background:#5aaeea}}
+
+@media(max-width:760px){
+  .bottom-city-composer:focus-within{z-index:1}
+  .bottom-city-suggestions[hidden]{display:none!important}
+  .bottom-city-suggestions{
+    /* Lista própria, sem encobrir a cápsula branca de navegação. */
+    bottom:calc(100% + 48px);
+    z-index:1;
+    border-color:rgba(255,255,255,.28);
+    border-radius:18px;
+    background:#5aaeea;
+    box-shadow:0 10px 24px #0a4b8530;
+    backdrop-filter:none;
+    -webkit-backdrop-filter:none;
+  }
+}
+
+/* Medidores da visão geral: temperatura e vento em escala; umidade e chuva em anel. */
+.metric-card--temperature{--metric-color:#ffae57}.metric-card--humidity{--metric-color:#49d9c5}.metric-card--rain{--metric-color:#77aefa}.metric-card--wind{--metric-color:#b9a5ff}.metric-card{--metric-track:#e8f0f7}
+.metric-card .metric-header{display:flex;align-items:center;gap:9px}.metric-card .metric-header .metric-leading{display:grid;place-items:center}.metric-card .metric-header .metric-meteocon{width:24px;height:24px}.metric-card .metric-header .metric-heading{font-size:.82rem}.metric-card .metric-header>.metric-reading{margin:0 0 0 auto}.metric-card .metric-linear{height:9px;overflow:hidden;border-radius:999px;background:var(--metric-track);margin-top:14px}.metric-card .metric-linear i{display:block;width:var(--metric-progress);height:100%;border-radius:inherit;background:var(--metric-color)}.metric-card .metric-scale{display:flex;justify-content:space-between;margin-top:6px;color:#8190a2;font-size:.66rem}.metric-card .metric-gauge{position:relative;display:grid;place-items:center;width:102px;height:102px;margin:17px auto 0;border-radius:50%;background:conic-gradient(var(--metric-color) var(--metric-progress),var(--metric-track) 0)}.metric-card .metric-gauge:before{content:"";position:absolute;inset:9px;border-radius:50%;background:var(--surface,#fff)}.metric-card .metric-gauge .metric-reading{position:relative;z-index:1;margin:0;font-size:1.7rem}.metric-card .metric-gauge .metric-suffix{font-size:.53em}.metric-card--humidity .metric-detail,.metric-card--rain .metric-detail{text-align:center;margin-top:13px}.metric-card--temperature .metric-detail,.metric-card--wind .metric-detail{margin-top:8px}.metric-card--temperature .metric-trend,.metric-card--wind .metric-trend{display:none}
+
+@media(max-width:760px){
+  .app-layout:has(.overview-grid) .metrics-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .app-layout:has(.overview-grid) .metric-card{display:block;height:auto;min-height:0;padding:18px;border-radius:22px;background:var(--surface,#fff)}
+  .app-layout:has(.overview-grid) .metric-card--temperature,.app-layout:has(.overview-grid) .metric-card--wind{grid-column:1/-1}
+  .app-layout:has(.overview-grid) .metric-card--temperature{min-height:119px}
+  .app-layout:has(.overview-grid) .metric-card--humidity,.app-layout:has(.overview-grid) .metric-card--rain{min-height:240px}
+  .app-layout:has(.overview-grid) .metric-card--wind{min-height:96px}
+  .app-layout:has(.overview-grid) .metric-card .metric-header{gap:8px}
+  .app-layout:has(.overview-grid) .metric-card .metric-header .metric-meteocon{width:32px;height:32px}
+  .app-layout:has(.overview-grid) .metric-card .metric-heading{font-size:.9rem}
+  .app-layout:has(.overview-grid) .metric-card .metric-header>.metric-reading{font-size:2rem;line-height:1}
+  .app-layout:has(.overview-grid) .metric-card--temperature .metric-header>.metric-reading{font-size:2.05rem}
+  .app-layout:has(.overview-grid) .metric-card .metric-detail{min-height:0;font-size:.71rem;line-height:1.3}
+  .app-layout:has(.overview-grid) .metric-card .metric-gauge{width:100px;height:100px;margin-top:25px}
+  .app-layout:has(.overview-grid) .metric-card .metric-gauge .metric-reading{font-size:1.72rem}
+  .app-layout:has(.overview-grid) .metric-card--humidity .metric-detail,.app-layout:has(.overview-grid) .metric-card--rain .metric-detail{margin-top:22px}
+}
+
+@media(min-width:761px){
+  .metrics-grid{align-items:stretch}
+  .metrics-grid .metric-card{height:100%!important;min-height:0}
+  .metric-card .metric-header .metric-meteocon{width:30px;height:30px}
+  .metric-card--humidity .metric-detail,.metric-card--rain .metric-detail{margin:5px 0 0;text-align:left}
+  .metric-card--humidity .metric-trend{display:none}
+  .metric-card--rain .metric-trend{display:block;margin:7px 0 0}
+}
+
+/* Sidebar desktop em vidro claro: aberta e compacta compartilham o mesmo painel. */
+@media(min-width:761px){
+  .app-layout{grid-template-columns:268px minmax(0,1fr);gap:20px;padding:10px;background:#dfe8f4}
+  .app-layout.sidebar-collapsed{grid-template-columns:72px minmax(0,1fr)}
+  .sidebar{position:sticky;top:10px;width:268px;height:calc(100vh - 20px);min-height:560px;margin:0;padding:22px 20px 20px;border:1px solid rgba(255,255,255,.72);border-radius:28px;background:rgba(255,255,255,.88);box-shadow:0 16px 35px #42627d1a;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+  .workspace{min-height:calc(100vh - 20px);margin:0}
+  .brand{min-height:58px;flex-direction:row;align-items:center;gap:11px;text-align:left;color:#202a39}
+  .brand-mark{width:44px;height:34px;margin:0}.brand-sun{width:19px;height:19px;right:3px;top:0}.brand-cloud{left:1px;bottom:1px;width:39px;height:17px}.brand-cloud:before{width:20px;height:20px;left:6px;bottom:6px}.brand-cloud:after{width:22px;height:23px;right:3px;bottom:4px}
+  .brand-copy{display:grid;gap:2px}.brand strong{font-size:1.08rem;letter-spacing:-.03em}.brand .brand-copy>span{font-size:.7rem;color:#68788e}
+  .sidebar-collapse-toggle{position:absolute;top:23px;right:20px;left:auto;width:37px;height:37px;padding:0;border:1px solid #dbe4ed;border-radius:50%;background:#f1f5f9;color:#33465d;box-shadow:none}.sidebar-collapse-toggle .icon{width:17px;height:17px;transform:rotate(180deg)}
+  .sidebar-section-label{display:block;margin:25px 6px 13px;color:#627187;font-size:.66rem;font-weight:700;letter-spacing:.11em}
+  .primary-nav{gap:11px;margin:0}.nav-link{height:57px;padding:0 10px;gap:12px;border-radius:999px;color:#334155;font-size:.91rem;font-weight:500}.nav-link .icon{box-sizing:border-box;width:44px;height:44px;padding:11px;border-radius:50%;background:#f0f4f8;color:#33465d}.nav-link:hover{background:#f6faff;color:#1266bd}.nav-link:hover .icon{background:#e8f2fb;color:#176dc5}.nav-link.active{background:#f7fbff;color:#1266bd;font-weight:700;box-shadow:inset 0 0 0 1px #dcebf8}.nav-link.active .icon{background:#1975d2;color:#fff;box-shadow:0 5px 12px #1975d238}
+  .sidebar-foot{right:20px;bottom:20px;left:20px;padding:0;border:0}.collector-card{display:flex;align-items:center;gap:10px;padding:12px 13px!important;border:0!important;border-radius:16px;background:#edf2f7!important;color:#5c6d83!important}.collector-refresh-button{display:grid;place-items:center;width:22px;height:22px;padding:0;border:0;border-radius:50%;background:transparent;color:#1574cf;flex:none}.collector-refresh-button:hover,.collector-refresh-button:focus-visible{background:#dcecff;outline:0}.collector-refresh{width:20px;height:20px}.collector-card>div{display:grid;gap:1px;min-width:0}.collector-update-label{font-size:.68rem;color:#738298}.collector-card #sidebar-last-reading{font-size:.75rem;color:#28374c!important;white-space:nowrap}
+
+  .sidebar-collapsed .sidebar{width:72px;padding:20px 10px;border-radius:28px;align-items:center}.sidebar-collapsed .brand{min-height:40px;justify-content:center}.sidebar-collapsed .brand-mark{width:45px;height:35px}.sidebar-collapsed .brand-copy,.sidebar-collapsed .sidebar-section-label{display:none}.sidebar-collapsed .sidebar-collapse-toggle{top:73px;right:auto;left:17px;width:38px;height:38px}.sidebar-collapsed .sidebar-collapse-toggle .icon{transform:none}.sidebar-collapsed .primary-nav{width:100%;margin-top:72px;justify-items:center}.sidebar-collapsed .nav-link{display:grid;width:44px;height:44px;padding:0;place-items:center;border-radius:50%}.sidebar-collapsed .nav-link>span{display:none}.sidebar-collapsed .nav-link .icon{width:44px;height:44px}.sidebar-collapsed .sidebar-foot{right:10px;bottom:19px;left:10px;display:block}.sidebar-collapsed .collector-card{display:grid!important;width:44px;height:44px;place-items:center;padding:0!important;border-radius:14px}.sidebar-collapsed .collector-card>div{display:none}.sidebar-collapsed .collector-refresh-button{width:36px;height:36px}.sidebar-collapsed .collector-refresh{width:20px;height:20px}
+  .topbar{padding-right:22px;padding-left:22px}.page-content{padding-right:22px;padding-left:22px}
+}
+
+/* Regras de rota não podem modificar a barra lateral compartilhada. */
+@media(min-width:761px){
+  .app-layout:has(.overview-grid) .collector-card{width:auto;margin-left:0}
+  .app-layout:has(.overview-grid) .workspace,
+  .app-layout:has(.settings-main) .workspace{overflow-x:clip!important;overflow-y:visible!important}
+  .app-layout:has(.settings-main){overflow-x:clip!important;overflow-y:visible!important}
+  .sidebar{z-index:5}
+  .sidebar-collapse-toggle{display:grid!important;z-index:7}
+  .sidebar-collapsed .sidebar-foot{display:grid;place-items:center}
+  .app-layout.sidebar-collapsed:has(.overview-grid) .collector-card{margin:0!important;justify-self:center}
+}
+
+/* Feedback de atualização manual ou de navegação. */
+.data-refresh-overlay{position:fixed;z-index:95;inset:0;display:grid;place-items:center;padding:24px;background:rgba(239,248,255,.94);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}.data-refresh-overlay[hidden]{display:none!important}.data-refresh-overlay-card{display:grid;justify-items:center;gap:10px;min-width:230px;padding:24px 30px;border:1px solid #d7eafa;border-radius:22px;background:#fff;box-shadow:0 18px 45px #2367981f;color:#123b68;text-align:center}.data-refresh-icons{position:relative;display:grid;place-items:center;width:64px;height:64px}.data-refresh-icons img{position:absolute;width:64px;height:64px;object-fit:contain;opacity:0;animation:refresh-weather-cycle 3.6s ease-in-out infinite}.data-refresh-icons img:nth-child(2){animation-delay:1.2s}.data-refresh-icons img:nth-child(3){animation-delay:2.4s}@keyframes refresh-weather-cycle{0%,100%{opacity:0;transform:scale(.8)}12%,28%{opacity:1;transform:scale(1)}40%{opacity:0;transform:scale(1.08)}}.data-refresh-overlay-card strong{font-size:.96rem}.data-refresh-overlay-card>span:last-child{color:#6c88a7;font-size:.75rem}
+@media(max-width:760px){.data-refresh-overlay{padding:18px}.data-refresh-overlay-card{min-width:0;width:min(280px,100%);padding:21px 18px}.data-refresh-icons,.data-refresh-icons img{width:58px;height:58px}}
