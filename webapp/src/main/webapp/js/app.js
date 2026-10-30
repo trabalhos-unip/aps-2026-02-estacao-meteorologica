@@ -13,6 +13,31 @@ const pageHeadings = {
   "/configuracoes": ["Configurações", "Ajuste os parâmetros de coleta de dados e o comportamento do sistema."],
 };
 renderShell(path, pages[path]());
+// Cada aba permanece como nó DOM fora da tela enquanto outra está ativa. Assim,
+// voltar a uma aba já visitada é imediato e conserva gráficos, filtros e tabela.
+const pageViews = new Map();
+const initializedPages = new Set();
+const initialContent = document.querySelector("#conteudo");
+const initialView = document.createElement("div");
+initialView.className = "page-view";
+initialView.replaceChildren(...Array.from(initialContent.childNodes));
+initialContent.replaceChildren(initialView);
+pageViews.set(path, initialView);
+
+function mountPage(route) {
+  const content = document.querySelector("#conteudo");
+  let view = pageViews.get(route);
+  const cached = Boolean(view);
+  if (!view) {
+    view = document.createElement("div");
+    view.className = "page-view";
+    view.innerHTML = pages[route]();
+    pageViews.set(route, view);
+  }
+  content.replaceChildren(view);
+  return cached;
+}
+
 function showInitialLoadingSkeleton() {
   const overview = `
     <div class="skeleton-overview">
@@ -785,8 +810,9 @@ async function renderForecast() {
 }
 
 async function refreshHome() {
-  await renderForecast();
-  await fetchLatest();
+  // Previsão e última leitura são independentes; buscar as duas juntas reduz
+  // o primeiro carregamento e as atualizações periódicas da tela inicial.
+  await Promise.all([renderForecast(), fetchLatest()]);
   try {
     const inicioDoDia = new Date();
     inicioDoDia.setHours(0, 0, 0, 0);
@@ -1034,8 +1060,8 @@ function setHistoryPreset(range) {
 }
 
 async function initHistory() {
-  await fetchLatest();
-  await setHistoryPreset("24h");
+  // A leitura atual não depende das consultas do histórico.
+  await Promise.all([fetchLatest(), setHistoryPreset("24h")]);
   document.querySelector("#history-range").addEventListener("click", event => {
     const button = event.target.closest("[data-range]");
     if (button) setHistoryPreset(button.dataset.range);
@@ -1194,13 +1220,14 @@ function startBackgroundRefresh() {
   });
 }
 
-async function initializeCurrentPage() {
+async function initializePage(route, { initial = false } = {}) {
   try {
-    await ({ "/": initHome, "/historico": initHistory, "/configuracoes": initSettings })[path]();
+    await ({ "/": initHome, "/historico": initHistory, "/configuracoes": initSettings })[route]();
   } catch (error) {
     showToast(error.message || "Não foi possível carregar os dados iniciais.");
   } finally {
-    hideInitialLoadingSkeleton();
+    initializedPages.add(route);
+    if (initial) hideInitialLoadingSkeleton();
   }
 }
 
@@ -1223,12 +1250,17 @@ async function navegarPara(nextPath, { push = true } = {}) {
     window.scrollTo({ top: 0, behavior: "smooth" });
     return;
   }
-  path = nextPath;
   if (push) window.history.pushState({}, "", nextPath);
-  document.querySelector("#conteudo").innerHTML = pages[path]();
+  const cached = mountPage(nextPath);
+  path = nextPath;
   atualizarNavegacaoAtiva();
   window.scrollTo({ top: 0, behavior: "auto" });
-  await initializeCurrentPage();
+  if (!cached || !initializedPages.has(path)) {
+    await initializePage(path);
+    return;
+  }
+  // A tela armazenada aparece já; dados novos chegam sem bloquear a navegação.
+  void refreshCurrentPage();
 }
 
 document.addEventListener("click", event => {
@@ -1242,5 +1274,5 @@ document.addEventListener("click", event => {
 });
 
 window.addEventListener("popstate", () => { void navegarPara(routeFromLocation(), { push: false }); });
-void initializeCurrentPage();
+void initializePage(path, { initial: true });
 startBackgroundRefresh();
