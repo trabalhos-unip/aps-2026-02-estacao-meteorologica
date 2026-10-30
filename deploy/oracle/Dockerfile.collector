@@ -7,9 +7,12 @@ COPY compartilhado/pom.xml compartilhado/pom.xml
 COPY collector/pom.xml collector/pom.xml
 COPY webapp/pom.xml webapp/pom.xml
 RUN mvn -B -pl collector -am dependency:go-offline
+
+# Esta camada muda menos que o coletor e pode ser reutilizada pelo Docker.
 COPY compartilhado/src compartilhado/src
+RUN mvn -B -pl compartilhado install -Dmaven.test.skip=true
 COPY collector/src collector/src
-RUN mvn -B -pl collector -am package -DskipTests \
+RUN mvn -B -pl collector package -Dmaven.test.skip=true \
     && cp /workspace/collector/target/collector-0.0.1-SNAPSHOT.jar /workspace/collector.jar
 
 FROM eclipse-temurin:21-jre

@@ -184,5 +184,7 @@ Após isso, cada push na branch `feature/probabilidade-chuva-horaria` dispara a
 atualização. O script detecta os arquivos do push: alteração só no `webapp`
 recompila apenas o webapp; alteração só no `collector` recompila somente o
 coletor; alteração no módulo `compartilhado` recompila ambos; documentação não
-reinicia nada. Acompanhe o resultado na aba **Actions** do GitHub. Nunca
-coloque a chave privada, senhas MySQL ou o arquivo `.env.oracle` no Git.
+reinicia nada. A compilação do módulo `compartilhado` fica em cache e os testes
+não são compilados durante o deploy, reduzindo o tempo de alterações apenas no
+front-end. Acompanhe o resultado na aba **Actions** do GitHub. Nunca coloque a
+chave privada, senhas MySQL ou o arquivo `.env.oracle` no Git.

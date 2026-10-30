@@ -7,9 +7,12 @@ COPY compartilhado/pom.xml compartilhado/pom.xml
 COPY collector/pom.xml collector/pom.xml
 COPY webapp/pom.xml webapp/pom.xml
 RUN mvn -B -pl webapp -am dependency:go-offline
+
+# Esta camada muda menos que o front-end e pode ser reutilizada pelo Docker.
 COPY compartilhado/src compartilhado/src
+RUN mvn -B -pl compartilhado install -Dmaven.test.skip=true
 COPY webapp/src webapp/src
-RUN mvn -B -pl webapp -am package -DskipTests \
+RUN mvn -B -pl webapp package -Dmaven.test.skip=true \
     && cp /workspace/webapp/target/webapp-0.0.1-SNAPSHOT.jar /workspace/webapp.jar
 
 FROM eclipse-temurin:21-jre
