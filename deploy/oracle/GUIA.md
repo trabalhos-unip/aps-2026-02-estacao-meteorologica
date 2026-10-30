@@ -148,6 +148,23 @@ docker compose --env-file deploy/oracle/.env.oracle -f deploy/oracle/docker-comp
 
 Não use `down -v`: isso removeria o volume do MySQL e os dados.
 
+### Consultar o banco com segurança
+
+O MySQL não possui porta pública. Ele é publicado apenas no `127.0.0.1` da VM,
+para acesso administrativo por um túnel SSH. No PowerShell do computador local,
+mantenha este comando aberto durante o uso do MySQL Workbench:
+
+```powershell
+ssh -N -L 3307:127.0.0.1:3306 -i "$env:USERPROFILE\.ssh\estacao-oracle" ubuntu@IP_PUBLICO_DA_VM
+```
+
+No MySQL Workbench crie uma conexão **Standard TCP/IP** com host `127.0.0.1`,
+porta `3307`, usuário `aps` e a senha `MYSQL_PASSWORD` do arquivo
+`deploy/oracle/.env.oracle`. O schema é `estacao_meteorologica`.
+
+Não crie uma regra Oracle para a porta `3306`: o túnel usa a conexão SSH já
+protegida e mantém o banco invisível para a internet.
+
 ## 7. Deploy automático após `push` (GitHub Actions)
 
 O workflow `.github/workflows/deploy-oracle.yml` só roda quando a variável do
