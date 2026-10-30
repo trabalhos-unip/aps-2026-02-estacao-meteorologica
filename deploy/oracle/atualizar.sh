@@ -19,6 +19,14 @@ git pull --ff-only origin "$BRANCH"
 DEPOIS="$(git rev-parse HEAD)"
 ARQUIVOS_ALTERADOS="$(git diff --name-only "$ANTES" "$DEPOIS")"
 
+# A chave do GitHub continua restrita a este script. Para uma execucao manual
+# do workflow, aceita somente o marcador fixo abaixo; nunca um comando livre.
+case "${SSH_ORIGINAL_COMMAND:-}" in
+  "") FORCAR_WEBAPP=false ;;
+  deploy-webapp) FORCAR_WEBAPP=true ;;
+  *) echo "Comando de deploy nao permitido." >&2; exit 2 ;;
+esac
+
 tem_alteracao() {
   grep -Eq "$1" <<< "$ARQUIVOS_ALTERADOS"
 }
@@ -35,6 +43,10 @@ if tem_alteracao '^(compartilhado/|pom.xml$)'; then
 fi
 
 if tem_alteracao '^(webapp/|deploy/oracle/Dockerfile.webapp$)'; then
+  ATUALIZAR_WEBAPP=true
+fi
+
+if [[ "$FORCAR_WEBAPP" == true ]]; then
   ATUALIZAR_WEBAPP=true
 fi
 

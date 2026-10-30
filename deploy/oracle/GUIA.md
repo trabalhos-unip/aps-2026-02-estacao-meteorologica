@@ -214,3 +214,10 @@ imagem pronta; se o download falhar, o contêiner em produção não é recriado
 Na primeira publicação, confirme em **Packages** do repositório que o pacote
 `meteora-webapp` está com visibilidade **Public**. Assim a VM pode baixá-lo sem
 guardar outro token de acesso.
+
+Se a primeira publicação ocorrer antes de o pacote estar público, abra a página
+principal do repositório no GitHub, clique em **Packages > meteora-webapp >
+Package settings > Change visibility > Public**. Em seguida, abra **Actions >
+Deploy na Oracle > Run workflow**, marque **force_webapp** e execute. Essa
+opção aceita somente a atualização da webapp e não concede um terminal à chave
+da automação.

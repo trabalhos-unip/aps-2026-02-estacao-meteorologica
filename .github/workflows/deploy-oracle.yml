@@ -5,6 +5,12 @@ on:
     branches:
       - feature/probabilidade-chuva-horaria
   workflow_dispatch:
+    inputs:
+      force_webapp:
+        description: Recompila e atualiza a webapp mesmo sem arquivos alterados
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -37,7 +43,7 @@ jobs:
 
   build-webapp:
     needs: changes
-    if: needs.changes.outputs.webapp == 'true'
+    if: needs.changes.outputs.webapp == 'true' || inputs.force_webapp == true
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -62,14 +68,6 @@ jobs:
           tags: ghcr.io/trabalhos-unip/meteora-webapp:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Permitir download da imagem pela VM
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: >-
-          gh api --method PATCH
-          /orgs/trabalhos-unip/packages/container/meteora-webapp
-          -f visibility=public
 
   deploy:
     needs: [changes, build-webapp]
@@ -98,4 +96,5 @@ jobs:
             -o BatchMode=yes \
             -o ConnectTimeout=20 \
             -o StrictHostKeyChecking=yes \
-            "$ORACLE_USER@$ORACLE_HOST"
+            "$ORACLE_USER@$ORACLE_HOST" \
+            "${{ inputs.force_webapp == true && 'deploy-webapp' || '' }}"
