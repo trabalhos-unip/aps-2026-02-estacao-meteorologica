@@ -299,3 +299,11 @@
 :where([data-theme="dark"]) .settings-city-label .select2-container--default .select2-selection--single{background:var(--surface-2);border-color:var(--line)}
 :where([data-theme="dark"]) .settings-city-label .select2-container--default .select2-selection__rendered{color:var(--text)}
 :where([data-theme="dark"]) .settings-location-card .select2-dropdown{background:var(--surface-2);border-color:var(--line)}
+
+/* Mantém controles selecionados escuros e legíveis no modo escuro. */
+:where([data-theme="dark"]) .settings-main .mode-option:has(input:checked){background:#12314a;border-color:#278fdb;box-shadow:0 0 0 1px #278fdb55}
+:where([data-theme="dark"]) .settings-main .mode-option:has(input:checked) strong,:where([data-theme="dark"]) .settings-main .mode-option:has(input:checked) small{color:var(--text)}
+:where([data-theme="dark"]) .settings-main .mode-option input:checked{border-color:#42adf5}
+:where([data-theme="dark"]) .settings-column>.settings-block,:where([data-theme="dark"]) .settings-actions{border:0;background:var(--surface);box-shadow:none}
+:where([data-theme="dark"]) body>.select2-container--open .select2-dropdown{background:var(--surface-2);border-color:var(--line);box-shadow:0 12px 26px #00000099}
+:where([data-theme="dark"]) body>.select2-container--open .select2-search__field{background:var(--bg);border-color:var(--line);color:var(--text)}
