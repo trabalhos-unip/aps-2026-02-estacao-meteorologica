@@ -9,11 +9,12 @@ COPY webapp/pom.xml webapp/pom.xml
 RUN mvn -B -pl webapp -am dependency:go-offline
 COPY compartilhado/src compartilhado/src
 COPY webapp/src webapp/src
-RUN mvn -B -pl webapp -am package -DskipTests
+RUN mvn -B -pl webapp -am package -DskipTests \
+    && cp /workspace/webapp/target/webapp-0.0.1-SNAPSHOT.jar /workspace/webapp.jar
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-COPY --from=build /workspace/webapp/target/webapp-*.jar /app/app.jar
+COPY --from=build /workspace/webapp.jar /app/app.jar
 EXPOSE 8080
 ENV JAVA_TOOL_OPTIONS="-Xms128m -Xmx512m"
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

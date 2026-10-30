@@ -14,8 +14,10 @@
   </dependencies>
   <build>
     <plugins>
-      <!-- mvn -pl collector spring-boot:run -->
-      <plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId></plugin>
+      <!-- mvn -pl collector spring-boot:run; package também gera um JAR executável para o deploy. -->
+      <plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId>
+        <executions><execution><goals><goal>repackage</goal></goals></execution></executions>
+      </plugin>
     </plugins>
   </build>
 </project>

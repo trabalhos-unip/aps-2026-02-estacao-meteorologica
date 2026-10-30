@@ -9,10 +9,11 @@ COPY webapp/pom.xml webapp/pom.xml
 RUN mvn -B -pl collector -am dependency:go-offline
 COPY compartilhado/src compartilhado/src
 COPY collector/src collector/src
-RUN mvn -B -pl collector -am package -DskipTests
+RUN mvn -B -pl collector -am package -DskipTests \
+    && cp /workspace/collector/target/collector-0.0.1-SNAPSHOT.jar /workspace/collector.jar
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-COPY --from=build /workspace/collector/target/collector-*.jar /app/app.jar
+COPY --from=build /workspace/collector.jar /app/app.jar
 ENV JAVA_TOOL_OPTIONS="-Xms64m -Xmx384m"
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
