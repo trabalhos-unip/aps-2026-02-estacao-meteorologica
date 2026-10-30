@@ -286,3 +286,20 @@ html:has(.select2-container--open),body:has(.select2-container--open){overflow-x
   .settings-appearance .theme-option>div{padding:0 3px}
   .settings-appearance .theme-option input{top:12px;right:12px;transform:none;z-index:1}
 }
+
+/* Barra inferior: largura do conteúdo, sem quarta célula vazia. */
+@media(max-width:760px){
+  .bottom-nav{right:auto;left:50%;width:max-content;transform:translateX(-50%);gap:10px}
+  .bottom-nav-links{flex:none;grid-template-columns:repeat(3,48px);width:auto;height:58px;padding:5px;border-radius:18px}
+  .bottom-nav-link{width:48px;height:48px;border-radius:14px}
+  .bottom-nav-link .icon{width:21px;height:21px}
+  .bottom-location-button{width:52px;height:52px;border-radius:16px}
+  .bottom-location-button .icon{width:23px;height:23px}
+  .page-content{padding-bottom:88px}
+}
+@media(max-width:365px){
+  .bottom-nav{gap:8px}
+  .bottom-nav-links{grid-template-columns:repeat(3,43px);height:53px;padding:5px}
+  .bottom-nav-link{width:43px;height:43px}
+  .bottom-location-button{width:48px;height:48px}
+}
