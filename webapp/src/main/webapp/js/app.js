@@ -1,7 +1,7 @@
 import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js?v=20261028-6";
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-8";
-import { overviewPage, historyPage, settingsPage } from "./pages.js?v=20261029-25";
+import { overviewPage, historyPage, settingsPage } from "./pages.js?v=20261029-26";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261029-13";
 
 const routeFromLocation = () => ({ "/historico": "/historico", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -1035,7 +1035,6 @@ async function initSettings() {
     interval.value = button.dataset.intervalChoice;
     syncIntervalChoices();
   }));
-  document.querySelector("#settings-notes").value = saved.notes || "";
   document.querySelector(`input[name="settings-mode"][value="${saved.mode === "simulado" ? "simulado" : "real"}"]`).checked = true;
   document.querySelectorAll('input[name="settings-mode"]').forEach(radio => {
     radio.addEventListener("change", async () => {
@@ -1058,7 +1057,6 @@ async function initSettings() {
     const preferences = {
       interval: document.querySelector("#settings-interval").value,
       mode: document.querySelector('input[name="settings-mode"]:checked').value,
-      notes: document.querySelector("#settings-notes").value.trim(),
     };
     try {
       localStorage.setItem(preferencesKey, JSON.stringify({ ...savedPreferences(), ...preferences }));
