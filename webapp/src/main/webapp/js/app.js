@@ -1,7 +1,7 @@
 import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js?v=20261028-6";
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-8";
-import { overviewPage, historyPage, settingsPage } from "./pages.js?v=20261029-28";
+import { overviewPage, historyPage, settingsPage } from "./pages.js?v=20261029-29";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261029-13";
 
 const routeFromLocation = () => ({ "/historico": "/historico", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -269,9 +269,20 @@ let homeChartRequest = 0;
 let recentReadings = [];
 let recentCurrentPage = 1;
 const RECENT_PAGE_SIZE = 15;
-// A coleta permanece em 10 s conforme o enunciado; a interface não precisa
-// repetir todas as consultas nessa mesma frequência.
-const UI_REFRESH_INTERVAL_MS = 30_000;
+// A coleta permanece independente no Java. Este intervalo controla somente
+// quando a interface consulta novamente os dados, sem recarregar a página.
+const DEFAULT_UI_REFRESH_INTERVAL_SECONDS = 900;
+let backgroundRefreshTimer = null;
+
+function refreshIntervalMs() {
+  const seconds = Number(savedPreferences().interval);
+  return (Number.isFinite(seconds) && seconds > 0 ? seconds : DEFAULT_UI_REFRESH_INTERVAL_SECONDS) * 1_000;
+}
+
+function restartBackgroundRefresh() {
+  if (backgroundRefreshTimer) window.clearInterval(backgroundRefreshTimer);
+  backgroundRefreshTimer = window.setInterval(() => { void refreshCurrentPage(); }, refreshIntervalMs());
+}
 
 function rangeDates(range, anchor = anchorDate(latestReading)) {
   const end = new Date(anchor);
@@ -1061,7 +1072,9 @@ async function initSettings() {
     try {
       localStorage.setItem(preferencesKey, JSON.stringify({ ...savedPreferences(), ...preferences }));
       applyMode(preferences.mode);
-      showToast("Configurações salvas neste navegador.");
+      restartBackgroundRefresh();
+      void refreshCurrentPage();
+      showToast("Configurações salvas. A interface será atualizada no intervalo escolhido.");
     } catch (error) {
       showToast(error.message || "Não foi possível atualizar a estação.");
     }
@@ -1155,7 +1168,7 @@ function refreshAfterCityChange() {
 }
 
 function startBackgroundRefresh() {
-  window.setInterval(() => { void refreshCurrentPage(); }, UI_REFRESH_INTERVAL_MS);
+  restartBackgroundRefresh();
   window.addEventListener("focus", () => { void refreshCurrentPage(); });
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) void refreshCurrentPage();
