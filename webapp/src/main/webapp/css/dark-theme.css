@@ -290,3 +290,8 @@
 :where([data-theme="dark"]) .theme-preview{background:#1a2534;border-color:var(--line);color:var(--accent)}
 :where([data-theme="dark"]) .theme-preview-light{background:linear-gradient(145deg,#dce9f8,#aebed1);color:#f2a900}
 :where([data-theme="dark"]) .theme-preview-dark{background:linear-gradient(145deg,#060b14,#172640);border-color:#33445b}
+
+:where([data-theme="dark"]) .station-location-fields output{background:var(--surface-2);border-color:var(--line);color:var(--text)}
+:where([data-theme="dark"]) .settings-location-card .location-settings-button{background:var(--surface);color:var(--text)}
+:where([data-theme="dark"]) .interval-options button{background:var(--surface-2);border-color:var(--line);color:var(--text)}
+:where([data-theme="dark"]) .interval-options button.selected{background:#373867;border-color:#777cff;color:#eef1ff}

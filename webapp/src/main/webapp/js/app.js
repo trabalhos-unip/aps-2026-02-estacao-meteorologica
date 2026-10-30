@@ -1,7 +1,7 @@
 import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js?v=20261028-6";
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-8";
-import { overviewPage, historyPage, settingsPage } from "./pages.js?v=20261029-22";
+import { overviewPage, historyPage, settingsPage } from "./pages.js?v=20261029-23";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261029-13";
 
 const routeFromLocation = () => ({ "/historico": "/historico", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -117,13 +117,24 @@ function showLocation(preferences) {
   const state = String(preferences.state || "").trim();
   const label = city ? `${city}${state === "São Paulo" ? ", SP" : state ? `, ${state}` : ""}` : "Localização da estação";
   document.querySelectorAll("[data-location-label]").forEach(element => { element.textContent = label; });
+  document.querySelectorAll("[data-settings-city]").forEach(element => { element.textContent = city || "—"; });
+  document.querySelectorAll("[data-settings-state]").forEach(element => { element.textContent = state || "—"; });
+}
+function showLocationCoordinates(station) {
+  const latitude = Number(station?.latitude);
+  const longitude = Number(station?.longitude);
+  document.querySelectorAll("[data-settings-latitude]").forEach(element => { element.textContent = Number.isFinite(latitude) ? latitude.toFixed(4) : "—"; });
+  document.querySelectorAll("[data-settings-longitude]").forEach(element => { element.textContent = Number.isFinite(longitude) ? longitude.toFixed(4) : "—"; });
 }
 showLocation(savedPreferences());
 
 async function showConfiguredLocation() {
   try {
     const source = await leiturasApi.buscarFonte();
-    if (source.cidade) document.querySelectorAll("[data-location-label]").forEach(element => { element.textContent = `${source.cidade}${source.estado ? `, ${source.estado}` : ""}`; });
+    if (source.cidade) {
+      showLocation({ city: source.cidade, state: source.estado });
+      showLocationCoordinates(source);
+    }
   } catch {
     // A localização configurada não impede o uso da página se a API local estiver indisponível.
   }
@@ -223,6 +234,7 @@ function setupLocationSelector() {
       const preferences = savedPreferences();
       localStorage.setItem(preferencesKey, JSON.stringify({ ...preferences, city: station.cidade, state: station.estado }));
       showLocation({ city: station.cidade, state: station.estado });
+      showLocationCoordinates(station);
       delete document.querySelector("#hourly-weather-rows")?.dataset.hourlyFocusedDate;
       close();
       showToast("Cidade atualizada. Os dados começam a ser carregados em instantes.");
@@ -1009,7 +1021,20 @@ async function initHistory() {
 
 async function initSettings() {
   const saved = savedPreferences();
-  document.querySelector("#settings-interval").value = saved.interval || "900";
+  const interval = document.querySelector("#settings-interval");
+  interval.value = saved.interval || "900";
+  const syncIntervalChoices = () => {
+    document.querySelectorAll("[data-interval-choice]").forEach(button => {
+      const selected = button.dataset.intervalChoice === interval.value;
+      button.classList.toggle("selected", selected);
+      button.setAttribute("aria-pressed", String(selected));
+    });
+  };
+  syncIntervalChoices();
+  document.querySelectorAll("[data-interval-choice]").forEach(button => button.addEventListener("click", () => {
+    interval.value = button.dataset.intervalChoice;
+    syncIntervalChoices();
+  }));
   document.querySelector("#settings-notes").value = saved.notes || "";
   document.querySelector(`input[name="settings-mode"][value="${saved.mode === "simulado" ? "simulado" : "real"}"]`).checked = true;
   document.querySelectorAll('input[name="settings-mode"]').forEach(radio => {
@@ -1043,6 +1068,13 @@ async function initSettings() {
       showToast(error.message || "Não foi possível atualizar a estação.");
     }
   });
+  try {
+    const station = await estacaoApi.ativa();
+    showLocation({ city: station.cidade, state: station.estado });
+    showLocationCoordinates(station);
+  } catch {
+    showLocation(saved);
+  }
   await fetchLatest();
 }
 
