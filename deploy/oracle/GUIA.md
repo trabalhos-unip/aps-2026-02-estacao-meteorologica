@@ -53,7 +53,7 @@ Entre novamente por SSH e execute:
 ```bash
 git clone https://github.com/trabalhos-unip/aps-2026-02-estacao-meteorologica.git
 cd aps-2026-02-estacao-meteorologica
-cp deploy/oracle/.env.oracle.exemplo deploy/oracle/.env.oracle
+cp deploy/oracle/env.oracle.exemplo deploy/oracle/.env.oracle
 nano deploy/oracle/.env.oracle
 ```
 
