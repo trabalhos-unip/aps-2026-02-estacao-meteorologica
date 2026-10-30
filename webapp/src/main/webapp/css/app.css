@@ -275,7 +275,7 @@ html:has(.select2-container--open),body:has(.select2-container--open){overflow-x
   .card-title h2,.title-with-icon h2{font-size:1rem}
   .metric-trend{display:none}
   .metric-card{min-height:146px;padding:14px 12px}
-  .metric-reading{margin-top:12px;font-size:1.55rem}
+  .metric-reading{margin-top:12px;font-size:1.9rem}
   .metric-detail{margin-top:8px;font-size:.75rem;line-height:1.35}
   .summary-card{overflow:hidden}
   .summary-row{grid-template-columns:32px minmax(0,1fr) auto;gap:8px;min-width:0}

@@ -614,8 +614,8 @@ async function renderGraficoClimaHorario() {
 
 const titulosPrevisaoDoTempo = {
   "24h": "Previsão do tempo",
-  "7d": "Previsão do tempo · Em 7 dias",
-  "15d": "Previsão do tempo · Em 15 dias",
+  "7d": "Previsão do tempo",
+  "15d": "Previsão do tempo",
 };
 
 async function renderHomeChart(range = homeChartRange, resetarNavegacao = false) {

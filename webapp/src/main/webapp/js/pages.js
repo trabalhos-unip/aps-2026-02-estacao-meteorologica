@@ -56,7 +56,7 @@ export function overviewPage() {
       ${metricCard("Vento", "wind", "metric-wind", "km/h", "wind-detail")}
     </section>
     <section class="card chart-card home-chart hourly-weather-chart" aria-label="Previsão do tempo">
-      <div class="section-head home-chart-toolbar"><div class="title-with-icon">${meteocon("partly-cloudy-day", "forecast-meteocon home-forecast-title-icon")}<h2 id="hourly-weather-title">Previsão do tempo · Hoje</h2></div>${tabs("home-chart-range")}</div>
+      <div class="section-head home-chart-toolbar"><div class="title-with-icon">${meteocon("partly-cloudy-day", "forecast-meteocon home-forecast-title-icon")}<h2 id="hourly-weather-title">Previsão do tempo</h2></div>${tabs("home-chart-range")}</div>
       <div class="hourly-weather-chart-canvas" id="hourly-weather-rows" aria-label="Carregando previsão por hora"><div class="chart-empty">Carregando previsão por hora…</div></div>
       <div class="home-daily-forecast" id="home-daily-forecast" hidden aria-label="Carregando previsão dos próximos dias">
         <div class="home-daily-forecast-scroll" id="home-daily-forecast-scroll"></div>

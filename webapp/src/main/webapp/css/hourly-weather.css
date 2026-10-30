@@ -24,7 +24,7 @@
 .hourly-grid-line-vertical { stroke: #d9ebf8; }
 .hourly-temperature-area { fill: url(#hourly-temperature-fill); }
 .hourly-temperature-line polyline { fill: none; stroke: #1299ed; stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; }
-@media (max-width: 760px) { .hourly-weather-chart { height: auto; } .hourly-weather-chart-canvas { height: 280px; } }
+@media (max-width: 760px) { .hourly-weather-chart { height: auto; } .hourly-weather-chart-canvas { height: 280px; margin-left: -8px; margin-right: -8px; padding-left: 0; padding-right: 0; width: calc(100% + 16px); } .hourly-weather-point { padding-left: 2px; padding-right: 2px; } }
 /* No desktop a Visão geral ocupa uma única área de trabalho. Os cartões usam
    a altura disponível e a previsão por hora cresce quando a janela cresce. */
 @media (min-width: 761px) {
