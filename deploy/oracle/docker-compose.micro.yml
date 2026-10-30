@@ -1,0 +1,19 @@
+# Sobreposição para a VM Oracle Always Free VM.Standard.E2.1.Micro (1 GB RAM).
+# Indicada para demonstração e uso acadêmico de baixo tráfego.
+services:
+  mysql:
+    command:
+      - --innodb-buffer-pool-size=96M
+      - --max-connections=12
+      - --performance-schema=OFF
+    mem_limit: 220m
+
+  webapp:
+    environment:
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx256m -XX:MaxMetaspaceSize=128m
+    mem_limit: 360m
+
+  collector:
+    environment:
+      JAVA_TOOL_OPTIONS: -Xms32m -Xmx192m -XX:MaxMetaspaceSize=96m
+    mem_limit: 260m

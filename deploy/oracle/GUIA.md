@@ -59,12 +59,38 @@ nano deploy/oracle/.env.oracle
 
 Troque as duas senhas do exemplo. Nunca publique esse arquivo.
 
+### VM AMD Micro de 1 GB
+
+Se `free -h` mostrar aproximadamente 1 GB de memória, como na
+`VM.Standard.E2.1.Micro`, crie antes uma swap de 2 GB para evitar que uma
+compilação ou um pico momentâneo encerre um processo Java:
+
+```bash
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+```
+
+Use também a sobreposição `docker-compose.micro.yml`, que reduz os limites da
+JVM e do MySQL. Ela é adequada para demonstração e baixo tráfego; para uso
+contínuo com folga, prefira a A1 com 4 GB.
+
 ## 4. Subir os três serviços
 
 ```bash
 docker compose --env-file deploy/oracle/.env.oracle -f deploy/oracle/docker-compose.yml up -d --build
 docker compose --env-file deploy/oracle/.env.oracle -f deploy/oracle/docker-compose.yml ps
 docker compose --env-file deploy/oracle/.env.oracle -f deploy/oracle/docker-compose.yml logs -f webapp
+```
+
+Em uma VM Micro de 1 GB, substitua o primeiro comando por:
+
+```bash
+docker compose --env-file deploy/oracle/.env.oracle \
+  -f deploy/oracle/docker-compose.yml \
+  -f deploy/oracle/docker-compose.micro.yml up -d --build
 ```
 
 Abra `http://IP_PUBLICO:8080`. O schema é aplicado automaticamente somente na

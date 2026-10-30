@@ -1,6 +1,7 @@
 FROM maven:3.9.11-eclipse-temurin-21 AS build
 
 WORKDIR /workspace
+ENV MAVEN_OPTS="-Xmx384m"
 COPY pom.xml .
 COPY compartilhado/pom.xml compartilhado/pom.xml
 COPY collector/pom.xml collector/pom.xml
@@ -14,4 +15,5 @@ FROM eclipse-temurin:21-jre
 WORKDIR /app
 COPY --from=build /workspace/webapp/target/webapp-*.jar /app/app.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-Xms128m", "-Xmx512m", "-jar", "/app/app.jar"]
+ENV JAVA_TOOL_OPTIONS="-Xms128m -Xmx512m"
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
