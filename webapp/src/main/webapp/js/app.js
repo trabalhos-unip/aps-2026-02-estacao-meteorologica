@@ -1411,7 +1411,9 @@ async function navegarPara(nextPath, { push = true } = {}) {
     window.scrollTo({ top: 0, behavior: "smooth" });
     return;
   }
-  showDataRefreshOverlay();
+  // Navegações já aquecidas normalmente terminam em poucos milissegundos.
+  // Só cubra a tela se a API realmente demorar, evitando o clarão entre abas.
+  let loadingTimer = window.setTimeout(showDataRefreshOverlay, 220);
   try {
     if (push) window.history.pushState({}, "", nextPath);
     const cached = mountPage(nextPath);
@@ -1424,6 +1426,7 @@ async function navegarPara(nextPath, { push = true } = {}) {
     }
     await refreshCurrentPage();
   } finally {
+    window.clearTimeout(loadingTimer);
     hideDataRefreshOverlay();
   }
 }
