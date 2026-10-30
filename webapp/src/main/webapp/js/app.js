@@ -2,7 +2,7 @@ import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-8";
 import { overviewPage, historyPage, settingsPage } from "./pages.js?v=20261029-29";
-import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261029-13";
+import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261029-14";
 
 const routeFromLocation = () => ({ "/historico": "/historico", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
 let path = routeFromLocation();
@@ -581,9 +581,9 @@ function desenharGraficoClimaHorario(previsoes) {
 
 function previsaoHorariaDeExemplo() {
   const inicio = new Date();
-  inicio.setHours(0, 0, 0, 0);
+  inicio.setMinutes(0, 0, 0);
   const chances = [10, 15, 20, 35, 50, 60, 45, 30];
-  return Array.from({ length: 24 }, (_, indice) => ({
+  return Array.from({ length: 13 }, (_, indice) => ({
     probabilidadeChuva: chances[indice % chances.length],
     dataHora: new Date(inicio.getTime() + indice * 3_600_000).toISOString(),
     temperatura: 25 - Math.min(indice, 6),
@@ -598,10 +598,10 @@ async function renderGraficoClimaHorario() {
     return;
   }
   const inicio = new Date();
-  inicio.setHours(0, 0, 0, 0);
-  // "Hoje" termina às 23:00: a previsão não é limitada às oito primeiras horas.
+  inicio.setMinutes(0, 0, 0);
+  // Janela móvel: exibe as próximas doze horas, inclusive ao atravessar a meia-noite.
   const fim = new Date(inicio);
-  fim.setHours(23, 0, 0, 0);
+  fim.setHours(fim.getHours() + 12);
   try {
     const previsoes = await resumosHorariosApi.buscarPrevisoes(apiDate(inicio), apiDate(fim));
     desenharGraficoClimaHorario(previsoes);
@@ -612,7 +612,7 @@ async function renderGraficoClimaHorario() {
 }
 
 const titulosPrevisaoDoTempo = {
-  "24h": "Previsão do tempo · Hoje",
+  "24h": "Previsão do tempo",
   "7d": "Previsão do tempo · Em 7 dias",
   "15d": "Previsão do tempo · Em 15 dias",
 };

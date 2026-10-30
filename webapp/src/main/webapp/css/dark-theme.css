@@ -300,6 +300,10 @@
 :where([data-theme="dark"]) .settings-city-label .select2-container--default .select2-selection__rendered{color:var(--text)}
 :where([data-theme="dark"]) .settings-location-card .select2-dropdown{background:var(--surface-2);border-color:var(--line)}
 
+:where([data-theme="dark"]) .sidebar-foot .sidebar-location-pill{background:#17191e;border-color:#30343c;color:#e3e9f2}
+:where([data-theme="dark"]) .sidebar-foot .sidebar-location-pill .icon{color:#9fcaee}
+:where([data-theme="dark"]) .sidebar-foot .sidebar-location-pill:hover,:where([data-theme="dark"]) .sidebar-foot .sidebar-location-pill:focus-visible{background:#20252d;border-color:#4d91c7;box-shadow:0 0 0 3px #2799ed20}
+
 /* Configurações: neutros escuros nas superfícies e azul somente como destaque. */
 :where([data-theme="dark"]) .settings-block-heading>.icon{background:#1a1f25;color:var(--accent)}
 :where([data-theme="dark"]) .theme-preview{background:#171c22;border-color:#2a3038;color:var(--accent)}

@@ -261,3 +261,6 @@ body:has(.overview-grid){overflow-x:hidden;overflow-y:auto}
 
 /* O dropdown do Select2 nunca deve ampliar a área rolável da página. */
 html:has(.select2-container--open),body:has(.select2-container--open){overflow-x:hidden}
+
+/* Cidade e última atualização ficam no rodapé fixo da sidebar. */
+.sidebar-foot{display:grid;gap:12px}.sidebar-foot .sidebar-location-pill{width:100%;min-width:0;height:46px;padding:0 14px;border-radius:15px;box-shadow:none;text-align:left}.sidebar-foot .sidebar-location-pill .icon{width:19px;height:19px;color:#2d557f}.sidebar-foot .sidebar-location-pill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.collector-card{display:grid;gap:3px;padding:0;min-height:0}.collector-update-label{padding-left:0}.collector-card>#sidebar-last-reading{padding-left:0}.sidebar-collapsed .sidebar-location-pill{display:grid;width:46px;min-width:46px;padding:0;place-items:center;border:0;border-radius:15px;background:transparent;color:#556276}.sidebar-collapsed .sidebar-location-pill span,.sidebar-collapsed .collector-card{display:none}
