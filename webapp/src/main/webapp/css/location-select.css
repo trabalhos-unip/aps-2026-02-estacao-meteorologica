@@ -27,7 +27,7 @@
 .location-modal-footer { display: flex; justify-content: flex-end; gap: 14px; margin-top: 24px; padding-top: 17px; border-top: 1px solid #e8eef4; color: #7288a1; font-size: .72rem; }
 .location-modal-footer > div { display: flex; gap: 8px; flex: none; }
 .location-modal-footer .primary-button { min-height: 39px; }
-@media (max-width: 520px) { .location-modal-card { padding: 20px; border-radius: 20px; } .location-shortcuts { grid-template-columns: 1fr; } .location-modal-footer { align-items: stretch; } .location-modal-footer > div { display: grid; width: 100%; grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) { .location-modal-card { padding: 20px; border-radius: 20px; } .location-shortcuts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; } .location-shortcuts button { min-height: 50px; padding: 7px 6px; font-size: .67rem; text-align: center; overflow-wrap: anywhere; } .location-modal-footer { align-items: stretch; } .location-modal-footer > div { display: grid; width: 100%; grid-template-columns: 1fr 1fr; } }
 .select2-container { width: 100% !important; }
 .select2-container--default .select2-selection--single { height: 39px; border: 1px solid #d9e5ef; border-radius: 8px; background: #fff; }
 .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 37px; padding-left: 11px; color: #173d65; font-size: .83rem; }

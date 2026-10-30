@@ -264,3 +264,25 @@ html:has(.select2-container--open),body:has(.select2-container--open){overflow-x
 
 /* Cidade e última atualização ficam no rodapé fixo da sidebar. */
 .sidebar-foot{display:grid;gap:12px}.sidebar-foot .sidebar-location-pill{width:100%;min-width:0;height:46px;padding:0 14px;border-radius:15px;box-shadow:none;text-align:left}.sidebar-foot .sidebar-location-pill .icon{width:19px;height:19px;color:#2d557f}.sidebar-foot .sidebar-location-pill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.collector-card{display:grid;gap:3px;padding:0;min-height:0}.collector-update-label{padding-left:0}.collector-card>#sidebar-last-reading{padding-left:0}.sidebar-collapsed .sidebar-location-pill{display:grid;width:46px;min-width:46px;padding:0;place-items:center;border:0;border-radius:15px;background:transparent;color:#556276}.sidebar-collapsed .sidebar-location-pill span,.sidebar-collapsed .collector-card{display:none}
+
+/* Hierarquia compacta e legível no celular. */
+@media(max-width:760px){
+  .theme-toggle{display:none}
+  .app-layout:has(.overview-grid) .topbar{display:none}
+  .app-layout:has(.overview-grid) .page-content{padding-top:14px}
+  .page-heading h1{font-size:1.55rem}
+  .page-heading p{font-size:.82rem}
+  .card-title h2,.title-with-icon h2{font-size:1rem}
+  .metric-trend{display:none}
+  .metric-card{min-height:146px;padding:14px 12px}
+  .metric-reading{margin-top:12px;font-size:1.55rem}
+  .metric-detail{margin-top:8px;font-size:.75rem;line-height:1.35}
+  .summary-card{overflow:hidden}
+  .summary-row{grid-template-columns:32px minmax(0,1fr) auto;gap:8px;min-width:0}
+  .summary-row>span{min-width:0;overflow-wrap:anywhere;font-size:.73rem}
+  .summary-row strong{white-space:nowrap;font-size:.84rem}
+  .settings-appearance .theme-option{display:grid;grid-template-columns:1fr;grid-template-rows:116px auto;gap:10px;min-height:0;padding:11px;text-align:left}
+  .settings-appearance .theme-option .theme-preview{height:116px;width:100%}
+  .settings-appearance .theme-option>div{padding:0 3px}
+  .settings-appearance .theme-option input{top:12px;right:12px;transform:none;z-index:1}
+}
