@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-label="Placeholder da tela em tema claro">
-  <rect width="320" height="180" rx="16" fill="#eef5fc"/>
-  <rect x="12" y="12" width="62" height="156" rx="11" fill="#ffffff"/>
-  <circle cx="31" cy="31" r="8" fill="#269cf0"/><rect x="25" y="54" width="35" height="7" rx="3.5" fill="#c8d8e8"/><rect x="25" y="70" width="29" height="7" rx="3.5" fill="#c8d8e8"/><rect x="25" y="86" width="35" height="7" rx="3.5" fill="#dcedfb"/>
-  <rect x="86" y="12" width="222" height="22" rx="9" fill="#ffffff"/><rect x="86" y="46" width="137" height="54" rx="10" fill="#ffffff"/><rect x="234" y="46" width="74" height="54" rx="10" fill="#ffffff"/><rect x="86" y="111" width="222" height="57" rx="10" fill="#ffffff"/>
-  <rect x="99" y="59" width="74" height="7" rx="3.5" fill="#173b64"/><rect x="99" y="73" width="99" height="6" rx="3" fill="#b8cae0"/><rect x="99" y="86" width="57" height="6" rx="3" fill="#d6e3f0"/>
-  <circle cx="270" cy="69" r="15" fill="#e7f5fe"/><path d="M270 59v20M260 69h20" stroke="#269cf0" stroke-width="3" stroke-linecap="round"/>
-  <rect x="99" y="124" width="92" height="8" rx="4" fill="#173b64"/><rect x="99" y="141" width="160" height="7" rx="3.5" fill="#c1d2e5"/><rect x="99" y="154" width="123" height="7" rx="3.5" fill="#d6e3f0"/>
-</svg>
