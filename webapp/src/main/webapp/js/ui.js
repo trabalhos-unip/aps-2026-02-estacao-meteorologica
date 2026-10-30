@@ -82,8 +82,14 @@ export function renderShell(path, content) {
     <nav class="bottom-nav" aria-label="Navegação móvel">
       <div class="bottom-nav-links">
         ${menu.map(item => `<a href="${item.path}" class="bottom-nav-link ${item.path === path ? "active" : ""}" aria-label="${item.label}" title="${item.label}" ${item.path === path ? 'aria-current="page"' : ""}>${icon(item.icon)}</a>`).join("")}
+        <button class="bottom-theme-button" type="button" id="bottom-theme-toggle" aria-label="Ativar tema escuro" title="Ativar tema escuro">${icon("moon")}</button>
       </div>
-      <button class="bottom-location-button" type="button" data-open-location-modal aria-label="Alterar cidade da estação" title="Alterar cidade da estação">${icon("pin")}</button>
+      <form class="bottom-city-composer" id="bottom-city-form" role="search">
+        <label class="sr-only" for="bottom-city-input">Alterar cidade da estação</label>
+        <input id="bottom-city-input" data-bottom-city type="text" inputmode="search" autocomplete="off" placeholder="Digite uma cidade" aria-label="Digite uma cidade">
+        <button type="submit" aria-label="Buscar cidade" title="Buscar cidade">${icon("search")}</button>
+        <div class="bottom-city-suggestions" id="bottom-city-suggestions" role="listbox" hidden></div>
+      </form>
     </nav>
     <div id="location-modal" class="location-modal" role="dialog" aria-modal="true" aria-labelledby="location-modal-title" hidden>
       <div class="location-modal-card">

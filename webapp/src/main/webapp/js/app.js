@@ -1,8 +1,8 @@
 import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js?v=20261028-6";
 import { demoApi } from "./demo-data.js?v=20261026-4";
-import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-8";
-import { overviewPage, historyPage, settingsPage } from "./pages.js?v=20261030-32";
-import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261030-18";
+import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261030-10";
+import { overviewPage, historyPage, settingsPage } from "./pages.js?v=20261030-37";
+import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261030-23";
 
 const routeFromLocation = () => ({ "/historico": "/historico", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
 let path = routeFromLocation();
@@ -124,13 +124,12 @@ function applyTheme(choice = themeChoice()) {
   const dark = choice === "escuro" || (choice === "auto" && systemDark.matches);
   document.documentElement.dataset.theme = dark ? "dark" : "light";
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#000000" : "#f6fbff");
-  const toggle = document.querySelector("#theme-toggle");
-  if (toggle) {
+  document.querySelectorAll("#theme-toggle, #bottom-theme-toggle").forEach(toggle => {
     const label = dark ? "Ativar tema claro" : "Ativar tema escuro";
     toggle.setAttribute("aria-label", label);
     toggle.title = label;
-    toggle.innerHTML = icon(dark ? "sun" : "moon");
-  }
+    toggle.innerHTML = icon(dark ? "moon" : "sun");
+  });
   const radio = document.querySelector(`input[name="settings-theme"][value="${choice}"]`);
   if (radio) radio.checked = true;
 }
@@ -144,14 +143,17 @@ function saveTheme(choice) {
 }
 applyTheme();
 systemDark.addEventListener("change", () => { if (themeChoice() === "auto") applyTheme(); });
-document.querySelector("#theme-toggle").addEventListener("click", () => {
+document.querySelectorAll("#theme-toggle, #bottom-theme-toggle").forEach(toggle => toggle.addEventListener("click", () => {
   saveTheme(document.documentElement.dataset.theme === "dark" ? "claro" : "escuro");
-});
+}));
 function showLocation(preferences) {
   const city = String(preferences.city || "").trim();
   const state = String(preferences.state || "").trim();
   const label = city ? `${city}${state === "São Paulo" ? ", SP" : state ? `, ${state}` : ""}` : "Localização da estação";
   document.querySelectorAll("[data-location-label]").forEach(element => { element.textContent = label; });
+  document.querySelectorAll("[data-bottom-city]").forEach(input => {
+    if (document.activeElement !== input) input.value = city ? label : "";
+  });
   text("#current-title", city || "Condições atuais");
   document.querySelectorAll("[data-settings-city]").forEach(element => { element.textContent = city || "—"; });
   document.querySelectorAll("[data-settings-state]").forEach(element => { element.textContent = state || "—"; });
@@ -183,9 +185,15 @@ function setupLocationSelector() {
   const modal = document.querySelector("#location-modal");
   const citySelect = document.querySelector("#location-city");
   const confirm = document.querySelector("#location-confirm");
+  const bottomForm = document.querySelector("#bottom-city-form");
+  const bottomInput = document.querySelector("#bottom-city-input");
+  const bottomSuggestions = document.querySelector("#bottom-city-suggestions");
   const $ = window.jQuery;
   let $city = null;
   let openRequest = 0;
+  let bottomRequest = 0;
+  let bottomOptions = [];
+  let bottomSearchTimer = 0;
   const locationId = (city, state) => `${city}::${state}`;
 
   function close() {
@@ -207,6 +215,45 @@ function setupLocationSelector() {
     locationChoice = { city, state };
     confirm.disabled = false;
     if (syncWidget && $city) $city.val(id).trigger("change.select2");
+  }
+
+  function hideBottomSuggestions() {
+    bottomSuggestions.hidden = true;
+    bottomSuggestions.replaceChildren();
+    bottomOptions = [];
+  }
+
+  function showBottomSuggestions(suggestions) {
+    bottomOptions = suggestions;
+    bottomSuggestions.replaceChildren();
+    suggestions.slice(0, 5).forEach((item, index) => {
+      const option = document.createElement("button");
+      option.type = "button";
+      option.dataset.bottomCityIndex = String(index);
+      option.setAttribute("role", "option");
+      option.textContent = `${item.cidade} — ${item.nomeEstado || item.estado}`;
+      bottomSuggestions.append(option);
+    });
+    bottomSuggestions.hidden = suggestions.length === 0;
+  }
+
+  async function applyCity(city, state, closeModal = false) {
+    if (!city || !state) return;
+    try {
+      const station = await estacaoApi.selecionar(city, state);
+      const preferences = savedPreferences();
+      localStorage.setItem(preferencesKey, JSON.stringify({ ...preferences, city: station.cidade, state: station.estado }));
+      showLocation({ city: station.cidade, state: station.estado });
+      showLocationCoordinates(station);
+      delete document.querySelector("#hourly-weather-rows")?.dataset.hourlyFocusedDate;
+      hideBottomSuggestions();
+      if (closeModal) close();
+      showToast("Cidade atualizada. Os dados começam a ser carregados em instantes.");
+      refreshAfterCityChange();
+    } catch (error) {
+      showToast(error.message || "Não foi possível atualizar a cidade.");
+      throw error;
+    }
   }
 
   if ($?.fn?.select2) {
@@ -266,18 +313,46 @@ function setupLocationSelector() {
     if (!locationChoice) return;
     confirm.disabled = true;
     try {
-      const station = await estacaoApi.selecionar(locationChoice.city, locationChoice.state);
-      const preferences = savedPreferences();
-      localStorage.setItem(preferencesKey, JSON.stringify({ ...preferences, city: station.cidade, state: station.estado }));
-      showLocation({ city: station.cidade, state: station.estado });
-      showLocationCoordinates(station);
-      delete document.querySelector("#hourly-weather-rows")?.dataset.hourlyFocusedDate;
-      close();
-      showToast("Cidade atualizada. Os dados começam a ser carregados em instantes.");
-      refreshAfterCityChange();
-    } catch (error) {
-      showToast(error.message || "Não foi possível atualizar a cidade.");
+      await applyCity(locationChoice.city, locationChoice.state, true);
+    } catch {
       confirm.disabled = false;
+    }
+  });
+
+  bottomInput?.addEventListener("input", () => {
+    window.clearTimeout(bottomSearchTimer);
+    const term = bottomInput.value.trim();
+    if (term.length < 2) {
+      hideBottomSuggestions();
+      return;
+    }
+    bottomSearchTimer = window.setTimeout(async () => {
+      const request = ++bottomRequest;
+      try {
+        const suggestions = await estacaoApi.sugestoes(term);
+        if (request === bottomRequest) showBottomSuggestions(suggestions);
+      } catch {
+        if (request === bottomRequest) hideBottomSuggestions();
+      }
+    }, 180);
+  });
+  bottomSuggestions?.addEventListener("click", event => {
+    const index = Number(event.target.closest("[data-bottom-city-index]")?.dataset.bottomCityIndex);
+    const option = bottomOptions[index];
+    if (option) void applyCity(option.cidade, option.estado);
+  });
+  bottomForm?.addEventListener("submit", async event => {
+    event.preventDefault();
+    const term = bottomInput.value.trim();
+    if (term.length < 2) return;
+    try {
+      const suggestions = bottomOptions.length ? bottomOptions : await estacaoApi.sugestoes(term);
+      const normalized = value => value.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLocaleLowerCase("pt-BR");
+      const option = suggestions.find(item => normalized(item.cidade) === normalized(term)) || suggestions[0];
+      if (!option) throw new Error("Nenhuma cidade brasileira encontrada.");
+      await applyCity(option.cidade, option.estado);
+    } catch (error) {
+      showToast(error.message || "Não foi possível localizar a cidade.");
     }
   });
 }
@@ -445,6 +520,11 @@ function readingMoment(reading) {
 
 function setRangeButtons(range, ids) {
   for (const id of ids) {
+    const select = document.querySelector(`#${id}`);
+    if (select instanceof HTMLSelectElement) {
+      select.value = range;
+      continue;
+    }
     document.querySelectorAll(`#${id} [data-range]`).forEach(button => {
       const selected = button.dataset.range === range;
       button.classList.toggle("selected", selected);
@@ -497,10 +577,9 @@ function renderHomeReading(reading, recent) {
   text("#metric-wind", number(reading.velocidadeVento));
   const first = recent.at(0);
   const temperatures = numericValues(recent, "temperatura");
-  const humidity = numericValues(recent, "umidadeRelativa");
-  text("#temperature-detail", temperatures.length ? `Mín. ${unit(Math.min(...temperatures), "°C")} · Máx. ${unit(Math.max(...temperatures), "°C")}` : "Sem histórico comparável");
-  text("#humidity-detail", humidity.length ? `Mín. ${number(Math.min(...humidity), 0)}% · Máx. ${number(Math.max(...humidity), 0)}%` : "Sem histórico comparável");
-  text("#wind-detail", "Velocidade na última leitura");
+  text("#temperature-detail", temperatures.length ? `Mín. ${number(Math.min(...temperatures))}° · Máx. ${number(Math.max(...temperatures))}°` : "Sem histórico comparável");
+  text("#humidity-detail", "");
+  text("#wind-detail", "");
   const delta = first && first.temperatura !== null && reading.temperatura !== null ? Number(reading.temperatura) - Number(first.temperatura) : null;
   text("#temperature-detail-trend", delta === null ? "Sem tendência disponível" : `${delta >= 0 ? "↗ +" : "↘ "}${number(delta)} °C nas últimas leituras`);
   text("#humidity-detail-trend", simulated() ? "Dados simulados" : "Dados da estação");
@@ -577,7 +656,7 @@ function atualizarCartaoChuva(previsoes) {
   const chance = Number(proximaPrevisao?.probabilidadeChuva);
   const precipitacao = Number(proximaPrevisao?.precipitacao);
   text("#metric-rain-chance", Number.isFinite(chance) ? number(chance, 0) : "—");
-  text("#rain-detail", `Precipitação prevista: ${Number.isFinite(precipitacao) ? unit(precipitacao, "mm") : "—"}`);
+  text("#rain-detail", `Previsto: ${Number.isFinite(precipitacao) ? unit(precipitacao, "mm") : "—"}`);
   text("#rain-detail-trend", proximaPrevisao ? `Previsão para ${horarioEmFormato24h(proximaPrevisao.dataHora)}` : "Previsão horária indisponível");
 }
 
@@ -590,8 +669,10 @@ function desenharGraficoClimaHorario(previsoes) {
   }
   atualizarCartaoChuva(previsoes);
   canvas.setAttribute("aria-label", "Previsão por hora com linha de temperatura e probabilidade de chuva");
-  // Mantém cada hora legível e permite navegar pelo restante do dia sem comprimir ícones ou pontos.
-  const largura = Math.max(canvas.clientWidth, previsoes.length * 104);
+  // No celular, cada hora é mais compacta para mostrar mais trechos do dia,
+  // preservando horário, ícone, temperatura e probabilidade de chuva.
+  const larguraPorHora = window.matchMedia("(max-width: 760px)").matches ? 76 : 104;
+  const largura = Math.max(canvas.clientWidth, previsoes.length * larguraPorHora);
   canvas.innerHTML = `${graficoDeTemperaturaHoraria(previsoes, largura)}<div class="hourly-weather-points" style="--hourly-items:${previsoes.length};width:${largura}px">${previsoes.map(item => {
     const hora = horarioEmFormato24h(item.dataHora);
     const chance = Number(item.probabilidadeChuva);
@@ -742,7 +823,7 @@ function renderPrevisaoDiariaNoPainel(previsoes, limite, resetarNavegacao = fals
     const data = dataDaPrevisao(item);
     const { chance, mm } = detalhesChuvaDaPrevisao(item);
     const asset = iconeDoClimaHorario(item);
-    return `<article class="daily-forecast-item"><time>${rotuloDaPrevisao(item, indice)}<small>${data ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(data) : ""}</small></time>${simboloClimaEstatico(asset)}<strong>${number(item.temperaturaMaxima, 0)}° <small>${number(item.temperaturaMinima, 0)}°</small></strong><span class="daily-forecast-rain">${icon("drop")}${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span></article>`;
+    return `<article class="daily-forecast-item"><time>${rotuloDaPrevisao(item, indice)}<small>${data ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(data) : ""}</small></time><span class="daily-forecast-weather">${simboloClimaEstatico(asset)}<span class="daily-forecast-rain">${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span></span><strong>${number(item.temperaturaMaxima, 0)}° <small>${number(item.temperaturaMinima, 0)}°</small></strong></article>`;
   }).join("");
   requestAnimationFrame(() => {
     atualizarNavegacaoPrevisaoDiaria();

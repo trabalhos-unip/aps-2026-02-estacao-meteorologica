@@ -136,9 +136,15 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
   }).join("");
   // Na visão horária principal, cada coluna representa uma hora completa.
   // Os gráficos menores mantêm a redução automática para não sobrepor rótulos.
-  const tickIndexes = !compact && !daily
-    ? slots.map((_, index) => index)
-    : visibleTicks(slots.length, compact, daily, plotWidth - 2 * inset);
+  const celularComSerieHoraria = !daily && window.matchMedia("(max-width: 760px)").matches;
+  // No celular, a referência horária é sempre previsível e legível: 00h,
+  // 06h, 12h e 18h, preservando também 23h como encerramento do dia. Os
+  // pontos intermediários continuam completos no gráfico.
+  const tickIndexes = celularComSerieHoraria
+    ? [0, 6, 12, 18, 23]
+    : !compact && !daily
+      ? slots.map((_, index) => index)
+      : visibleTicks(slots.length, compact, daily, plotWidth - 2 * inset);
   const vertical = tickIndexes.map(index => {
     const x = xAt(index);
     return `<line x1="${x}" y1="${top}" x2="${x}" y2="${baseline}" class="grid-line temporal-grid-vertical"/><text x="${x}" y="${height - 7}" text-anchor="middle" class="axis-label">${slots[index].label}</text>`;

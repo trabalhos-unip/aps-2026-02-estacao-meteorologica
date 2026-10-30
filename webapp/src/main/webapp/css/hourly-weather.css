@@ -24,7 +24,17 @@
 .hourly-grid-line-vertical { stroke: #d9ebf8; }
 .hourly-temperature-area { fill: url(#hourly-temperature-fill); }
 .hourly-temperature-line polyline { fill: none; stroke: #1299ed; stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; }
-@media (max-width: 760px) { .hourly-weather-chart { height: auto; } .hourly-weather-chart-canvas { height: 280px; margin-left: -8px; margin-right: -8px; padding-left: 0; padding-right: 0; width: calc(100% + 16px); } .hourly-weather-point { padding-left: 2px; padding-right: 2px; } }
+@media (max-width: 760px) {
+  .hourly-weather-chart { height: auto; }
+  .hourly-weather-chart-canvas { height: 230px; margin-left: -8px; margin-right: -8px; padding-left: 0; padding-right: 0; width: calc(100% + 16px); }
+  .hourly-weather-point { grid-template-rows: 18px 43px 26px minmax(68px, 1fr) 22px; gap: 2px; padding-left: 1px; padding-right: 1px; }
+  .hourly-weather-point time { font-size: .72rem; }
+  .hourly-weather-icon,.hourly-weather-symbol { width: 48px; height: 40px; }
+  .hourly-weather-point strong { font-size: 1.15rem; }
+  .hourly-rain-chance { gap: 3px; font-size: .73rem; }
+  .hourly-rain-chance .icon { width: 14px; height: 14px; }
+  .hourly-temperature-dots i { width: 11px; height: 11px; border-width: 1.5px; }
+}
 /* No desktop a Visão geral ocupa uma única área de trabalho. Os cartões usam
    a altura disponível e a previsão por hora cresce quando a janela cresce. */
 @media (min-width: 761px) {
@@ -66,21 +76,28 @@ html[data-theme="dark"] .hourly-grid-line { stroke: #294763; }
 html[data-theme="dark"] .hourly-weather-chart-canvas { scrollbar-color: #52b8f4 transparent; }
 
 /* Faixa de previsão diária navegável no mesmo cartão principal. */
-.home-daily-forecast { position: relative; height: 230px; margin-top: 8px; }
-.home-daily-forecast-scroll { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(142px, calc((100% - 48px) / 7)); gap: 8px; height: 100%; overflow-x: auto; overscroll-behavior-inline: contain; padding: 0 4px 16px; scroll-behavior: smooth; scroll-snap-type: x mandatory; scrollbar-gutter: stable; scrollbar-width: auto; scrollbar-color: #279eea transparent; }
+.home-daily-forecast { position: relative; height: 230px; min-width: 0; margin-top: 8px; overflow: hidden; }
+.home-daily-forecast-scroll { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(142px, calc((100% - 48px) / 7)); gap: 8px; width: 100%; height: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-inline: contain; padding: 0 4px 16px; scroll-behavior: smooth; scroll-snap-type: x mandatory; scrollbar-gutter: stable; scrollbar-width: auto; scrollbar-color: #279eea transparent; }
 .home-daily-forecast-scroll.fit-seven-days { grid-auto-flow: initial; grid-auto-columns: auto; grid-template-columns: repeat(7, minmax(0, 1fr)); overflow-x: hidden; overscroll-behavior-inline: auto; scroll-snap-type: none; }
 .home-daily-forecast-scroll::-webkit-scrollbar { height: 15px; }
 .home-daily-forecast-scroll::-webkit-scrollbar-track { margin: 0 14px; background: transparent; }
 .home-daily-forecast-scroll::-webkit-scrollbar-thumb { min-width: 48px; border: 2px solid transparent; border-radius: 999px; background: linear-gradient(90deg, #1595e8, #45b7fb); background-clip: padding-box; }
 .home-daily-forecast-scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(90deg, #087ed1, #22a7f5); background-clip: padding-box; }
-.daily-forecast-item { display: grid; min-height: 198px; align-content: center; justify-items: center; gap: 7px; padding: 6px 8px; scroll-snap-align: start; text-align: center; }
+.daily-forecast-item { display: grid; min-width: 0; min-height: 198px; align-content: center; justify-items: center; gap: 7px; padding: 6px 8px; scroll-snap-align: start; text-align: center; }
 .daily-forecast-item time { color: #55799d; font-size: .82rem; font-weight: 600; }
 .daily-forecast-item time small { display: block; margin-top: 3px; color: #91a5bc; font-size: .71rem; font-weight: 400; }
 .forecast-meteocon { width: 48px; height: 48px; object-fit: contain; }
+.daily-forecast-weather { position: relative; display: grid; place-items: center; width: 64px; height: 64px; }
 .daily-forecast-item .forecast-meteocon { width: 64px; height: 64px; }
 .daily-forecast-item strong { color: #0b2e60; font-size: 1.18rem; }
 .daily-forecast-item strong small { color: #748ba6; font-size: .64rem; font-weight: 500; vertical-align: baseline; }
-.daily-forecast-rain { display: inline-flex; align-items: center; gap: 4px; color: #168fe9; font-size: .86rem; font-weight: 700; }
-.daily-forecast-rain .icon { width: 17px; height: 17px; fill: currentColor; }
+.daily-forecast-rain { position: absolute; right: -18px; bottom: -2px; display: inline-flex; align-items: center; min-height: 19px; padding: 2px 5px; border-radius:999px; background:#e6f5ff; color:#127fca; font-size:.62rem; font-weight:700; line-height:1; white-space:nowrap; box-shadow:0 1px 4px #168fec1f; }
 html[data-theme="dark"] .daily-forecast-item { border-color: #294763; }
 html[data-theme="dark"] .daily-forecast-item strong { color: #edf7ff; }
+html[data-theme="dark"] .daily-forecast-rain { background:#173249; color:#87d2ff; box-shadow:0 1px 4px #00000045; }
+
+@media (max-width:760px) {
+  .home-daily-forecast { height: 214px; }
+  .home-daily-forecast-scroll { grid-auto-columns: minmax(132px, 76%); padding-bottom: 14px; }
+  .daily-forecast-item { min-height: 180px; }
+}
