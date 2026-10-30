@@ -205,3 +205,12 @@ reinicia nada. A compilação do módulo `compartilhado` fica em cache e os test
 não são compilados durante o deploy, reduzindo o tempo de alterações apenas no
 front-end. Acompanhe o resultado na aba **Actions** do GitHub. Nunca coloque a
 chave privada, senhas MySQL ou o arquivo `.env.oracle` no Git.
+
+### Imagem pronta da webapp
+
+Em alterações do `webapp`, o GitHub Actions agora compila a imagem em um runner
+próprio e a publica no GitHub Container Registry (GHCR). A VM apenas baixa essa
+imagem pronta; se o download falhar, o contêiner em produção não é recriado.
+Na primeira publicação, confirme em **Packages** do repositório que o pacote
+`meteora-webapp` está com visibilidade **Public**. Assim a VM pode baixá-lo sem
+guardar outro token de acesso.

@@ -4,6 +4,7 @@ set -Eeuo pipefail
 
 readonly PROJETO="$HOME/aps-2026-02-estacao-meteorologica"
 readonly BRANCH="feature/probabilidade-chuva-horaria"
+readonly WEBAPP_IMAGE="ghcr.io/trabalhos-unip/meteora-webapp"
 readonly COMPOSE=(
   docker compose
   --env-file deploy/oracle/.env.oracle
@@ -50,15 +51,22 @@ if tem_alteracao '^deploy/oracle/Caddyfile$'; then
   REINICIAR_CADDY=true
 fi
 
-SERVICOS=()
-if [[ "$ATUALIZAR_WEBAPP" == true ]]; then SERVICOS+=(webapp); fi
-if [[ "$ATUALIZAR_COLETOR" == true ]]; then SERVICOS+=(collector); fi
+if [[ "$ATUALIZAR_WEBAPP" == true ]]; then
+  # A imagem foi compilada no runner do GitHub. Se o pull falhar, o comando
+  # encerra sem recriar o contêiner atual, preservando a versão em produção.
+  echo "Baixando a imagem pronta da webapp: ${DEPOIS:0:12}"
+  docker pull "$WEBAPP_IMAGE:$DEPOIS"
+  docker tag "$WEBAPP_IMAGE:$DEPOIS" oracle-webapp:latest
+  "${COMPOSE[@]}" up -d --no-build --no-deps webapp
+fi
 
-if ((${#SERVICOS[@]})); then
-  echo "Construindo apenas: ${SERVICOS[*]}"
-  "${COMPOSE[@]}" build "${SERVICOS[@]}"
-  "${COMPOSE[@]}" up -d --no-deps "${SERVICOS[@]}"
-else
+if [[ "$ATUALIZAR_COLETOR" == true ]]; then
+  echo "Construindo apenas: collector"
+  "${COMPOSE[@]}" build collector
+  "${COMPOSE[@]}" up -d --no-deps collector
+fi
+
+if [[ "$ATUALIZAR_WEBAPP" == false && "$ATUALIZAR_COLETOR" == false ]]; then
   echo "Nenhuma alteracao de codigo Java/front-end para reconstruir."
 fi
 
