@@ -181,5 +181,8 @@ Actions** e crie estes *Repository secrets*:
 
 Por fim, em **Variables**, crie `ORACLE_DEPLOY_ENABLED` com o valor `true`.
 Após isso, cada push na branch `feature/probabilidade-chuva-horaria` dispara a
-atualização. Acompanhe o resultado na aba **Actions** do GitHub. Nunca coloque
-a chave privada, senhas MySQL ou o arquivo `.env.oracle` no Git.
+atualização. O script detecta os arquivos do push: alteração só no `webapp`
+recompila apenas o webapp; alteração só no `collector` recompila somente o
+coletor; alteração no módulo `compartilhado` recompila ambos; documentação não
+reinicia nada. Acompanhe o resultado na aba **Actions** do GitHub. Nunca
+coloque a chave privada, senhas MySQL ou o arquivo `.env.oracle` no Git.
