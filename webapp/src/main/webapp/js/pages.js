@@ -45,7 +45,7 @@ function forecastRows() {
 export function overviewPage() {
   return `<div class="overview-grid"><div class="overview-left">
     <section class="weather-hero" aria-labelledby="current-title">
-      <div class="hero-head"><div><h2 id="current-title">CONDIÇÕES ATUAIS</h2><p id="current-date">Aguardando leitura…</p></div></div>
+      <div class="hero-head"><div><h2 id="current-title">Localização da estação</h2><p id="current-date">Aguardando leitura…</p></div></div>
       <p class="hero-temperature"><span id="hero-temperature">—</span><span>°C</span></p>
       <p class="hero-description" id="hero-description">Aguardando dados da estação</p>
     </section>
@@ -122,6 +122,6 @@ export function settingsPage() {
         <section class="card settings-block settings-appearance"><div class="settings-block-heading">${icon("sun")}<div><h3>Aparência</h3><p>Escolha o tema visual da aplicação.</p></div></div><div class="mode-options theme-options"><label class="mode-option theme-option"><input type="radio" name="settings-theme" value="auto"><span class="theme-preview theme-preview-auto">${icon("monitor")}</span><div><strong>Automático</strong><small>Segue o sistema.</small></div></label><label class="mode-option theme-option"><input type="radio" name="settings-theme" value="claro"><span class="theme-preview theme-preview-light"><img src="/img/preview-configuracoes-claro.png" alt="Prévia da interface clara"></span><div><strong>Claro</strong><small>Interface clara.</small></div></label><label class="mode-option theme-option"><input type="radio" name="settings-theme" value="escuro"><span class="theme-preview theme-preview-dark"><img src="/img/preview-configuracoes-escuro.png" alt="Prévia da interface escura"></span><div><strong>Escuro</strong><small>Interface escura.</small></div></label></div></section>
       </section>
     </div>
-    <footer class="settings-actions"><p class="settings-note">As preferências ficam salvas neste navegador. A configuração real do coletor permanece no <code>.env</code>.</p><button class="primary-button save-settings" id="save-settings" type="button">${icon("file")} Salvar alterações</button></footer>
+    <footer class="settings-actions"><button class="primary-button save-settings" id="save-settings" type="button">${icon("file")} Salvar alterações</button></footer>
   </section>`;
 }

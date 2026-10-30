@@ -319,3 +319,8 @@
 :where([data-theme="dark"]) .settings-column>.settings-block,:where([data-theme="dark"]) .settings-actions{border:0;background:var(--surface);box-shadow:none}
 :where([data-theme="dark"]) body>.select2-container--open .select2-dropdown{background:var(--surface-2);border-color:var(--line);box-shadow:0 12px 26px #00000099}
 :where([data-theme="dark"]) body>.select2-container--open .select2-search__field{background:var(--bg);border-color:var(--line);color:var(--text)}
+:where([data-theme="dark"]) .toast{background:#171a1f;border-color:#30353d;color:#f4f7fb;box-shadow:0 18px 45px #000000a6}
+:where([data-theme="dark"]) .toast p{color:#b8c3d1}
+:where([data-theme="dark"]) .toast-icon{background:#12314a;color:#65beff}
+:where([data-theme="dark"]) .toast[data-kind="success"] .toast-icon{background:#103a2d;color:#64dcaa}
+:where([data-theme="dark"]) .toast[data-kind="error"] .toast-icon{background:#452220;color:#ff948a}

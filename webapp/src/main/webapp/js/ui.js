@@ -20,6 +20,7 @@ export const iconSprite = `
   <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8m-4-4v4"/></symbol>
   <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V9m6 11V4m6 16v-8m4 8v-5M2 20h20"/></symbol>
   <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 11v6m0-10h.01"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2.8 19a2 2 0 0 0 1.73 3h14.94A2 2 0 0 0 21.2 19L12 3Z"/><path d="M12 9v5m0 4h.01"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 4 12 8-12 8z"/></symbol>
   <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 2h9l4 4v16H6zM15 2v5h4M9 12h7m-7 4h7"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12 5 5L20 6"/></symbol>
@@ -152,7 +153,26 @@ export function updateCollectorCard(latest) {
 
 export function showToast(message) {
   const toast = document.querySelector("#toast");
-  toast.textContent = message;
+  const normalized = String(message || "");
+  const kind = /n[aã]o foi|erro|falha|indispon[ií]vel/i.test(normalized)
+    ? "error"
+    : /salv|atualizad|ativo|conclu[ií]d/i.test(normalized)
+      ? "success"
+      : "info";
+  const labels = { error: "Atenção", success: "Atualização concluída", info: "Informação" };
+  const icons = { error: "alert", success: "check", info: "info" };
+  toast.dataset.kind = kind;
+  toast.replaceChildren();
+  const emblem = document.createElement("span");
+  emblem.className = "toast-icon";
+  emblem.innerHTML = icon(icons[kind]);
+  const content = document.createElement("div");
+  const title = document.createElement("strong");
+  const detail = document.createElement("p");
+  title.textContent = labels[kind];
+  detail.textContent = normalized;
+  content.append(title, detail);
+  toast.append(emblem, content);
   toast.hidden = false;
   clearTimeout(showToast.timer);
   showToast.timer = setTimeout(() => { toast.hidden = true; }, 5500);
