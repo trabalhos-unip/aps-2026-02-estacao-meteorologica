@@ -121,12 +121,12 @@ export function parseDate(value) {
 
 export function dateTime(value) {
   const date = value instanceof Date ? value : parseDate(value);
-  return date ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "medium" }).format(date) : "—";
+  return date ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(date) : "—";
 }
 
 export function time(value) {
   const date = value instanceof Date ? value : parseDate(value);
-  return date ? new Intl.DateTimeFormat("pt-BR", { timeStyle: "medium" }).format(date) : "—";
+  return date ? new Intl.DateTimeFormat("pt-BR", { timeStyle: "short" }).format(date) : "—";
 }
 
 export function dateInput(date) {

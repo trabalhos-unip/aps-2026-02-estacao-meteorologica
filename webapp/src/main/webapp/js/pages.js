@@ -45,7 +45,7 @@ function forecastRows() {
 export function overviewPage() {
   return `<div class="overview-grid"><div class="overview-left">
     <section class="weather-hero" aria-labelledby="current-title">
-      <div class="hero-head"><div><h2 id="current-title">CONDIÇÕES ATUAIS</h2><p id="current-date">Aguardando leitura…</p></div><span class="source-chip" id="home-source-chip">${meteocon("overcast-day", "weather-library-icon")} Fonte: Open-Meteo</span></div>
+      <div class="hero-head"><div><h2 id="current-title">CONDIÇÕES ATUAIS</h2><p id="current-date">Aguardando leitura…</p></div></div>
       <p class="hero-temperature"><span id="hero-temperature">—</span><span>°C</span></p>
       <p class="hero-description" id="hero-description">Aguardando dados da estação</p>
     </section>

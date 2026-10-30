@@ -1,8 +1,8 @@
 import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js?v=20261028-6";
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-8";
-import { overviewPage, historyPage, settingsPage } from "./pages.js?v=20261029-29";
-import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261029-15";
+import { overviewPage, historyPage, settingsPage } from "./pages.js?v=20261029-30";
+import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261029-16";
 
 const routeFromLocation = () => ({ "/historico": "/historico", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
 let path = routeFromLocation();
@@ -739,7 +739,6 @@ function renderDemoForecast() {
   text("#forecast-source", "Exemplo de previsão simulada");
   text("#forecast-note", "Previsão ilustrativa gerada neste navegador.");
   text("#overview-data-note", "Modo simulado: todos os valores desta tela são exemplos locais. Nenhum deles é gravado no MySQL.");
-  document.querySelector("#home-source-chip").innerHTML = `${icon("flask")} Fonte: Simulado`;
   const rows = document.querySelector("#forecast-rows");
   rows.setAttribute("aria-label", "Previsão simulada para cinco dias");
   rows.innerHTML = previsoesDiariasDeExemplo(5).map(renderLinhaPrevisaoDiaria).join("");
