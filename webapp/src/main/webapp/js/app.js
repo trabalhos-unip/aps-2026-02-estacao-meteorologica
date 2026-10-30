@@ -996,7 +996,6 @@ async function loadHistory(start, end) {
     historyForecasts = previsoes;
     historicalDailyWeather = climaDosUltimosDias;
     renderHistoryDetails();
-    if (historyReadings.length > 100) showToast("Mostrando os 100 registros mais recentes na tabela.");
   } catch (error) {
     if (request !== historyRequest) return;
     historyReadings = [];
