@@ -1,7 +1,7 @@
 import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js?v=20261028-6";
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-8";
-import { overviewPage, historyPage, settingsPage } from "./pages.js?v=20261029-31";
+import { overviewPage, historyPage, settingsPage } from "./pages.js?v=20261030-32";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261030-18";
 
 const routeFromLocation = () => ({ "/historico": "/historico", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -749,6 +749,7 @@ function renderDemoForecast() {
   if (!simulated()) return;
   text("#forecast-source", "Exemplo de previsão simulada");
   text("#forecast-note", "Previsão ilustrativa gerada neste navegador.");
+  document.querySelector("#forecast-note").hidden = false;
   text("#overview-data-note", "Modo simulado: todos os valores desta tela são exemplos locais. Nenhum deles é gravado no MySQL.");
   const rows = document.querySelector("#forecast-rows");
   rows.setAttribute("aria-label", "Previsão simulada para cinco dias");
@@ -773,12 +774,15 @@ async function renderForecast() {
     const previsoes = await buscarPrevisoesDiarias(5);
     if (!previsoes.length) throw new Error("A previsão ainda não foi carregada pelo coletor.");
     text("#forecast-source", "Previsão da Open-Meteo");
-    text("#forecast-note", "Atualizada pelo coletor; dias futuros não são leituras da estação.");
+    const note = document.querySelector("#forecast-note");
+    note.hidden = true;
+    note.textContent = "";
     rows.setAttribute("aria-label", "Previsão para os próximos cinco dias");
     rows.innerHTML = previsoes.map(renderLinhaPrevisaoDiaria).join("");
   } catch (error) {
     text("#forecast-source", "Previsão ainda indisponível");
     text("#forecast-note", "Inicie o coletor para carregar os próximos dias.");
+    document.querySelector("#forecast-note").hidden = false;
     rows.innerHTML = `<div class="forecast-row"><span><strong>—</strong><small>sem dados</small></span><span class="forecast-weather">—</span><span class="forecast-rain">—</span><span class="forecast-temperatures"><strong>—°</strong><small>—°</small></span></div>`;
   }
 }

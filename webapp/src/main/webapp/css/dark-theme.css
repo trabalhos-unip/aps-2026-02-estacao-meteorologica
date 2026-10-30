@@ -140,6 +140,7 @@
 :where([data-theme="dark"]) .settings-section textarea{background:var(--surface-2);border-color:var(--line);color:var(--text)}
 :where([data-theme="dark"]) .field input:focus,:where([data-theme="dark"]) .field select:focus{outline-color:#2f8fd8}
 :where([data-theme="dark"]) .summary-card .card-title{border-bottom-color:var(--line)}
+:where([data-theme="dark"]) .historical-weather-card .card-title{border-bottom-color:var(--line)}
 :where([data-theme="dark"]) .summary-row{border-bottom-color:var(--line-soft);color:var(--muted)}
 :where([data-theme="dark"]) .summary-row strong{color:var(--text)}
 :where([data-theme="dark"]) .summary-row strong.positive{color:var(--green)}

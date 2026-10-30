@@ -70,7 +70,7 @@ export function overviewPage() {
     <aside class="card forecast-card" aria-labelledby="forecast-title">
       <div class="card-title">${icon("calendar")}<div><h2 id="forecast-title">Previsão dos próximos dias</h2><small id="forecast-source">Dados da API Open-Meteo</small></div></div>
       <div class="forecast-rows" id="forecast-rows" aria-label="Previsão aguardando integração">${forecastRows()}</div>
-      <p class="forecast-note" id="forecast-note">Previsão ainda não integrada; valores indisponíveis.</p>
+      <p class="forecast-note" id="forecast-note" hidden></p>
     </aside>
     <section class="card recent-card" aria-labelledby="recent-title">
       <div class="section-head"><div class="title-with-icon">${icon("database")}<h2 id="recent-title">Últimas medições</h2></div><a class="secondary-button recent-see-all" href="/historico">Ver tudo ${icon("arrow")}</a></div>
