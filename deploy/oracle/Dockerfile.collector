@@ -9,6 +9,9 @@ COPY webapp/pom.xml webapp/pom.xml
 RUN mvn -B -pl collector -am dependency:go-offline
 
 # Esta camada muda menos que o coletor e pode ser reutilizada pelo Docker.
+# O POM pai precisa estar no repositorio local para o artefato compartilhado
+# instalado abaixo ser resolvido fora do reactor Maven.
+RUN mvn -B -N install -Dmaven.test.skip=true
 COPY compartilhado/src compartilhado/src
 RUN mvn -B -pl compartilhado install -Dmaven.test.skip=true
 COPY collector/src collector/src
