@@ -13,8 +13,8 @@
 /* Paleta: fundo preto (#000) e cartões em cinza quase preto; o azul fica só nos destaques. */
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --bg:#101722;--surface:#18212d;--surface-2:#202b38;--surface-3:#2a3544;
-  --line:#303d4c;--line-soft:#202b38;
+  --bg:#000;--surface:#101215;--surface-2:#161a1f;--surface-3:#1d2228;
+  --line:#292e35;--line-soft:#171b20;
   --text:#f5f5f5;--text-2:#c8c8c8;--muted:#929292;--faint:#6e6e6e;
   --accent:#4db5ff;--accent-soft:#4db5ff1f;--accent-line:#4db5ff66;
   --teal:#35d4b4;--amber:#ffc44f;--red:#ff7d8a;--purple:#a2aeff;--green:#43d891;
@@ -215,10 +215,10 @@
 
 /* Ajustes finais do shell atual: no modo escuro, controles e superfícies não
    podem herdar nenhum fundo claro das regras do tema padrão. */
-:where([data-theme="dark"]) .app-layout{background:#101722;color:var(--text)}
+:where([data-theme="dark"]) .app-layout{background:#000;color:var(--text)}
 :where([data-theme="dark"]) .workspace,
-:where([data-theme="dark"]) .page-content{background:#141d28;color:var(--text)}
-:where([data-theme="dark"]) .sidebar{background:#121b26;border-color:#293848}
+:where([data-theme="dark"]) .page-content{background:#0d0f12;color:var(--text)}
+:where([data-theme="dark"]) .sidebar{background:#0d0f12;border-color:#24282e}
 :where([data-theme="dark"]) .primary-nav>.sidebar-location-input,
 :where([data-theme="dark"]) .sidebar-location-input{background:#17191e;border-color:#30343c;color:#e3e9f2}
 :where([data-theme="dark"]) .sidebar-location-input .icon{color:#9fcaee}
