@@ -324,3 +324,10 @@
 :where([data-theme="dark"]) .toast-icon{background:#12314a;color:#65beff}
 :where([data-theme="dark"]) .toast[data-kind="success"] .toast-icon{background:#103a2d;color:#64dcaa}
 :where([data-theme="dark"]) .toast[data-kind="error"] .toast-icon{background:#452220;color:#ff948a}
+
+/* Mesmas proporções do conteúdo no carregamento, sem clarões no tema escuro. */
+:where([data-theme="dark"]) .initial-page-skeleton .skeleton-block,
+:where([data-theme="dark"]) .initial-page-skeleton .skeleton-overview-side>i,
+:where([data-theme="dark"]) .initial-page-skeleton .skeleton-history-side>i,
+:where([data-theme="dark"]) .initial-page-skeleton .skeleton-settings i,
+:where([data-theme="dark"]) .initial-page-skeleton .skeleton-insights>i{border-color:#29323d;background:linear-gradient(100deg,#171e27 20%,#222c37 38%,#171e27 55%);background-size:220% 100%}

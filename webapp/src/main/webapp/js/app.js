@@ -14,10 +14,20 @@ const pageHeadings = {
 };
 renderShell(path, pages[path]());
 function showInitialLoadingSkeleton() {
+  const overview = `
+    <div class="skeleton-overview">
+      <div class="skeleton-overview-main"><div class="skeleton-hero skeleton-block"></div><div class="skeleton-metrics">${"<i></i>".repeat(4)}</div><div class="skeleton-chart skeleton-block"></div><div class="skeleton-insights">${"<i></i>".repeat(3)}</div></div>
+      <div class="skeleton-overview-side"><i></i><i></i></div>
+    </div>`;
+  const history = `
+    <div class="skeleton-filter skeleton-block"></div><div class="skeleton-history"><div><div class="skeleton-chart skeleton-block"></div><div class="skeleton-insights">${"<i></i>".repeat(3)}</div></div><div class="skeleton-history-side"><i></i><i></i></div></div><div class="skeleton-table skeleton-block"></div>`;
+  const settings = `
+    <div class="skeleton-settings"><div><i></i><i></i></div><div><i></i><i></i></div></div><div class="skeleton-settings-action skeleton-block"></div>`;
+  const content = path === "/historico" ? history : path === "/configuracoes" ? settings : overview;
   document.querySelector("#app").insertAdjacentHTML("beforeend", `
     <div class="initial-page-skeleton" role="status" aria-live="polite" aria-label="Carregando dados">
       <aside class="skeleton-sidebar"><i></i><i></i><i></i><i></i><i></i></aside>
-      <main class="skeleton-workspace"><div class="skeleton-heading"><i></i><i></i></div><div class="skeleton-hero"></div><div class="skeleton-metrics"><i></i><i></i><i></i><i></i></div><div class="skeleton-chart"></div><span>Carregando dados…</span></main>
+      <main class="skeleton-workspace"><div class="skeleton-heading"><i></i><i></i></div>${content}<span>Carregando dados…</span></main>
     </div>`);
   document.querySelector("#app").setAttribute("aria-busy", "true");
 }
