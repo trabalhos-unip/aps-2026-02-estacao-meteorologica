@@ -4,18 +4,20 @@ services:
   mysql:
     command:
       - --innodb-buffer-pool-size=96M
-      - --max-connections=12
+      # Webapp, collector e healthcheck precisam de uma pequena margem sem
+      # deixar o MySQL consumir memoria demais na VM de 1 GB.
+      - --max-connections=24
       - --performance-schema=OFF
     mem_limit: 220m
 
   webapp:
     environment:
-      JAVA_TOOL_OPTIONS: -Xms64m -Xmx256m -XX:MaxMetaspaceSize=128m
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx256m -XX:MaxMetaspaceSize=128m -Dhibernate.connection.pool_size=8
     mem_limit: 360m
 
   collector:
     environment:
-      JAVA_TOOL_OPTIONS: -Xms32m -Xmx192m -XX:MaxMetaspaceSize=96m
+      JAVA_TOOL_OPTIONS: -Xms32m -Xmx192m -XX:MaxMetaspaceSize=96m -Dhibernate.connection.pool_size=4
     mem_limit: 260m
 
   caddy:

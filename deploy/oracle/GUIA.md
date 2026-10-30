@@ -92,7 +92,8 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 ```
 
 Use também a sobreposição `docker-compose.micro.yml`, que reduz os limites da
-JVM e do MySQL. Ela é adequada para demonstração e baixo tráfego; para uso
+JVM e do MySQL e reserva pools de conexão pequenos para o webapp e o coletor.
+Ela é adequada para demonstração e baixo tráfego; para uso
 contínuo com folga, prefira a A1 com 4 GB.
 
 ## 4. Subir os serviços com HTTPS
