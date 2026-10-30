@@ -287,6 +287,11 @@ html:has(.select2-container--open),body:has(.select2-container--open){overflow-x
   .settings-appearance .theme-option input{top:12px;right:12px;transform:none;z-index:1}
 }
 
+/* Em telas compactas, o tema é ajustado exclusivamente em Configurações > Aparência. */
+@media(max-width:900px){
+  #theme-toggle{display:none!important}
+}
+
 /* Barra inferior: largura do conteúdo, sem quarta célula vazia. */
 @media(max-width:760px){
   .bottom-nav{right:auto;left:50%;width:max-content;transform:translateX(-50%);gap:10px}
