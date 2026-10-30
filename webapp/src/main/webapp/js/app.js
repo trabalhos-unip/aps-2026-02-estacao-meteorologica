@@ -1,7 +1,7 @@
 import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js?v=20261028-6";
 import { demoApi } from "./demo-data.js?v=20261026-4";
 import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261029-8";
-import { overviewPage, historyPage, settingsPage } from "./pages.js?v=20261029-24";
+import { overviewPage, historyPage, settingsPage } from "./pages.js?v=20261029-25";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261029-13";
 
 const routeFromLocation = () => ({ "/historico": "/historico", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
@@ -1068,13 +1068,63 @@ async function initSettings() {
       showToast(error.message || "Não foi possível atualizar a estação.");
     }
   });
+  let configuredStation = null;
   try {
-    const station = await estacaoApi.ativa();
-    showLocation({ city: station.cidade, state: station.estado });
-    showLocationCoordinates(station);
+    configuredStation = await estacaoApi.ativa();
+    showLocation({ city: configuredStation.cidade, state: configuredStation.estado });
+    showLocationCoordinates(configuredStation);
   } catch {
     showLocation(saved);
   }
+  const citySelect = document.querySelector("#settings-location-city");
+  const $ = window.jQuery;
+  const locationId = (city, state) => `${city}::${state}`;
+  const selectStation = station => {
+    if (!station?.cidade || !station?.estado) return;
+    const id = locationId(station.cidade, station.estado);
+    let option = [...citySelect.options].find(item => item.value === id);
+    if (!option) {
+      option = new Option(`${station.cidade} — ${station.estado}`, id, true, true);
+      citySelect.add(option);
+    }
+    citySelect.value = id;
+    if ($?.fn?.select2) $(citySelect).val(id).trigger("change");
+  };
+  const applyStation = async (city, state) => {
+    if (!city || !state) return;
+    try {
+      const station = await estacaoApi.selecionar(city, state);
+      localStorage.setItem(preferencesKey, JSON.stringify({ ...savedPreferences(), city: station.cidade, state: station.estado }));
+      showLocation({ city: station.cidade, state: station.estado });
+      showLocationCoordinates(station);
+      selectStation(station);
+      showToast("Cidade atualizada. Os dados começam a ser carregados em instantes.");
+    } catch (error) {
+      showToast(error.message || "Não foi possível atualizar a cidade.");
+    }
+  };
+  if ($?.fn?.select2) {
+    const $settingsCity = $(citySelect);
+    $settingsCity.select2({
+      width: "100%",
+      placeholder: citySelect.dataset.placeholder,
+      minimumInputLength: 2,
+      dropdownParent: $(citySelect.closest(".settings-location-card")),
+      language: { inputTooShort: () => "Digite ao menos 2 letras", searching: () => "Buscando cidades…", noResults: () => "Nenhuma cidade brasileira encontrada" },
+      ajax: {
+        delay: 200,
+        transport: (params, success, failure) => { estacaoApi.sugestoes(params.data.term || "").then(success).catch(failure); return { abort() {} }; },
+        processResults: suggestions => ({ results: suggestions.map(item => ({ id: locationId(item.cidade, item.estado), text: `${item.cidade} — ${item.nomeEstado || item.estado}`, cidade: item.cidade, estado: item.estado })) })
+      }
+    });
+    $settingsCity.on("select2:select", event => { void applyStation(event.params.data.cidade, event.params.data.estado); });
+  } else {
+    citySelect.addEventListener("change", () => {
+      const [city, state] = citySelect.value.split("::");
+      void applyStation(city, state);
+    });
+  }
+  selectStation(configuredStation || { cidade: saved.city, estado: saved.state });
   await fetchLatest();
 }
 

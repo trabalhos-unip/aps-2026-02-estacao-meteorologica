@@ -295,3 +295,7 @@
 :where([data-theme="dark"]) .settings-location-card .location-settings-button{background:var(--surface);color:var(--text)}
 :where([data-theme="dark"]) .interval-options button{background:var(--surface-2);border-color:var(--line);color:var(--text)}
 :where([data-theme="dark"]) .interval-options button.selected{background:#373867;border-color:#777cff;color:#eef1ff}
+
+:where([data-theme="dark"]) .settings-city-label .select2-container--default .select2-selection--single{background:var(--surface-2);border-color:var(--line)}
+:where([data-theme="dark"]) .settings-city-label .select2-container--default .select2-selection__rendered{color:var(--text)}
+:where([data-theme="dark"]) .settings-location-card .select2-dropdown{background:var(--surface-2);border-color:var(--line)}
