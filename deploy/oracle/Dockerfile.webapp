@@ -21,7 +21,8 @@ RUN mvn -B -pl webapp package -Dmaven.test.skip=true \
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 LABEL org.opencontainers.image.source="https://github.com/trabalhos-unip/aps-2026-02-estacao-meteorologica" \
-      org.opencontainers.image.title="Meteora webapp"
+      org.opencontainers.image.title="Meteora webapp" \
+      org.opencontainers.image.description="Aplicação web Meteora"
 COPY --from=build /workspace/webapp.jar /app/app.jar
 EXPOSE 8080
 ENV JAVA_TOOL_OPTIONS="-Xms128m -Xmx512m"
