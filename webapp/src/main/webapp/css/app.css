@@ -258,3 +258,6 @@ body:has(.overview-grid){overflow-x:hidden;overflow-y:auto}
 
 /* Fluxo vertical da configuração: sem grid e sem rolagem horizontal. */
 .settings-board{display:block!important;width:100%;max-width:760px}.settings-column{display:block!important;width:100%}.settings-column>.settings-block{display:block;width:100%;margin:0 0 16px}.settings-column>.settings-block:last-child{margin-bottom:0}.theme-preview{height:100px}.settings-appearance .theme-option{min-height:157px}.app-layout:has(.settings-main),.app-layout:has(.settings-main) .workspace{overflow-x:hidden}.app-layout:has(.settings-main) .page-content{overflow-x:clip}
+
+/* O dropdown do Select2 nunca deve ampliar a área rolável da página. */
+html:has(.select2-container--open),body:has(.select2-container--open){overflow-x:hidden}
