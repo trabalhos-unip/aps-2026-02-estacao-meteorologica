@@ -211,13 +211,33 @@ chave privada, senhas MySQL ou o arquivo `.env.oracle` no Git.
 Em alterações do `webapp`, o GitHub Actions agora compila a imagem em um runner
 próprio e a publica no GitHub Container Registry (GHCR). A VM apenas baixa essa
 imagem pronta; se o download falhar, o contêiner em produção não é recriado.
-Na primeira publicação, confirme em **Packages** do repositório que o pacote
-`meteora-webapp` está com visibilidade **Public**. Assim a VM pode baixá-lo sem
-guardar outro token de acesso.
+O pacote `meteora-webapp` permanece **Private**. Para a VM baixá-lo, crie no
+GitHub um **Personal access token (classic)** somente com o escopo
+`read:packages` e uma expiração curta (por exemplo, 90 dias). Não selecione
+`repo`, `write:packages` nem `delete:packages`. O token precisa pertencer a uma
+pessoa que tenha acesso de leitura ao pacote na organização.
 
-Se a primeira publicação ocorrer antes de o pacote estar público, abra a página
-principal do repositório no GitHub, clique em **Packages > meteora-webapp >
-Package settings > Change visibility > Public**. Em seguida, abra **Actions >
-Deploy na Oracle > Run workflow**, marque **force_webapp** e execute. Essa
-opção aceita somente a atualização da webapp e não concede um terminal à chave
-da automação.
+Na VM, crie o arquivo de credenciais fora do projeto:
+
+```bash
+mkdir -p ~/.config/meteora
+chmod 700 ~/.config/meteora
+nano ~/.config/meteora/ghcr-pull.env
+```
+
+Conteúdo, substituindo os valores e sem aspas:
+
+```text
+GHCR_USERNAME=SEU_USUARIO_GITHUB
+GHCR_READ_TOKEN=github_pat_SEU_TOKEN_AQUI
+```
+
+Proteja-o e nunca o envie ao Git:
+
+```bash
+chmod 600 ~/.config/meteora/ghcr-pull.env
+```
+
+Se precisar testar ou repetir a atualização, abra **Actions > Deploy na Oracle
+> Run workflow**, marque **force_webapp** e execute. Essa opção aceita somente
+a atualização da webapp e não concede um terminal à chave da automação.

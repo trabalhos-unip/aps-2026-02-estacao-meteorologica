@@ -5,6 +5,7 @@ set -Eeuo pipefail
 readonly PROJETO="$HOME/aps-2026-02-estacao-meteorologica"
 readonly BRANCH="feature/probabilidade-chuva-horaria"
 readonly WEBAPP_IMAGE="ghcr.io/trabalhos-unip/meteora-webapp"
+readonly GHCR_CREDENTIALS="$HOME/.config/meteora/ghcr-pull.env"
 readonly COMPOSE=(
   docker compose
   --env-file deploy/oracle/.env.oracle
@@ -67,6 +68,17 @@ if [[ "$ATUALIZAR_WEBAPP" == true ]]; then
   # A imagem foi compilada no runner do GitHub. Se o pull falhar, o comando
   # encerra sem recriar o contêiner atual, preservando a versão em produção.
   echo "Baixando a imagem pronta da webapp: ${DEPOIS:0:12}"
+  if [[ ! -r "$GHCR_CREDENTIALS" ]]; then
+    echo "Credencial privada do GHCR ausente em $GHCR_CREDENTIALS." >&2
+    exit 1
+  fi
+  # Arquivo local da VM, com permissao 600, nunca versionado nem carregado
+  # como variavel de ambiente dos contêineres da aplicacao.
+  source "$GHCR_CREDENTIALS"
+  : "${GHCR_USERNAME:?GHCR_USERNAME ausente}"
+  : "${GHCR_READ_TOKEN:?GHCR_READ_TOKEN ausente}"
+  printf '%s' "$GHCR_READ_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin >/dev/null
+  trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
   docker pull "$WEBAPP_IMAGE:$DEPOIS"
   docker tag "$WEBAPP_IMAGE:$DEPOIS" oracle-webapp:latest
   "${COMPOSE[@]}" up -d --no-build --no-deps webapp
