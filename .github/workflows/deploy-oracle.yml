@@ -63,6 +63,14 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Permitir download da imagem pela VM
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >-
+          gh api --method PATCH
+          /orgs/trabalhos-unip/packages/container/meteora-webapp
+          -f visibility=public
+
   deploy:
     needs: [changes, build-webapp]
     if: >-
