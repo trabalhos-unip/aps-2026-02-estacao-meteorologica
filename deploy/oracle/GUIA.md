@@ -24,19 +24,36 @@ Essa configuração é suficiente para a demonstração: o webapp usa no máximo
 shape A1 estiver sem capacidade, tente outra região/availability domain. Não
 habilite recursos que apareçam como pagos.
 
-## 2. Liberar o acesso HTTP
+## 2. Acesso seguro com HTTPS
 
-Na VCN, abra a subnet da instância, depois **Security List > Ingress Rules** e
-adicione TCP `8080` de `0.0.0.0/0`. No servidor, depois do primeiro acesso SSH:
+O acesso público final não usa a porta `8080`: ela é interna entre o Caddy e o
+webapp. Na VCN, abra a subnet da instância, depois **Security List > Ingress
+Rules**, e adicione estas regras **stateless: No**:
+
+- TCP `80` de `0.0.0.0/0` (redirecionamento HTTP para HTTPS e emissão do certificado);
+- TCP `443` de `0.0.0.0/0` (site HTTPS).
+
+Não habilite UFW neste deploy: portas publicadas pelo Docker podem contornar
+suas regras. O bloqueio é feito pela Security List da Oracle e pelo Compose,
+que não publica MySQL, o coletor ou o webapp diretamente.
+
+### DNS e certificado
+
+No provedor responsável por `normaflowapp.com.br`, crie um registro DNS:
+
+| Tipo | Nome/host | Valor |
+| --- | --- | --- |
+| A | `meteora` | IPv4 público atual da VM Oracle |
+
+Espere a propagação e confirme na VM (o resultado deve ser o IPv4 público da
+VM):
 
 ```bash
-sudo ufw allow OpenSSH
-sudo ufw allow 8080/tcp
-sudo ufw enable
+getent ahostsv4 meteora.normaflowapp.com.br
 ```
 
-O primeiro teste será `http://IP_PUBLICO:8080`. Depois podemos colocar Nginx e
-HTTPS na porta 443.
+O Caddy solicitará e renovará o certificado TLS automaticamente. Certificados
+confiáveis não podem ser emitidos para um IPv4 puro; o domínio é indispensável.
 
 ## 3. Instalar Docker e baixar o projeto
 
@@ -58,6 +75,7 @@ nano deploy/oracle/.env.oracle
 ```
 
 Troque as duas senhas do exemplo. Nunca publique esse arquivo.
+Também mantenha `CADDY_DOMAIN=meteora.normaflowapp.com.br`.
 
 ### VM AMD Micro de 1 GB
 
@@ -77,12 +95,15 @@ Use também a sobreposição `docker-compose.micro.yml`, que reduz os limites da
 JVM e do MySQL. Ela é adequada para demonstração e baixo tráfego; para uso
 contínuo com folga, prefira a A1 com 4 GB.
 
-## 4. Subir os três serviços
+## 4. Subir os serviços com HTTPS
 
 ```bash
-docker compose --env-file deploy/oracle/.env.oracle -f deploy/oracle/docker-compose.yml up -d --build
-docker compose --env-file deploy/oracle/.env.oracle -f deploy/oracle/docker-compose.yml ps
-docker compose --env-file deploy/oracle/.env.oracle -f deploy/oracle/docker-compose.yml logs -f webapp
+docker compose --env-file deploy/oracle/.env.oracle \
+  -f deploy/oracle/docker-compose.yml \
+  -f deploy/oracle/docker-compose.https.yml up -d --build
+docker compose --env-file deploy/oracle/.env.oracle \
+  -f deploy/oracle/docker-compose.yml \
+  -f deploy/oracle/docker-compose.https.yml ps
 ```
 
 Em uma VM Micro de 1 GB, substitua o primeiro comando por:
@@ -90,27 +111,36 @@ Em uma VM Micro de 1 GB, substitua o primeiro comando por:
 ```bash
 docker compose --env-file deploy/oracle/.env.oracle \
   -f deploy/oracle/docker-compose.yml \
-  -f deploy/oracle/docker-compose.micro.yml up -d --build
+  -f deploy/oracle/docker-compose.micro.yml \
+  -f deploy/oracle/docker-compose.https.yml up -d --build
 ```
 
-Abra `http://IP_PUBLICO:8080`. O schema é aplicado automaticamente somente na
-primeira criação do volume MySQL. O volume `mysql-data` mantém o banco durante
-reinícios e novos deploys.
+Abra `https://meteora.normaflowapp.com.br`. O schema é aplicado automaticamente
+somente na primeira criação do volume MySQL. O volume `mysql-data` mantém o
+banco durante reinícios e novos deploys.
+
+Depois de confirmar que o endereço HTTPS está funcionando, remova da Security
+List a regra pública TCP `8080`. Para proteger também o SSH, primeiro crie uma
+regra TCP `22` apenas para o IP público da sua rede (`SEU_IP/32`), teste uma
+nova sessão SSH e só então remova a regra TCP `22` de `0.0.0.0/0`.
 
 ## 5. Atualizar depois de um push
 
 ```bash
 cd aps-2026-02-estacao-meteorologica
 git pull --ff-only origin feature/probabilidade-chuva-horaria
-docker compose --env-file deploy/oracle/.env.oracle -f deploy/oracle/docker-compose.yml up -d --build
+docker compose --env-file deploy/oracle/.env.oracle \
+  -f deploy/oracle/docker-compose.yml \
+  -f deploy/oracle/docker-compose.micro.yml \
+  -f deploy/oracle/docker-compose.https.yml up -d --build
 ```
 
 ## 6. Comandos úteis
 
 ```bash
-docker compose --env-file deploy/oracle/.env.oracle -f deploy/oracle/docker-compose.yml logs -f collector
-docker compose --env-file deploy/oracle/.env.oracle -f deploy/oracle/docker-compose.yml restart collector
-docker compose --env-file deploy/oracle/.env.oracle -f deploy/oracle/docker-compose.yml down
+docker compose --env-file deploy/oracle/.env.oracle -f deploy/oracle/docker-compose.yml -f deploy/oracle/docker-compose.micro.yml -f deploy/oracle/docker-compose.https.yml logs -f caddy
+docker compose --env-file deploy/oracle/.env.oracle -f deploy/oracle/docker-compose.yml -f deploy/oracle/docker-compose.micro.yml -f deploy/oracle/docker-compose.https.yml logs -f collector
+docker compose --env-file deploy/oracle/.env.oracle -f deploy/oracle/docker-compose.yml -f deploy/oracle/docker-compose.micro.yml -f deploy/oracle/docker-compose.https.yml down
 ```
 
 Não use `down -v`: isso removeria o volume do MySQL e os dados.

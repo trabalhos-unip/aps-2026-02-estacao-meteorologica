@@ -1,0 +1,25 @@
+# Sobreposicao de producao: so o Caddy fica exposto publicamente.
+# Requer CADDY_DOMAIN definido em deploy/oracle/.env.oracle.
+services:
+  webapp:
+    # Remove a publicacao direta de 8080 definida no compose base.
+    ports: !reset []
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    environment:
+      CADDY_DOMAIN: ${CADDY_DOMAIN}
+    depends_on:
+      - webapp
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  caddy-data:
+  caddy-config:

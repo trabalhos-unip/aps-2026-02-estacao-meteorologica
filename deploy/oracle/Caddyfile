@@ -1,0 +1,16 @@
+# O nome publico e fornecido apenas pelo arquivo .env.oracle, nunca pelo Git.
+# Caddy solicita e renova automaticamente o certificado TLS valido.
+{$CADDY_DOMAIN} {
+	encode zstd gzip
+
+	# Cabecalhos seguros para a aplicacao web.
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(), microphone=(), camera=()"
+	}
+
+	reverse_proxy webapp:8080
+}

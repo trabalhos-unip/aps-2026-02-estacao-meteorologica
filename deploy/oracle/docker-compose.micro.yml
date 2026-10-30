@@ -17,3 +17,6 @@ services:
     environment:
       JAVA_TOOL_OPTIONS: -Xms32m -Xmx192m -XX:MaxMetaspaceSize=96m
     mem_limit: 260m
+
+  caddy:
+    mem_limit: 96m
