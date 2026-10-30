@@ -147,3 +147,39 @@ docker compose --env-file deploy/oracle/.env.oracle -f deploy/oracle/docker-comp
 ```
 
 Não use `down -v`: isso removeria o volume do MySQL e os dados.
+
+## 7. Deploy automático após `push` (GitHub Actions)
+
+O workflow `.github/workflows/deploy-oracle.yml` só roda quando a variável do
+repositório `ORACLE_DEPLOY_ENABLED` for `true`. Antes de habilitá-la, crie uma
+chave SSH exclusiva para a automação — **não reutilize sua chave pessoal**.
+
+No PowerShell do seu computador:
+
+```powershell
+ssh-keygen -t ed25519 -f "$env:USERPROFILE\.ssh\meteora-github-actions" -C "github-actions-meteora"
+Get-Content "$env:USERPROFILE\.ssh\meteora-github-actions.pub"
+```
+
+Na VM, cole a chave pública exibida como uma nova linha em
+`~/.ssh/authorized_keys`, precedida por estas restrições (a chave só poderá
+executar o script de atualização, sem terminal ou encaminhamento de portas):
+
+```text
+command="/home/ubuntu/aps-2026-02-estacao-meteorologica/deploy/oracle/atualizar.sh",no-port-forwarding,no-agent-forwarding,no-X11-forwarding,no-pty COLE_AQUI_A_CHAVE_PUBLICA_COMPLETA
+```
+
+Na página do GitHub do repositório, abra **Settings > Secrets and variables >
+Actions** e crie estes *Repository secrets*:
+
+| Secret | Conteúdo |
+| --- | --- |
+| `ORACLE_SSH_PRIVATE_KEY` | conteúdo completo do arquivo privado `meteora-github-actions` |
+| `ORACLE_KNOWN_HOSTS` | saída de `ssh-keyscan -H IP_PUBLICO_DA_VM` |
+| `ORACLE_HOST` | IPv4 público da VM |
+| `ORACLE_USER` | `ubuntu` |
+
+Por fim, em **Variables**, crie `ORACLE_DEPLOY_ENABLED` com o valor `true`.
+Após isso, cada push na branch `feature/probabilidade-chuva-horaria` dispara a
+atualização. Acompanhe o resultado na aba **Actions** do GitHub. Nunca coloque
+a chave privada, senhas MySQL ou o arquivo `.env.oracle` no Git.

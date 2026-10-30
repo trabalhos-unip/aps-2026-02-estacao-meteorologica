@@ -1,0 +1,43 @@
+name: Deploy na Oracle
+
+on:
+  push:
+    branches:
+      - feature/probabilidade-chuva-horaria
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Impede dois pushes de compilarem simultaneamente na VM pequena.
+concurrency:
+  group: deploy-oracle-producao
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # So inicia depois que a variavel for habilitada nas configuracoes do repo.
+    if: vars.ORACLE_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Configurar chave SSH exclusiva do deploy
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.ORACLE_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.ORACLE_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+
+      - name: Atualizar aplicacao na VM
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+            -o BatchMode=yes \
+            -o ConnectTimeout=20 \
+            -o StrictHostKeyChecking=yes \
+            "$ORACLE_USER@$ORACLE_HOST"
