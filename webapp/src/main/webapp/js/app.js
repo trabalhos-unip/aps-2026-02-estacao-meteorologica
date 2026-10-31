@@ -1,13 +1,71 @@
-import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js";
-import { demoApi, demoForecast } from "./demo-data.js?v=20261026-4";
-import { drawScenarioComparison } from "./charts.js?v=20261028-1";
-import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261028-3";
-import { overviewPage, historyPage, simulationsPage, settingsPage, scenarios } from "./pages.js?v=20261028-2";
-import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261028-1";
+import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js?v=20261030-7";
+import { demoApi } from "./demo-data.js?v=20261026-4";
+import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261030-10";
+import { overviewPage, historyPage, settingsPage } from "./pages.js?v=20261030-40";
+import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261030-27";
 
-const path = ({ "/historico": "/historico", "/simulacoes": "/simulacoes", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
-const pages = { "/": overviewPage, "/historico": historyPage, "/simulacoes": simulationsPage, "/configuracoes": settingsPage };
+const routeFromLocation = () => ({ "/historico": "/historico", "/configuracoes": "/configuracoes" })[window.location.pathname.replace(/\/$/, "")] || "/";
+let path = routeFromLocation();
+const pages = { "/": overviewPage, "/historico": historyPage, "/configuracoes": settingsPage };
+const pageHeadings = {
+  "/": ["Visão geral", "Acompanhe em tempo real as condições meteorológicas"],
+  "/historico": ["Histórico e análises", "Visualize a evolução das variáveis meteorológicas"],
+  "/configuracoes": ["Configurações", "Ajuste os parâmetros de coleta de dados e o comportamento do sistema."],
+};
 renderShell(path, pages[path]());
+// Cada aba permanece como nó DOM fora da tela enquanto outra está ativa. Assim,
+// voltar a uma aba já visitada é imediato e conserva gráficos, filtros e tabela.
+const pageViews = new Map();
+const initializedPages = new Set();
+const initialContent = document.querySelector("#conteudo");
+const initialView = document.createElement("div");
+initialView.className = "page-view";
+initialView.replaceChildren(...Array.from(initialContent.childNodes));
+initialContent.replaceChildren(initialView);
+pageViews.set(path, initialView);
+
+function mountPage(route) {
+  const content = document.querySelector("#conteudo");
+  let view = pageViews.get(route);
+  const cached = Boolean(view);
+  if (!view) {
+    view = document.createElement("div");
+    view.className = "page-view";
+    view.innerHTML = pages[route]();
+    pageViews.set(route, view);
+  }
+  content.replaceChildren(view);
+  return cached;
+}
+
+function showInitialLoadingSkeleton() {
+  const overview = `
+    <div class="skeleton-overview skeleton-real-overview">
+      <div class="skeleton-overview-main">
+        <div class="skeleton-hero skeleton-block"><i class="sk-line sk-city"></i><i class="sk-line sk-date"></i><i class="sk-line sk-temperature"></i><i class="sk-line sk-condition"></i></div>
+        <div class="skeleton-metrics skeleton-real-metrics"><div class="sk-temperature-card skeleton-block"><i class="sk-line sk-label"></i><i class="sk-line sk-big-value"></i><i class="sk-line sk-chip"></i><i class="sk-progress"></i></div><div class="sk-ring-card skeleton-block"><i class="sk-ring"></i><i class="sk-line sk-label"></i><i class="sk-line sk-detail"></i></div><div class="sk-ring-card skeleton-block"><i class="sk-ring"></i><i class="sk-line sk-label"></i><i class="sk-line sk-detail"></i></div><div class="sk-wind-card skeleton-block"><i class="sk-line sk-label"></i><i class="sk-line sk-value"></i><i class="sk-progress"></i></div></div>
+        <div class="skeleton-chart skeleton-block skeleton-weather-chart"><div class="sk-chart-title"><i class="sk-icon"></i><i class="sk-line"></i><i class="sk-tabs"></i></div><div class="sk-weather-columns">${"<i></i>".repeat(8)}</div><i class="sk-chart-line"></i></div>
+        <div class="skeleton-insights">${["", "", ""].map(() => `<div class="skeleton-block sk-mini-chart"><i class="sk-line"></i><i class="sk-mini-plot"></i></div>`).join("")}</div>
+      </div>
+      <div class="skeleton-overview-side"><div class="skeleton-block sk-forecast-side">${"<i></i>".repeat(6)}</div><div class="skeleton-block sk-table-side"><i class="sk-line"></i>${"<i></i>".repeat(8)}</div></div>
+    </div>`;
+  const history = `
+    <div class="skeleton-filter skeleton-block"><i class="sk-line"></i><i class="sk-tabs"></i></div><div class="skeleton-history"><div><div class="skeleton-chart skeleton-block skeleton-history-plot"><div class="sk-chart-title"><i class="sk-icon"></i><i class="sk-line"></i></div><i class="sk-history-grid"></i></div><div class="skeleton-insights">${["", "", ""].map(() => `<div class="skeleton-block sk-mini-chart"><i class="sk-line"></i><i class="sk-mini-plot"></i></div>`).join("")}</div></div><div class="skeleton-history-side"><div class="skeleton-block sk-summary-side">${"<i></i>".repeat(5)}</div><div class="skeleton-block sk-forecast-side">${"<i></i>".repeat(5)}</div></div></div><div class="skeleton-table skeleton-block">${"<i></i>".repeat(8)}</div>`;
+  const settings = `
+    <div class="skeleton-settings"><div><div class="skeleton-block sk-settings-card">${"<i></i>".repeat(4)}</div><div class="skeleton-block sk-settings-card">${"<i></i>".repeat(3)}</div></div><div><div class="skeleton-block sk-settings-card">${"<i></i>".repeat(4)}</div><div class="skeleton-block sk-settings-card">${"<i></i>".repeat(3)}</div></div></div><div class="skeleton-settings-action skeleton-block"><i class="sk-line"></i><i class="sk-button"></i></div>`;
+  const content = path === "/historico" ? history : path === "/configuracoes" ? settings : overview;
+  document.querySelector("#app").insertAdjacentHTML("beforeend", `
+    <div class="initial-page-skeleton" role="status" aria-live="polite" aria-label="Carregando dados">
+      <aside class="skeleton-sidebar"><i class="sk-brand"></i><i class="sk-collapse"></i><i class="sk-nav active"></i><i class="sk-nav"></i><i class="sk-nav"></i><i class="sk-refresh"></i></aside>
+      <main class="skeleton-workspace"><div class="skeleton-heading"><div><i></i><i></i></div><i class="sk-location"></i></div>${content}<span>Carregando dados…</span><div class="skeleton-mobile-nav"><i></i><i></i><i></i><i></i></div></main>
+    </div>`);
+  document.querySelector("#app").setAttribute("aria-busy", "true");
+}
+function hideInitialLoadingSkeleton() {
+  document.querySelector(".initial-page-skeleton")?.remove();
+  document.querySelector("#app").removeAttribute("aria-busy");
+}
+showInitialLoadingSkeleton();
 const preferencesKey = "meteora-ui-preferences";
 function savedPreferences() {
   try {
@@ -16,7 +74,31 @@ function savedPreferences() {
   }
   catch { return {}; }
 }
+function applySidebarState(collapsed) {
+  document.querySelector(".app-layout")?.classList.toggle("sidebar-collapsed", collapsed);
+  const toggle = document.querySelector("#sidebar-collapse-toggle");
+  if (toggle) {
+    const label = collapsed ? "Expandir menu" : "Recolher menu";
+    toggle.setAttribute("aria-label", label);
+    toggle.title = label;
+  }
+}
+function setupSidebarCollapse() {
+  applySidebarState(Boolean(savedPreferences().sidebarCollapsed));
+  document.querySelector("#sidebar-collapse-toggle")?.addEventListener("click", () => {
+    const collapsed = !document.querySelector(".app-layout")?.classList.contains("sidebar-collapsed");
+    try {
+      localStorage.setItem(preferencesKey, JSON.stringify({ ...savedPreferences(), sidebarCollapsed: collapsed }));
+    } catch {
+      // A preferência é apenas visual; a navegação segue funcionando sem armazenamento local.
+    }
+    applySidebarState(collapsed);
+  });
+}
+setupSidebarCollapse();
+document.querySelector("#collector-refresh-button")?.addEventListener("click", () => { void refreshCurrentPage({ showLoading: true }); });
 let activeReadingsApi = leiturasApi;
+let currentRefreshPromise = null;
 function simulated() {
   return activeReadingsApi === demoApi;
 }
@@ -28,7 +110,6 @@ function applyMode(mode) {
     text("#page-subtitle", {
       "/": "Explore condições meteorológicas simuladas",
       "/historico": "Visualize a evolução de dados simulados",
-      "/simulacoes": "Exemplos de cenários meteorológicos para testes do sistema",
       "/configuracoes": "Escolha quais dados aparecem na aplicação",
     }[path]);
   }
@@ -50,13 +131,12 @@ function applyTheme(choice = themeChoice()) {
   const dark = choice === "escuro" || (choice === "auto" && systemDark.matches);
   document.documentElement.dataset.theme = dark ? "dark" : "light";
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#000000" : "#f6fbff");
-  const toggle = document.querySelector("#theme-toggle");
-  if (toggle) {
+  document.querySelectorAll("#theme-toggle, #bottom-theme-toggle").forEach(toggle => {
     const label = dark ? "Ativar tema claro" : "Ativar tema escuro";
     toggle.setAttribute("aria-label", label);
     toggle.title = label;
-    toggle.innerHTML = icon(dark ? "sun" : "moon");
-  }
+    toggle.innerHTML = icon(dark ? "moon" : "sun");
+  });
   const radio = document.querySelector(`input[name="settings-theme"][value="${choice}"]`);
   if (radio) radio.checked = true;
 }
@@ -70,20 +150,36 @@ function saveTheme(choice) {
 }
 applyTheme();
 systemDark.addEventListener("change", () => { if (themeChoice() === "auto") applyTheme(); });
-document.querySelector("#theme-toggle").addEventListener("click", () => {
+document.querySelectorAll("#theme-toggle, #bottom-theme-toggle").forEach(toggle => toggle.addEventListener("click", () => {
   saveTheme(document.documentElement.dataset.theme === "dark" ? "claro" : "escuro");
-});
+}));
 function showLocation(preferences) {
   const city = String(preferences.city || "").trim();
   const state = String(preferences.state || "").trim();
-  text("#location-label", city ? `${city}${state === "São Paulo" ? ", SP" : state ? `, ${state}` : ""}` : "Localização da estação");
+  const label = city ? `${city}${state === "São Paulo" ? ", SP" : state ? `, ${state}` : ""}` : "Localização da estação";
+  document.querySelectorAll("[data-location-label]").forEach(element => { element.textContent = label; });
+  document.querySelectorAll("[data-bottom-city]").forEach(input => {
+    if (document.activeElement !== input) input.value = city ? label : "";
+  });
+  text("#current-title", city || "Condições atuais");
+  document.querySelectorAll("[data-settings-city]").forEach(element => { element.textContent = city || "—"; });
+  document.querySelectorAll("[data-settings-state]").forEach(element => { element.textContent = state || "—"; });
+}
+function showLocationCoordinates(station) {
+  const latitude = Number(station?.latitude);
+  const longitude = Number(station?.longitude);
+  document.querySelectorAll("[data-settings-latitude]").forEach(element => { element.textContent = Number.isFinite(latitude) ? latitude.toFixed(4) : "—"; });
+  document.querySelectorAll("[data-settings-longitude]").forEach(element => { element.textContent = Number.isFinite(longitude) ? longitude.toFixed(4) : "—"; });
 }
 showLocation(savedPreferences());
 
 async function showConfiguredLocation() {
   try {
     const source = await leiturasApi.buscarFonte();
-    if (source.cidade) text("#location-label", `${source.cidade}${source.estado ? `, ${source.estado}` : ""}`);
+    if (source.cidade) {
+      showLocation({ city: source.cidade, state: source.estado });
+      showLocationCoordinates(source);
+    }
   } catch {
     // A localização configurada não impede o uso da página se a API local estiver indisponível.
   }
@@ -96,11 +192,15 @@ function setupLocationSelector() {
   const modal = document.querySelector("#location-modal");
   const citySelect = document.querySelector("#location-city");
   const confirm = document.querySelector("#location-confirm");
-  const recentSection = document.querySelector("#location-recent-section");
-  const recentContainer = document.querySelector("#location-recent");
+  const bottomForm = document.querySelector("#bottom-city-form");
+  const bottomInput = document.querySelector("#bottom-city-input");
+  const bottomSuggestions = document.querySelector("#bottom-city-suggestions");
   const $ = window.jQuery;
   let $city = null;
   let openRequest = 0;
+  let bottomRequest = 0;
+  let bottomOptions = [];
+  let bottomSearchTimer = 0;
   const locationId = (city, state) => `${city}::${state}`;
 
   function close() {
@@ -124,22 +224,43 @@ function setupLocationSelector() {
     if (syncWidget && $city) $city.val(id).trigger("change.select2");
   }
 
-  function recentLocations() {
-    const locations = savedPreferences().recentCities;
-    return Array.isArray(locations) ? locations.filter(item => item?.city && item?.state).slice(0, 5) : [];
+  function hideBottomSuggestions() {
+    bottomSuggestions.hidden = true;
+    bottomSuggestions.replaceChildren();
+    bottomOptions = [];
   }
 
-  function renderRecent() {
-    const locations = recentLocations();
-    recentContainer.replaceChildren();
-    recentSection.hidden = locations.length === 0;
-    locations.forEach(item => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.textContent = `${item.city}, ${item.state}`;
-      button.addEventListener("click", () => selectCity(item.city, item.state));
-      recentContainer.append(button);
+  function showBottomSuggestions(suggestions) {
+    bottomOptions = suggestions;
+    bottomSuggestions.replaceChildren();
+    suggestions.slice(0, 5).forEach((item, index) => {
+      const option = document.createElement("button");
+      option.type = "button";
+      option.dataset.bottomCityIndex = String(index);
+      option.setAttribute("role", "option");
+      option.textContent = `${item.cidade} — ${item.nomeEstado || item.estado}`;
+      bottomSuggestions.append(option);
     });
+    bottomSuggestions.hidden = suggestions.length === 0;
+  }
+
+  async function applyCity(city, state, closeModal = false) {
+    if (!city || !state) return;
+    try {
+      const station = await estacaoApi.selecionar(city, state);
+      const preferences = savedPreferences();
+      localStorage.setItem(preferencesKey, JSON.stringify({ ...preferences, city: station.cidade, state: station.estado }));
+      showLocation({ city: station.cidade, state: station.estado });
+      showLocationCoordinates(station);
+      delete document.querySelector("#hourly-weather-rows")?.dataset.hourlyFocusedDate;
+      hideBottomSuggestions();
+      if (closeModal) close();
+      await refreshAfterCityChange();
+      showToast("Cidade atualizada e dados recarregados.");
+    } catch (error) {
+      showToast(error.message || "Não foi possível atualizar a cidade.");
+      throw error;
+    }
   }
 
   if ($?.fn?.select2) {
@@ -177,7 +298,6 @@ function setupLocationSelector() {
     const request = ++openRequest;
     locationChoice = null;
     confirm.disabled = true;
-    renderRecent();
     modal.hidden = false;
     document.body.classList.add("location-modal-open");
     try {
@@ -200,18 +320,46 @@ function setupLocationSelector() {
     if (!locationChoice) return;
     confirm.disabled = true;
     try {
-      const station = await estacaoApi.selecionar(locationChoice.city, locationChoice.state);
-      const preferences = savedPreferences();
-      const recentCities = [{ city: station.cidade, state: station.estado }, ...recentLocations()
-        .filter(item => !(item.city === station.cidade && item.state === station.estado))].slice(0, 5);
-      localStorage.setItem(preferencesKey, JSON.stringify({ ...preferences, city: station.cidade, state: station.estado, recentCities }));
-      showLocation({ city: station.cidade, state: station.estado });
-      close();
-      showToast("Cidade atualizada. Os dados começam a ser carregados em instantes.");
-      refreshAfterCityChange();
-    } catch (error) {
-      showToast(error.message || "Não foi possível atualizar a cidade.");
+      await applyCity(locationChoice.city, locationChoice.state, true);
+    } catch {
       confirm.disabled = false;
+    }
+  });
+
+  bottomInput?.addEventListener("input", () => {
+    window.clearTimeout(bottomSearchTimer);
+    const term = bottomInput.value.trim();
+    if (term.length < 2) {
+      hideBottomSuggestions();
+      return;
+    }
+    bottomSearchTimer = window.setTimeout(async () => {
+      const request = ++bottomRequest;
+      try {
+        const suggestions = await estacaoApi.sugestoes(term);
+        if (request === bottomRequest) showBottomSuggestions(suggestions);
+      } catch {
+        if (request === bottomRequest) hideBottomSuggestions();
+      }
+    }, 180);
+  });
+  bottomSuggestions?.addEventListener("click", event => {
+    const index = Number(event.target.closest("[data-bottom-city-index]")?.dataset.bottomCityIndex);
+    const option = bottomOptions[index];
+    if (option) void applyCity(option.cidade, option.estado);
+  });
+  bottomForm?.addEventListener("submit", async event => {
+    event.preventDefault();
+    const term = bottomInput.value.trim();
+    if (term.length < 2) return;
+    try {
+      const suggestions = bottomOptions.length ? bottomOptions : await estacaoApi.sugestoes(term);
+      const normalized = value => value.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLocaleLowerCase("pt-BR");
+      const option = suggestions.find(item => normalized(item.cidade) === normalized(term)) || suggestions[0];
+      if (!option) throw new Error("Nenhuma cidade brasileira encontrada.");
+      await applyCity(option.cidade, option.estado);
+    } catch (error) {
+      showToast(error.message || "Não foi possível localizar a cidade.");
     }
   });
 }
@@ -226,12 +374,54 @@ const variables = {
 };
 let latestReading = null;
 let historyReadings = [];
+let historyForecasts = [];
+let historicalDailyWeather = [];
 let historyStart = null;
 let historyEnd = null;
-let homeChartRequest = 0;
 let historyRequest = 0;
-let homeRange = "7d";
+let historyCurrentPage = 1;
+const HISTORY_PAGE_SIZE = 10;
 let pageRefreshInProgress = false;
+let homeChartRange = "24h";
+let homeChartRequest = 0;
+let recentReadings = [];
+let recentCurrentPage = 1;
+const RECENT_PAGE_SIZE = 15;
+// A coleta permanece independente no Java. Este intervalo controla somente
+// quando a interface consulta novamente os dados, sem recarregar a página.
+const DEFAULT_UI_REFRESH_INTERVAL_SECONDS = 900;
+// A coleta grava uma leitura nova a cada 10 s. Esta verificação leve só faz a
+// tela redesenhar quando o banco realmente recebeu uma leitura diferente.
+const COLLECTOR_POLL_INTERVAL_MS = 10_000;
+let backgroundRefreshTimer = null;
+let collectorRefreshTimer = null;
+
+function refreshIntervalMs() {
+  const seconds = Number(savedPreferences().interval);
+  return (Number.isFinite(seconds) && seconds > 0 ? seconds : DEFAULT_UI_REFRESH_INTERVAL_SECONDS) * 1_000;
+}
+
+function restartBackgroundRefresh() {
+  if (backgroundRefreshTimer) window.clearInterval(backgroundRefreshTimer);
+  backgroundRefreshTimer = window.setInterval(() => { void refreshCurrentPage(); }, refreshIntervalMs());
+}
+
+function wait(milliseconds) {
+  return new Promise(resolve => window.setTimeout(resolve, milliseconds));
+}
+
+async function refreshWhenCollectorChanges() {
+  if (document.hidden || pageRefreshInProgress || simulated()) return;
+  try {
+    const reading = await activeReadingsApi.buscarUltima();
+    if (!reading || reading.id === latestReading?.id) return;
+    latestReading = reading;
+    await refreshCurrentPage();
+  } catch {
+    // A troca de estação pode acontecer entre a consulta e a próxima coleta.
+    // O próximo ciclo fará a tentativa novamente, sem interromper a interface.
+  }
+}
 
 function rangeDates(range, anchor = anchorDate(latestReading)) {
   const end = new Date(anchor);
@@ -311,6 +501,7 @@ function resumoHorarioComoLeitura(resumo) {
     umidadeRelativa: resumo.umidadeRelativa,
     precipitacao: resumo.precipitacao,
     chuva: resumo.chuva,
+    probabilidadeChuva: resumo.probabilidadeChuva,
     velocidadeVento: resumo.velocidadeVento,
     codigoClima: resumo.codigoClima,
     descricaoClima: resumo.descricaoClima,
@@ -357,6 +548,11 @@ function readingMoment(reading) {
 
 function setRangeButtons(range, ids) {
   for (const id of ids) {
+    const select = document.querySelector(`#${id}`);
+    if (select instanceof HTMLSelectElement) {
+      select.value = range;
+      continue;
+    }
     document.querySelectorAll(`#${id} [data-range]`).forEach(button => {
       const selected = button.dataset.range === range;
       button.classList.toggle("selected", selected);
@@ -373,10 +569,6 @@ async function fetchLatest() {
   try {
     latestReading = await activeReadingsApi.buscarUltima();
     updateCollectorCard(latestReading);
-    if (simulated()) {
-      text("#collector-title", "Dados simulados");
-      text("#sidebar-collector-note", "Exemplos locais; o coletor não foi alterado.");
-    }
     return latestReading;
   } catch (error) {
     updateCollectorCard(null);
@@ -409,55 +601,319 @@ function renderHomeReading(reading, recent) {
   text("#current-date", `${isPreviousValid ? "Última leitura válida: " : ""}${dateTime(reading.dataHoraColeta)}`);
   text("#metric-temperature", number(reading.temperatura));
   text("#metric-humidity", number(reading.umidadeRelativa, 0));
-  text("#metric-precipitation", number(reading.precipitacao));
+  // O cartão de chuva conserva a última previsão válida enquanto a nova consulta carrega.
   text("#metric-wind", number(reading.velocidadeVento));
+  setMetricProgress(".metric-card--temperature", Number(reading.temperatura), 40);
+  setMetricProgress(".metric-card--humidity", Number(reading.umidadeRelativa), 100);
+  setMetricProgress(".metric-card--wind", Number(reading.velocidadeVento), 30);
   const first = recent.at(0);
   const temperatures = numericValues(recent, "temperatura");
-  const humidity = numericValues(recent, "umidadeRelativa");
-  text("#temperature-detail", temperatures.length ? `Mín. ${unit(Math.min(...temperatures), "°C")} · Máx. ${unit(Math.max(...temperatures), "°C")}` : "Sem histórico comparável");
-  text("#humidity-detail", humidity.length ? `Mín. ${number(Math.min(...humidity), 0)}% · Máx. ${number(Math.max(...humidity), 0)}%` : "Sem histórico comparável");
-  text("#precipitation-detail", reading.presencaPrecipitacao == null ? "Presença de chuva desconhecida" : reading.presencaPrecipitacao ? "Chuva presente" : "Sem chuva nesta leitura");
-  text("#wind-detail", "Velocidade na última leitura");
+  text("#temperature-detail", temperatures.length ? `Mín. ${number(Math.min(...temperatures))}° · Máx. ${number(Math.max(...temperatures))}°` : "Sem histórico comparável");
+  text("#humidity-detail", humidityCondition(reading.umidadeRelativa));
+  text("#wind-detail", "");
   const delta = first && first.temperatura !== null && reading.temperatura !== null ? Number(reading.temperatura) - Number(first.temperatura) : null;
   text("#temperature-detail-trend", delta === null ? "Sem tendência disponível" : `${delta >= 0 ? "↗ +" : "↘ "}${number(delta)} °C nas últimas leituras`);
   text("#humidity-detail-trend", simulated() ? "Dados simulados" : "Dados da estação");
-  text("#precipitation-detail-trend", reading.presencaPrecipitacao == null ? "Sem indicação disponível" : reading.presencaPrecipitacao ? "Precipitação detectada" : "Sem precipitação detectada");
   text("#wind-detail-trend", simulated() ? "Dados simulados" : "Dados da estação");
 }
 
-async function loadHomeChart(range) {
-  const request = ++homeChartRequest;
-  setRangeButtons(range, ["home-range"]);
-  const [start, end] = rangeDates(range);
-  text("#home-chart-subtitle", "Carregando período…");
-  try {
-    const readings = await buscarSerieDoPeriodo(start, end);
-    if (request !== homeChartRequest) return;
-    const chartReadings = readingsForPeriod(readings, start, end);
-    const summary = drawTemporalChart("#home-chart-canvas", chartReadings, "temperatura", "°C", "#2498ed", { start, end, daily: isDailyPeriod(start, end) });
-    text("#home-chart-subtitle", range === "24h"
-      ? `Médias por hora · ${summary.available} de 24 horas com dados${summary.first ? ` · ${summary.first}–${summary.last}` : ""}`
-      : `Médias por dia · ${summary.available} de ${summary.total} dias com dados`);
-  } catch (error) {
-    if (request !== homeChartRequest) return;
-    clearTemporalChart("#home-chart-canvas", error.message);
-    text("#home-chart-subtitle", "Dados indisponíveis");
+function humidityCondition(value) {
+  const humidity = Number(value);
+  if (!Number.isFinite(humidity)) return "Condição: indisponível";
+  if (humidity < 12) return "Condição: emergência · ar extremamente seco";
+  if (humidity <= 20) return "Condição: alerta · ar muito seco";
+  if (humidity <= 30) return "Condição: atenção · ar seco";
+  if (humidity <= 59) return "Condição: umidade adequada";
+  return "Condição: umidade confortável";
+}
+
+function setMetricProgress(selector, value, maximum) {
+  const card = document.querySelector(selector);
+  if (!card) return;
+  const ratio = Number.isFinite(value) && maximum > 0 ? Math.max(0, Math.min(100, (value / maximum) * 100)) : 0;
+  card.style.setProperty("--metric-progress", `${ratio}%`);
+}
+
+function previsaoNoturna(item) {
+  const horario = item.dataHora || item.dataHoraColeta || (item.data ? `${item.data}T12:00:00` : null);
+  const data = parseDate(horario);
+  return data ? data.getHours() < 6 || data.getHours() >= 18 : false;
+}
+
+// Códigos WMO da Open-Meteo. A visualização horária usa SVGs animados da
+// Meteocons; a diária mantém os mesmos símbolos em SVG estático.
+function iconeDoClimaHorario(item) {
+  const codigo = Number(item.codigoClima);
+  const noturno = previsaoNoturna(item);
+  if (codigo === 0) return noturno ? "clear-night" : "clear-day";
+  if ([1, 2].includes(codigo)) return noturno ? "partly-cloudy-night" : "partly-cloudy-day";
+  if (codigo === 3) return noturno ? "overcast-night" : "overcast-day";
+  if ([45, 48].includes(codigo)) return noturno ? "fog-night" : "fog-day";
+  if ([51, 53, 55].includes(codigo)) return "drizzle";
+  if ([56, 57, 66, 67].includes(codigo)) return "sleet";
+  if ([61, 63, 65, 80, 81, 82].includes(codigo)) return "rain";
+  if ([71, 73, 75, 77, 85, 86].includes(codigo)) return "snow";
+  if ([95, 96, 99].includes(codigo)) return "thunderstorms-rain";
+  const chance = Number(item.probabilidadeChuva ?? item.probabilidadeChuvaMaxima);
+  return Number.isFinite(chance) && chance >= 40 ? "rain" : noturno ? "partly-cloudy-night" : "partly-cloudy-day";
+}
+
+function simboloClimaHorario(asset) {
+  return `<img class="hourly-weather-symbol" src="https://cdn.meteocons.com/3.0.0-next.10/svg/fill/${asset}.svg" alt="" aria-hidden="true" decoding="async">`;
+}
+
+function simboloClimaEstatico(asset) {
+  return `<img class="forecast-meteocon" src="https://cdn.meteocons.com/3.0.0-next.10/svg-static/fill/${asset}.svg" alt="" aria-hidden="true" decoding="async">`;
+}
+
+function iconeResumo(asset) {
+  return `<span class="summary-meteocon"><img src="https://cdn.meteocons.com/3.0.0-next.10/svg-static/fill/${asset}.svg" alt="" aria-hidden="true" decoding="async"></span>`;
+}
+
+function graficoDeTemperaturaHoraria(previsoes, largura) {
+  const temperaturas = previsoes.map(item => Number(item.temperatura)).filter(Number.isFinite);
+  if (!temperaturas.length) return "";
+  const minima = Math.min(...temperaturas);
+  const maxima = Math.max(...temperaturas);
+  const media = temperaturas.reduce((soma, temperatura) => soma + temperatura, 0) / temperaturas.length;
+  const semiAmplitude = Math.max((maxima - minima) / 2, .5);
+  const pontos = previsoes.map((item, index) => {
+    const divisor = previsoes.length - 1;
+    const x = previsoes.length === 1 ? 50 : index === 0 ? 25 / divisor : index === divisor ? 100 - 25 / divisor : index / divisor * 100;
+    // A curva traduz somente a variação térmica. A média fica no centro da
+    // área gráfica; mínimo e máximo usam a amplitude disponível sem alcançar
+    // os rótulos de temperatura, acima, nem a chance de chuva, abaixo.
+    const temperatura = Number(item.temperatura);
+    const desvioNormalizado = Number.isFinite(temperatura)
+      ? Math.max(-1, Math.min(1, (temperatura - media) / semiAmplitude)) : 0;
+    const y = 53 - desvioNormalizado * 7;
+    return { x, y };
+  });
+  const linha = pontos.map(({ x, y }) => `${x},${y}`).join(" ");
+  return `<svg class="hourly-temperature-line" style="width:${largura}px" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polyline points="${linha}" /></svg><span class="hourly-temperature-dots" style="width:${largura}px" aria-hidden="true">${pontos.map(({ x, y }) => `<i style="left:${x}%;top:${y}%"></i>`).join("")}</span>`;
+}
+
+function horarioEmFormato24h(value) {
+  const data = parseDate(value);
+  if (!data) return "—";
+  return `${String(data.getHours()).padStart(2, "0")}:${String(data.getMinutes()).padStart(2, "0")}`;
+}
+
+function atualizarCartaoChuva(previsoes) {
+  const proximaPrevisao = previsoes.find(item => Number.isFinite(Number(item.probabilidadeChuva))) || previsoes[0];
+  const chance = Number(proximaPrevisao?.probabilidadeChuva);
+  const precipitacao = Number(proximaPrevisao?.precipitacao);
+  text("#metric-rain-chance", Number.isFinite(chance) ? number(chance, 0) : "—");
+  setMetricProgress(".metric-card--rain", chance, 100);
+  text("#rain-detail", `Previsto: ${Number.isFinite(precipitacao) ? unit(precipitacao, "mm") : "—"}`);
+  text("#rain-detail-trend", proximaPrevisao ? `Previsão para ${horarioEmFormato24h(proximaPrevisao.dataHora)}` : "Previsão horária indisponível");
+}
+
+function desenharGraficoClimaHorario(previsoes) {
+  const canvas = document.querySelector("#hourly-weather-rows");
+  if (!canvas) return;
+  if (!previsoes.length) {
+    canvas.innerHTML = '<div class="chart-empty">A previsão por hora ainda não está disponível.</div>';
+    return;
   }
+  atualizarCartaoChuva(previsoes);
+  canvas.setAttribute("aria-label", "Previsão por hora com linha de temperatura e probabilidade de chuva");
+  // No celular, cada hora é mais compacta para mostrar mais trechos do dia,
+  // preservando horário, ícone, temperatura e probabilidade de chuva.
+  const larguraPorHora = window.matchMedia("(max-width: 760px)").matches ? 76 : 104;
+  const largura = Math.max(canvas.clientWidth, previsoes.length * larguraPorHora);
+  canvas.innerHTML = `${graficoDeTemperaturaHoraria(previsoes, largura)}<div class="hourly-weather-points" style="--hourly-items:${previsoes.length};width:${largura}px">${previsoes.map(item => {
+    const hora = horarioEmFormato24h(item.dataHora);
+    const chance = Number(item.probabilidadeChuva);
+    const asset = iconeDoClimaHorario(item);
+    return `<article class="hourly-weather-point"><time>${hora}</time><span class="hourly-weather-icon ${asset}">${simboloClimaHorario(asset)}</span><strong>${number(item.temperatura, 0)}°</strong><span class="hourly-rain-chance">${icon("drop")} ${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span></article>`;
+  }).join("")}</div>`;
+  const hoje = dateInput(new Date());
+  if (canvas.dataset.hourlyFocusedDate !== hoje) {
+    const horaAtual = new Date().getHours();
+    const indiceAtual = previsoes.findIndex(item => parseDate(item.dataHora)?.getHours() === horaAtual);
+    if (indiceAtual >= 0) {
+      requestAnimationFrame(() => {
+        const passo = largura / previsoes.length;
+        canvas.scrollLeft = Math.max(0, indiceAtual * passo - (canvas.clientWidth - passo) / 2);
+      });
+    }
+    canvas.dataset.hourlyFocusedDate = hoje;
+  }
+}
+
+function previsaoHorariaDeExemplo() {
+  const inicio = new Date();
+  inicio.setMinutes(0, 0, 0);
+  const chances = [10, 15, 20, 35, 50, 60, 45, 30];
+  return Array.from({ length: 13 }, (_, indice) => ({
+    probabilidadeChuva: chances[indice % chances.length],
+    dataHora: new Date(inicio.getTime() + indice * 3_600_000).toISOString(),
+    temperatura: 25 - Math.min(indice, 6),
+    precipitacao: chances[indice % chances.length] >= 40 ? (chances[indice % chances.length] - 30) / 10 : 0,
+    codigoClima: chances[indice % chances.length] >= 40 ? 61 : indice < 2 ? 1 : 3,
+  }));
+}
+
+async function renderGraficoClimaHorario() {
+  if (simulated()) {
+    desenharGraficoClimaHorario(previsaoHorariaDeExemplo());
+    return;
+  }
+  const inicio = new Date();
+  inicio.setMinutes(0, 0, 0);
+  // Janela móvel: exibe as próximas doze horas, inclusive ao atravessar a meia-noite.
+  const fim = new Date(inicio);
+  fim.setHours(fim.getHours() + 12);
+  try {
+    const previsoes = await resumosHorariosApi.buscarPrevisoes(apiDate(inicio), apiDate(fim));
+    desenharGraficoClimaHorario(previsoes);
+  } catch (error) {
+    const canvas = document.querySelector("#hourly-weather-rows");
+    if (canvas) canvas.innerHTML = `<div class="chart-empty">${error.message}</div>`;
+  }
+}
+
+const titulosPrevisaoDoTempo = {
+  "24h": "Previsão do tempo",
+  "7d": "Previsão do tempo",
+  "15d": "Previsão do tempo",
+};
+
+async function renderHomeChart(range = homeChartRange, resetarNavegacao = false) {
+  homeChartRange = range;
+  setRangeButtons(range, ["home-chart-range"]);
+  text("#hourly-weather-title", titulosPrevisaoDoTempo[range] || titulosPrevisaoDoTempo["24h"]);
+  const hourlyCanvas = document.querySelector("#hourly-weather-rows");
+  const dailyPanel = document.querySelector("#home-daily-forecast");
+  const chartPanel = document.querySelector(".hourly-weather-chart");
+  if (!hourlyCanvas || !dailyPanel) return;
+  const hourly = range === "24h";
+  chartPanel?.classList.toggle("daily-forecast-mode", !hourly);
+  hourlyCanvas.hidden = !hourly;
+  dailyPanel.hidden = hourly;
+  if (hourly) {
+    await renderGraficoClimaHorario();
+    return;
+  }
+  const request = ++homeChartRequest;
+  const limite = range === "7d" ? 7 : 15;
+  try {
+    const previsoes = await buscarPrevisoesDiarias(limite);
+    if (request !== homeChartRequest || homeChartRange !== range) return;
+    renderPrevisaoDiariaNoPainel(previsoes, limite, resetarNavegacao);
+  } catch (error) {
+    if (request !== homeChartRequest || homeChartRange !== range) return;
+    const scroller = document.querySelector("#home-daily-forecast-scroll");
+    scroller.dataset.itemCount = "0";
+    scroller.dataset.allowNavigation = "false";
+    scroller.classList.remove("fit-seven-days");
+    scroller.innerHTML = `<div class="chart-empty">${error.message}</div>`;
+    atualizarNavegacaoPrevisaoDiaria();
+  }
+}
+
+function previsoesDiariasDeExemplo(limite) {
+  const inicio = new Date();
+  inicio.setHours(12, 0, 0, 0);
+  return Array.from({ length: limite }, (_, indice) => {
+    const data = new Date(inicio);
+    data.setDate(data.getDate() + indice);
+    const chance = [14, 21, 38, 60, 75, 48, 25, 15][indice % 8];
+    return {
+      data: dateInput(data), temperaturaMinima: 15 + indice % 3, temperaturaMaxima: 24 - indice % 4,
+      precipitacaoTotal: chance >= 40 ? chance / 25 : 0, probabilidadeChuvaMaxima: chance,
+      codigoClima: chance >= 40 ? 61 : indice % 3 === 0 ? 1 : 3,
+    };
+  });
+}
+
+async function buscarPrevisoesDiarias(limite) {
+  return simulated() ? previsoesDiariasDeExemplo(limite) : resumosDiariosApi.buscarPrevisoes(limite);
+}
+
+function dataDaPrevisao(item) {
+  return item.data ? parseDate(`${item.data}T12:00:00`) : item.day instanceof Date ? item.day : null;
+}
+
+function nomeDoDia(data) {
+  if (!data) return "—";
+  const day = new Intl.DateTimeFormat("pt-BR", { weekday: "long" }).format(data);
+  return `${day.charAt(0).toLocaleUpperCase("pt-BR")}${day.slice(1)}`;
+}
+
+function rotuloDaPrevisao(item, indice = 0) {
+  const data = dataDaPrevisao(item);
+  if (!data) return "—";
+  return indice === 0 ? "Hoje" : nomeDoDia(data);
+}
+
+function detalhesChuvaDaPrevisao(item) {
+  const chance = Number(item.probabilidadeChuvaMaxima ?? item.probabilidadeChuva);
+  const mm = Number(item.precipitacaoTotal ?? item.precipitacao ?? item.rain);
+  return { chance, mm };
+}
+
+function renderPrevisaoDiariaNoPainel(previsoes, limite, resetarNavegacao = false) {
+  const scroller = document.querySelector("#home-daily-forecast-scroll");
+  if (!scroller) return;
+  if (!previsoes.length) {
+    scroller.dataset.itemCount = "0";
+    scroller.dataset.allowNavigation = "false";
+    scroller.classList.remove("fit-seven-days");
+    scroller.innerHTML = '<div class="chart-empty">A previsão diária ainda não está disponível.</div>';
+    atualizarNavegacaoPrevisaoDiaria();
+    return;
+  }
+  scroller.setAttribute("aria-label", `Previsão para os próximos ${Math.min(limite, previsoes.length)} dias`);
+  scroller.dataset.itemCount = String(Math.min(limite, previsoes.length));
+  const posicaoAnterior = resetarNavegacao ? 0 : scroller.scrollLeft;
+  scroller.innerHTML = previsoes.slice(0, limite).map((item, indice) => {
+    const data = dataDaPrevisao(item);
+    const { chance, mm } = detalhesChuvaDaPrevisao(item);
+    const asset = iconeDoClimaHorario(item);
+    return `<article class="daily-forecast-item"><time>${rotuloDaPrevisao(item, indice)}<small>${data ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(data) : ""}</small></time><span class="daily-forecast-weather">${simboloClimaEstatico(asset)}<span class="daily-forecast-rain">${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span></span><strong>${number(item.temperaturaMaxima, 0)}° <small>${number(item.temperaturaMinima, 0)}°</small></strong></article>`;
+  }).join("");
+  requestAnimationFrame(() => {
+    atualizarNavegacaoPrevisaoDiaria();
+    scroller.scrollLeft = posicaoAnterior;
+    requestAnimationFrame(atualizarNavegacaoPrevisaoDiaria);
+  });
+}
+
+function atualizarNavegacaoPrevisaoDiaria() {
+  const scroller = document.querySelector("#home-daily-forecast-scroll");
+  const anterior = document.querySelector("#daily-forecast-previous");
+  const proximo = document.querySelector("#daily-forecast-next");
+  if (!scroller) return;
+  const quantidade = Number(scroller.dataset.itemCount || scroller.children.length);
+  // Sete dias ficam fixos no layout desktop. Em tela estreita, a faixa volta a
+  // ser navegável para não comprimir as colunas.
+  const semanaCabeNoPainel = quantidade <= 7 && !window.matchMedia("(max-width: 760px)").matches;
+  scroller.classList.toggle("fit-seven-days", semanaCabeNoPainel);
+  scroller.dataset.allowNavigation = String(quantidade > 0 && !semanaCabeNoPainel);
+  // A rolagem personalizada é o único controle de navegação; não há setas laterais.
+  if (anterior) anterior.hidden = true;
+  if (proximo) proximo.hidden = true;
 }
 
 function renderDemoForecast() {
   if (!simulated()) return;
   text("#forecast-source", "Exemplo de previsão simulada");
   text("#forecast-note", "Previsão ilustrativa gerada neste navegador.");
+  document.querySelector("#forecast-note").hidden = false;
   text("#overview-data-note", "Modo simulado: todos os valores desta tela são exemplos locais. Nenhum deles é gravado no MySQL.");
-  document.querySelector("#home-source-chip").innerHTML = `${icon("flask")} Fonte: Simulado`;
   const rows = document.querySelector("#forecast-rows");
   rows.setAttribute("aria-label", "Previsão simulada para cinco dias");
-  rows.innerHTML = demoForecast().map((item, index) => {
-    const label = index === 0 ? "Hoje" : new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(item.day).replace(".", "");
-    const date = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(item.day);
-    return `<div class="forecast-row"><span><strong>${label}</strong><small>${date}</small></span><span class="forecast-weather">${icon(item.rain > 0 ? "rain" : "sun")}</span><span>${number(item.maximum, 0)}°</span><span>${number(item.minimum, 0)}°</span><span>${number(item.rain)} mm</span>${icon("chevron")}</div>`;
-  }).join("");
+  rows.innerHTML = previsoesDiariasDeExemplo(5).map(renderLinhaPrevisaoDiaria).join("");
+}
+
+function renderLinhaPrevisaoDiaria(item, indice) {
+  const data = dataDaPrevisao(item);
+  const { chance } = detalhesChuvaDaPrevisao(item);
+  const asset = iconeDoClimaHorario(item);
+  const dataCurta = data ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(data) : "";
+  return `<div class="forecast-row"><span><strong>${rotuloDaPrevisao(item, indice)}</strong><small>${dataCurta}</small></span><span class="forecast-weather">${simboloClimaEstatico(asset)}</span><span class="forecast-rain">${Number.isFinite(chance) ? `${number(chance, 0)}%` : "—"}</span><span class="forecast-temperatures"><strong>${number(item.temperaturaMaxima, 0)}°</strong><small>${number(item.temperaturaMinima, 0)}°</small></span></div>`;
 }
 
 async function renderForecast() {
@@ -467,54 +923,120 @@ async function renderForecast() {
   }
   const rows = document.querySelector("#forecast-rows");
   try {
-    const previsoes = await resumosDiariosApi.buscarPrevisoes(5);
+    const previsoes = await buscarPrevisoesDiarias(5);
     if (!previsoes.length) throw new Error("A previsão ainda não foi carregada pelo coletor.");
     text("#forecast-source", "Previsão da Open-Meteo");
-    text("#forecast-note", "Atualizada pelo coletor; dias futuros não são leituras da estação.");
+    const note = document.querySelector("#forecast-note");
+    note.hidden = true;
+    note.textContent = "";
     rows.setAttribute("aria-label", "Previsão para os próximos cinco dias");
-    rows.innerHTML = previsoes.map((item, index) => {
-      const day = parseDate(`${item.data}T12:00:00`);
-      const label = index === 0 ? "Hoje" : new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(day).replace(".", "");
-      const date = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(day);
-      const rainy = Number(item.precipitacaoTotal || 0) > 0 || rainCodes.includes(item.codigoClima);
-      return `<div class="forecast-row"><span><strong>${label}</strong><small>${date}</small></span><span class="forecast-weather">${icon(rainy ? "rain" : "sun")}</span><span>${number(item.temperaturaMaxima, 0)}°</span><span>${number(item.temperaturaMinima, 0)}°</span><span>${number(item.precipitacaoTotal)} mm</span>${icon("chevron")}</div>`;
-    }).join("");
+    rows.innerHTML = previsoes.map(renderLinhaPrevisaoDiaria).join("");
   } catch (error) {
     text("#forecast-source", "Previsão ainda indisponível");
     text("#forecast-note", "Inicie o coletor para carregar os próximos dias.");
-    rows.innerHTML = `<div class="forecast-row"><span><strong>—</strong><small>sem dados</small></span><span>—</span><span>—</span><span>—</span><span>—</span></div>`;
+    document.querySelector("#forecast-note").hidden = false;
+    rows.innerHTML = `<div class="forecast-row"><span><strong>—</strong><small>sem dados</small></span><span class="forecast-weather">—</span><span class="forecast-rain">—</span><span class="forecast-temperatures"><strong>—°</strong><small>—°</small></span></div>`;
   }
 }
 
 async function refreshHome() {
-  await renderForecast();
-  await fetchLatest();
+  // Previsão e última leitura são independentes; buscar as duas juntas reduz
+  // o primeiro carregamento e as atualizações periódicas da tela inicial.
+  await Promise.all([renderForecast(), fetchLatest()]);
   try {
-    const recent = await activeReadingsApi.buscarUltimas(5);
-    const lastValid = [...recent].reverse().find(reading => reading.temperatura != null || reading.umidadeRelativa != null || reading.precipitacao != null || reading.velocidadeVento != null);
-    renderHomeReading(lastValid || latestReading, recent);
-    fillTable("#recent-rows", [...recent].reverse(), [
+    const inicioDoDia = new Date();
+    inicioDoDia.setHours(0, 0, 0, 0);
+    const fimDoDia = new Date(inicioDoDia);
+    fimDoDia.setHours(23, 59, 59, 999);
+    const [leiturasRecentes, leiturasDoDia, previsoesDoDia] = await Promise.all([
+      activeReadingsApi.buscarUltimas(100),
+      buscarSerieDoPeriodo(inicioDoDia, fimDoDia).catch(() => []),
+      simulated()
+        ? Promise.resolve(previsaoHorariaDeExemplo().map(resumoHorarioComoLeitura))
+        : resumosHorariosApi.buscarPrevisoes(apiDate(inicioDoDia), apiDate(fimDoDia))
+          .then(itens => itens.map(resumoHorarioComoLeitura))
+          .catch(() => []),
+    ]);
+    recentReadings = leiturasRecentes;
+    const lastValid = [...recentReadings].reverse().find(reading => reading.temperatura != null || reading.umidadeRelativa != null || reading.precipitacao != null || reading.velocidadeVento != null);
+    renderHomeReading(lastValid || latestReading, recentReadings);
+    renderRecentReadings();
+    renderHomeInsights(leiturasDoDia.length ? leiturasDoDia : recentReadings, previsoesDoDia);
+  } catch (error) {
+    recentReadings = [];
+    renderHomeReading(latestReading, []);
+    renderRecentReadings(error.message);
+    renderHomeInsights();
+  }
+  await renderHomeChart(homeChartRange);
+}
+
+function renderHomeInsights(readings = recentReadings, forecasts = []) {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setHours(23, 59, 59, 999);
+  const domain = { start, end, daily: false };
+  const charts = [
+    ["#home-humidity-chart", "#home-humidity-subtitle", "umidadeRelativa", "%", "#269ceb", "Umidade relativa do ar", "#home-humidity-series-legend"],
+    ["#home-rain-chart", "#home-rain-subtitle", "precipitacao", "mm", "#6a95ed", "Chuva registrada hoje", "#home-rain-series-legend"],
+    ["#home-wind-chart", "#home-wind-subtitle", "velocidadeVento", "km/h", "#18b979", "Vento registrado hoje", "#home-wind-series-legend"],
+  ];
+  charts.forEach(([selector, subtitle, field, suffix, color, description, legendSelector]) => {
+    const summary = drawTemporalChart(selector, readings, field, suffix, color, domain, forecasts);
+    const period = summary?.available ? `${summary.available} horas medidas hoje` : "Sem leituras medidas hoje";
+    text(subtitle, `${description} · ${period}`);
+    const legend = document.querySelector(legendSelector);
+    if (legend) {
+      legend.hidden = !summary?.forecast;
+      legend.style.setProperty("--measured-series-color", color);
+    }
+  });
+}
+
+function renderRecentReadings(errorMessage = null) {
+  const totalPages = Math.max(1, Math.ceil(recentReadings.length / RECENT_PAGE_SIZE));
+  recentCurrentPage = Math.min(recentCurrentPage, totalPages);
+  const start = (recentCurrentPage - 1) * RECENT_PAGE_SIZE;
+  const visible = [...recentReadings].reverse().slice(start, start + RECENT_PAGE_SIZE);
+  fillTable("#recent-rows", visible, [
       { value: reading => time(reading.dataHoraColeta) },
       { value: reading => unit(reading.temperatura, "°C") },
       { value: reading => unit(reading.umidadeRelativa, "%", 0) },
       { value: reading => unit(reading.precipitacao, "mm") },
       { value: reading => unit(reading.velocidadeVento, "km/h") },
-    ]);
-  } catch (error) {
-    renderHomeReading(latestReading, []);
-    fillTable("#recent-rows", [], Array.from({ length: 5 }, () => ({})), error.message);
+    ], errorMessage || undefined);
+  const pagination = document.querySelector("#recent-pagination");
+  const pageLabel = document.querySelector("#recent-page-label");
+  if (pagination) {
+    pagination.hidden = recentReadings.length <= RECENT_PAGE_SIZE;
+    pagination.querySelector('[data-recent-page="previous"]').disabled = recentCurrentPage === 1;
+    pagination.querySelector('[data-recent-page="next"]').disabled = recentCurrentPage === totalPages;
   }
-  await loadHomeChart(homeRange);
+  if (pageLabel) pageLabel.textContent = `Página ${recentCurrentPage} de ${totalPages}`;
 }
 
 async function initHome() {
-  await refreshHome();
-  document.querySelector("#home-range").addEventListener("click", event => {
+  document.querySelector("#home-chart-range").addEventListener("click", event => {
     const button = event.target.closest("[data-range]");
-    if (!button) return;
-    homeRange = button.dataset.range;
-    loadHomeChart(homeRange);
+    if (button) renderHomeChart(button.dataset.range, true);
   });
+  document.querySelector("#recent-pagination").addEventListener("click", event => {
+    const direction = event.target.closest("[data-recent-page]")?.dataset.recentPage;
+    if (!direction) return;
+    recentCurrentPage += direction === "next" ? 1 : -1;
+    renderRecentReadings();
+  });
+  const previsaoDiaria = document.querySelector("#home-daily-forecast-scroll");
+  const moverPrevisao = direcao => {
+    if (!previsaoDiaria) return;
+    previsaoDiaria.scrollBy({ left: direcao * Math.max(previsaoDiaria.clientWidth * .82, 420), behavior: "smooth" });
+  };
+  document.querySelector("#daily-forecast-previous")?.addEventListener("click", () => moverPrevisao(-1));
+  document.querySelector("#daily-forecast-next")?.addEventListener("click", () => moverPrevisao(1));
+  previsaoDiaria?.addEventListener("scroll", atualizarNavegacaoPrevisaoDiaria, { passive: true });
+  window.addEventListener("resize", atualizarNavegacaoPrevisaoDiaria);
+  await refreshHome();
 }
 
 function renderSummary(readings) {
@@ -524,53 +1046,90 @@ function renderSummary(readings) {
     rows.innerHTML = '<p class="muted">Não há temperaturas válidas neste período.</p>';
     return;
   }
-  const average = values.reduce((sum, value) => sum + value, 0) / values.length;
-  const minimum = Math.min(...values);
-  const maximum = Math.max(...values);
-  const variation = values.at(-1) - values[0];
-  const minReading = readings.find(reading => reading.temperatura != null && Number(reading.temperatura) === minimum);
-  const maxReading = readings.find(reading => reading.temperatura != null && Number(reading.temperatura) === maximum);
+  const average = list => list.length ? list.reduce((sum, value) => sum + value, 0) / list.length : null;
+  const humidity = numericValues(readings, "umidadeRelativa");
+  const precipitation = numericValues(readings, "precipitacao");
+  const wind = numericValues(readings, "velocidadeVento");
   rows.innerHTML = `
-    <div class="summary-row"><span class="icon-disc red">♨</span><span>Temperatura média</span><strong>${unit(average, "°C")}</strong></div>
-    <div class="summary-row"><span class="icon-disc blue">↓</span><span>Temperatura mínima</span><strong class="summary-value">${unit(minimum, "°C")}<small>${readingMoment(minReading)}</small></strong></div>
-    <div class="summary-row"><span class="icon-disc red">↑</span><span>Temperatura máxima</span><strong class="summary-value">${unit(maximum, "°C")}<small>${readingMoment(maxReading)}</small></strong></div>
-    <div class="summary-row"><span class="icon-disc teal">↗</span><span>Variação no período</span><strong class="${variation >= 0 ? "positive" : "negative"}">${variation >= 0 ? "+" : ""}${unit(variation, "°C")}</strong></div>`;
+    <div class="summary-row">${iconeResumo("thermometer")}<span>Temperatura média</span><strong>${unit(average(values), "°C")}</strong></div>
+    <div class="summary-row">${iconeResumo("humidity")}<span>Umidade média</span><strong>${unit(average(humidity), "%", 0)}</strong></div>
+    <div class="summary-row">${iconeResumo("rain")}<span>Precipitação total</span><strong>${unit(precipitation.length ? precipitation.reduce((sum, value) => sum + value, 0) : null, "mm")}</strong></div>
+    <div class="summary-row">${iconeResumo("wind")}<span>Velocidade média do vento</span><strong>${unit(average(wind), "km/h")}</strong></div>`;
+}
+
+function renderHistoricalWeather() {
+  const container = document.querySelector("#historical-weather-list");
+  if (!container) return;
+  if (!historicalDailyWeather.length) {
+    container.innerHTML = '<div class="chart-empty">Ainda não há dias medidos para exibir.</div>';
+    return;
+  }
+  container.innerHTML = historicalDailyWeather.slice(-5).reverse().map(item => {
+    const data = dataDaPrevisao(item);
+    const label = nomeDoDia(data);
+    const dataCurta = data ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(data) : "";
+    const chuva = Number(item.precipitacaoTotal);
+    const asset = iconeDoClimaHorario(item);
+    return `<div class="forecast-row historical-weather-row"><span><strong>${label}</strong><small>${dataCurta}</small></span><span class="forecast-weather">${simboloClimaEstatico(asset)}</span><span class="forecast-rain">${Number.isFinite(chuva) ? unit(chuva, "mm") : "—"}</span><span class="forecast-temperatures"><strong>${number(item.temperaturaMaxima, 0)}°</strong><small>${number(item.temperaturaMinima, 0)}°</small></span></div>`;
+  }).join("");
+}
+
+async function buscarClimaDosUltimosDias(end) {
+  if (simulated()) return [];
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const ultimoDiaCompleto = new Date(Math.min(end.getTime(), hoje.getTime() - 1));
+  ultimoDiaCompleto.setHours(0, 0, 0, 0);
+  const inicio = new Date(ultimoDiaCompleto);
+  inicio.setDate(inicio.getDate() - 4);
+  if (ultimoDiaCompleto < inicio) return [];
+  return resumosDiariosApi.buscarHistorico(dateInput(inicio), dateInput(ultimoDiaCompleto));
 }
 
 function redrawHistoryCharts() {
   const variable = document.querySelector("#history-variable").value;
   const settings = variables[variable];
-  text("#history-chart-title", `Evolução da ${settings.title}`);
+  text("#history-chart-title", `Histórico de ${settings.title}`);
   const domain = { start: historyStart, end: historyEnd, daily: isDailyPeriod(historyStart, historyEnd) };
-  const periodSubtitle = (summary, field) => {
-    const measure = field === "precipitacao" ? "Maior valor" : "Média";
-    return domain.daily
-      ? `${measure} por dia · ${summary.available} de ${summary.total} dias com dados`
-      : `${measure} por hora · ${summary.available} de 24 horas com dados${summary.first ? ` · ${summary.first}–${summary.last}` : ""}`;
-  };
-  const summary = drawTemporalChart("#history-chart-canvas", historyReadings, variable, settings.suffix, settings.color, domain);
+  const periodSubtitle = (_summary, field) => ({
+    temperatura: "Variação da temperatura",
+    umidadeRelativa: "Umidade relativa do ar",
+    precipitacao: "Chuva registrada no período",
+    velocidadeVento: "Velocidade do vento no período",
+  })[field] || "Condições registradas no período";
+  const summary = drawTemporalChart("#history-chart-canvas", historyReadings, variable, settings.suffix, settings.color, domain, historyForecasts);
   text("#history-chart-subtitle", periodSubtitle(summary, variable));
+  const legend = document.querySelector("#history-series-legend");
+  if (legend) {
+    legend.hidden = summary.forecast === 0;
+    legend.style.setProperty("--measured-series-color", settings.color);
+  }
   const miniCharts = [
-    ["#humidity-chart", "umidadeRelativa", "%", "#269ceb"],
-    ["#rain-chart", "precipitacao", "mm", "#6a95ed"],
-    ["#wind-chart", "velocidadeVento", "km/h", "#18b979"],
+    ["#humidity-chart", "umidadeRelativa", "%", "#269ceb", "#humidity-series-legend"],
+    ["#rain-chart", "precipitacao", "mm", "#6a95ed", "#rain-series-legend"],
+    ["#wind-chart", "velocidadeVento", "km/h", "#18b979", "#wind-series-legend"],
   ];
-  miniCharts.forEach(([selector, field, suffix, color], index) => {
-    const miniSummary = drawTemporalChart(selector, historyReadings, field, suffix, color, domain);
+  miniCharts.forEach(([selector, field, suffix, color, legendSelector], index) => {
+    const miniSummary = drawTemporalChart(selector, historyReadings, field, suffix, color, domain, historyForecasts);
     document.querySelectorAll(".mini-chart-card .title-with-icon small")[index].textContent = periodSubtitle(miniSummary, field);
+    const miniLegend = document.querySelector(legendSelector);
+    if (miniLegend) {
+      miniLegend.hidden = miniSummary.forecast === 0;
+      miniLegend.style.setProperty("--measured-series-color", color);
+    }
   });
 }
 
 function renderHistoryDetails() {
-  text("#summary-period", `${dateTime(historyStart)} a ${dateTime(historyEnd)}`);
-  text("#period-start", dateTime(historyStart));
-  text("#period-end", dateTime(historyEnd));
-  text("#period-count-label", historyReadings.at(0)?.diario ? "Dias com dados" : "Registros do dia");
-  text("#period-total", number(historyReadings.length, 0));
-  const sources = [...new Set(historyReadings.map(reading => reading.fonteDados).filter(Boolean))];
-  text("#period-source", sources.length ? sources.join(", ") : "—");
+  const dateFormatter = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  text("#summary-period", `Medido de ${dateFormatter.format(historyStart)} até ${dateFormatter.format(historyEnd)}`);
   renderSummary(historyReadings);
-  const visible = [...historyReadings].reverse().slice(0, 100);
+  renderHistoricalWeather();
+  const ordered = [...historyReadings].reverse();
+  const totalPages = Math.max(1, Math.ceil(ordered.length / HISTORY_PAGE_SIZE));
+  historyCurrentPage = Math.min(historyCurrentPage, totalPages);
+  const pageStart = (historyCurrentPage - 1) * HISTORY_PAGE_SIZE;
+  const visible = ordered.slice(pageStart, pageStart + HISTORY_PAGE_SIZE);
   fillTable("#history-rows", visible, [
     { value: reading => reading.diario ? readingMoment(reading) : dateTime(reading.dataHoraColeta) },
     { value: reading => unit(reading.temperatura, "°C") },
@@ -579,6 +1138,16 @@ function renderHistoryDetails() {
     { value: reading => unit(reading.velocidadeVento, "km/h") },
     { value: reading => reading.fonteDados || "—", badge: true },
   ]);
+  const pagination = document.querySelector("#history-pagination");
+  const status = document.querySelector("#history-page-status");
+  const pageLabel = document.querySelector("#history-page-label");
+  if (status) status.textContent = ordered.length ? `${pageStart + 1}–${Math.min(pageStart + HISTORY_PAGE_SIZE, ordered.length)} de ${ordered.length} registros` : "0 registros";
+  if (pagination) {
+    pagination.hidden = ordered.length <= HISTORY_PAGE_SIZE;
+    pagination.querySelector('[data-history-page="previous"]').disabled = historyCurrentPage === 1;
+    pagination.querySelector('[data-history-page="next"]').disabled = historyCurrentPage === totalPages;
+  }
+  if (pageLabel) pageLabel.textContent = `Página ${historyCurrentPage} de ${totalPages}`;
   redrawHistoryCharts();
 }
 
@@ -587,119 +1156,71 @@ async function loadHistory(start, end) {
   historyStart = start;
   historyEnd = end;
   try {
-    const readings = await buscarSerieDoPeriodo(start, end);
+    const hoje = dateInput(new Date());
+    const incluirPrevisaoHoraria = !isDailyPeriod(start, end) && dateInput(start) === hoje && dateInput(end) === hoje;
+    const [readings, previsoes, climaDosUltimosDias] = await Promise.all([
+      buscarSerieDoPeriodo(start, end),
+      incluirPrevisaoHoraria
+        ? resumosHorariosApi.buscarPrevisoes(apiDate(start), apiDate(end))
+            .then(itens => itens.map(resumoHorarioComoLeitura))
+            .catch(() => [])
+        : Promise.resolve([]),
+      buscarClimaDosUltimosDias(end).catch(() => []),
+    ]);
     if (request !== historyRequest) return;
     historyReadings = readingsForPeriod(readings, start, end);
+    historyForecasts = previsoes;
+    historicalDailyWeather = climaDosUltimosDias;
     renderHistoryDetails();
-    if (historyReadings.length > 100) showToast("Mostrando os 100 registros mais recentes na tabela.");
   } catch (error) {
     if (request !== historyRequest) return;
     historyReadings = [];
+    historyForecasts = [];
+    historicalDailyWeather = [];
     renderHistoryDetails();
     showToast(error.message);
   }
 }
 
 function setHistoryPreset(range) {
-  setRangeButtons(range, ["history-range", "chart-range"]);
+  setRangeButtons(range, ["history-range"]);
   const [start, end] = rangeDates(range);
-  document.querySelector("#history-start").value = dateInput(start);
-  document.querySelector("#history-end").value = dateInput(end);
-  loadHistory(start, end);
+  historyCurrentPage = 1;
+  return loadHistory(start, end);
 }
 
 async function initHistory() {
-  await fetchLatest();
-  setHistoryPreset("7d");
-  for (const id of ["history-range", "chart-range"]) {
-    document.querySelector(`#${id}`).addEventListener("click", event => {
-      const button = event.target.closest("[data-range]");
-      if (button) setHistoryPreset(button.dataset.range);
-    });
-  }
+  // A leitura atual não depende das consultas do histórico.
+  await Promise.all([fetchLatest(), setHistoryPreset("24h")]);
+  document.querySelector("#history-range").addEventListener("click", event => {
+    const button = event.target.closest("[data-range]");
+    if (button) setHistoryPreset(button.dataset.range);
+  });
   document.querySelector("#history-variable").addEventListener("change", redrawHistoryCharts);
-  document.querySelector("#history-filter").addEventListener("submit", event => {
-    event.preventDefault();
-    const start = parseDate(`${document.querySelector("#history-start").value}T00:00:00`);
-    const end = parseDate(`${document.querySelector("#history-end").value}T23:59:59`);
-    if (!start || !end || start > end) return showToast("Escolha um período válido.");
-    if (end - start > 31 * 24 * 60 * 60_000) return showToast("O período máximo é de 31 dias.");
-    document.querySelectorAll("#history-range .segment, #chart-range .segment").forEach(button => {
-      button.classList.remove("selected");
-      button.setAttribute("aria-pressed", "false");
-    });
-    loadHistory(start, end);
-  });
-}
-
-function initSimulations() {
-  fetchLatest();
-  drawScenarioComparison("#comparison-chart", "Temperatura");
-  const executions = [];
-  function renderPreview() {
-    const last = executions[0];
-    if (!last) return;
-    const item = scenarios.find(scenario => scenario.key === last.key);
-    const container = document.querySelector("#last-simulation-content");
-    container.className = "simulation-result";
-    container.replaceChildren();
-    const head = document.createElement("div");
-    head.className = "simulation-result-head";
-    const heading = document.createElement("div");
-    heading.innerHTML = `<span class="icon-disc ${item.tone}">${document.querySelector(`[data-scenario="${item.key}"]`).closest(".scenario-card").querySelector(".scenario-icon").innerHTML}</span><div><strong></strong><small>Prévia local em <time></time></small></div>`;
-    heading.querySelector("strong").textContent = item.title;
-    heading.querySelector("time").textContent = dateTime(last.at);
-    const badge = document.createElement("span");badge.className="pill green-pill";badge.textContent="Prévia";
-    head.append(heading,badge);container.append(head);
-    const values = document.createElement("dl");
-    for (const [label,value] of [["Temperatura",item.values[0]],["Umidade",item.values[1]],["Precipitação",item.values[2]],["Vento",item.values[3]]]) {
-      const row=document.createElement("div"),dt=document.createElement("dt"),dd=document.createElement("dd");
-      dt.textContent=label;dd.textContent=value;row.append(dt,dd);values.append(row);
-    }
-    container.append(values);
-    const note=document.createElement("p");note.className="simulation-result-note";note.textContent="Resultado ilustrativo; não registrado no banco.";container.append(note);
-    const rows=document.querySelector("#sim-history-rows");rows.replaceChildren();
-    for(const execution of executions){
-      const scenario=scenarios.find(candidate=>candidate.key===execution.key);
-      const row=rows.insertRow();
-      for(const value of [dateTime(execution.at),scenario.title,...scenario.values]){row.insertCell().textContent=value;}
-    }
-  }
-  if (simulated()) {
-    const now = Date.now();
-    executions.push(
-      { key: "chuva", at: new Date(now - 60 * 60_000) },
-      { key: "seco", at: new Date(now - 4 * 60 * 60_000) },
-      { key: "vento", at: new Date(now - 24 * 60 * 60_000) },
-    );
-    renderPreview();
-  }
-  document.querySelectorAll("[data-scenario]").forEach(button => {
-    button.addEventListener("click", () => {
-      executions.unshift({key:button.dataset.scenario,at:new Date()});
-      renderPreview();
-      showToast("Prévia local exibida. Nenhum dado foi enviado ao coletor ou gravado no MySQL.");
-    });
-  });
-  document.querySelectorAll("[data-sim-metric]").forEach(button => {
-    button.addEventListener("click", () => {
-      document.querySelectorAll("[data-sim-metric]").forEach(other => other.classList.toggle("selected", other === button));
-      drawScenarioComparison("#comparison-chart", button.dataset.simMetric);
-    });
+  document.querySelector("#history-pagination").addEventListener("click", event => {
+    const direction = event.target.closest("[data-history-page]")?.dataset.historyPage;
+    if (!direction) return;
+    historyCurrentPage += direction === "next" ? 1 : -1;
+    renderHistoryDetails();
   });
 }
 
 async function initSettings() {
-  function showLastReading() {
-    text("#settings-last-reading", latestReading ? dateTime(latestReading.dataHoraColeta) : "—");
-    if (!latestReading) return text("#settings-last-badge", "Indisponível");
-    if (simulated()) return text("#settings-last-badge", "Exemplo");
-    const minutes = Math.max(0, Math.round((Date.now() - parseDate(latestReading.dataHoraColeta).getTime()) / 60_000));
-    text("#settings-last-badge", minutes < 1 ? "Agora" : `Há ${minutes} min`);
-  }
   const saved = savedPreferences();
-  document.querySelector("#settings-interval").value = saved.interval || "900";
-  document.querySelector("#settings-notes").value = saved.notes || "";
+  const interval = document.querySelector("#settings-interval");
+  interval.value = saved.interval || "900";
+  const syncIntervalChoices = () => {
+    document.querySelectorAll("[data-interval-choice]").forEach(button => {
+      const selected = button.dataset.intervalChoice === interval.value;
+      button.classList.toggle("selected", selected);
+      button.setAttribute("aria-pressed", String(selected));
+    });
+  };
+  syncIntervalChoices();
+  document.querySelectorAll("[data-interval-choice]").forEach(button => button.addEventListener("click", () => {
+    interval.value = button.dataset.intervalChoice;
+    syncIntervalChoices();
+  }));
   document.querySelector(`input[name="settings-mode"][value="${saved.mode === "simulado" ? "simulado" : "real"}"]`).checked = true;
   document.querySelectorAll('input[name="settings-mode"]').forEach(radio => {
     radio.addEventListener("change", async () => {
@@ -708,7 +1229,6 @@ async function initSettings() {
         localStorage.setItem(preferencesKey, JSON.stringify({ ...savedPreferences(), mode: radio.value }));
         applyMode(radio.value);
         await fetchLatest();
-        showLastReading();
         showToast(radio.value === "simulado" ? "Modo simulado ativo em todas as telas." : "Modo real ativo em todas as telas.");
       } catch {
         showToast("Não foi possível guardar o modo neste navegador.");
@@ -723,43 +1243,98 @@ async function initSettings() {
     const preferences = {
       interval: document.querySelector("#settings-interval").value,
       mode: document.querySelector('input[name="settings-mode"]:checked').value,
-      notes: document.querySelector("#settings-notes").value.trim(),
     };
     try {
       localStorage.setItem(preferencesKey, JSON.stringify({ ...savedPreferences(), ...preferences }));
       applyMode(preferences.mode);
-      showToast("Configurações salvas neste navegador.");
+      restartBackgroundRefresh();
+      void refreshCurrentPage();
+      showToast("Configurações salvas. A interface será atualizada no intervalo escolhido.");
     } catch (error) {
       showToast(error.message || "Não foi possível atualizar a estação.");
     }
   });
+  let configuredStation = null;
+  try {
+    configuredStation = await estacaoApi.ativa();
+    showLocation({ city: configuredStation.cidade, state: configuredStation.estado });
+    showLocationCoordinates(configuredStation);
+  } catch {
+    showLocation(saved);
+  }
+  const citySelect = document.querySelector("#settings-location-city");
+  const $ = window.jQuery;
+  const locationId = (city, state) => `${city}::${state}`;
+  const selectStation = station => {
+    if (!station?.cidade || !station?.estado) return;
+    const id = locationId(station.cidade, station.estado);
+    let option = [...citySelect.options].find(item => item.value === id);
+    if (!option) {
+      option = new Option(`${station.cidade} — ${station.estado}`, id, true, true);
+      citySelect.add(option);
+    }
+    citySelect.value = id;
+    if ($?.fn?.select2) $(citySelect).val(id).trigger("change");
+  };
+  const applyStation = async (city, state) => {
+    if (!city || !state) return;
+    try {
+      const station = await estacaoApi.selecionar(city, state);
+      localStorage.setItem(preferencesKey, JSON.stringify({ ...savedPreferences(), city: station.cidade, state: station.estado }));
+      showLocation({ city: station.cidade, state: station.estado });
+      showLocationCoordinates(station);
+      selectStation(station);
+      await refreshCurrentPage({ showLoading: true });
+      showToast("Cidade atualizada e dados recarregados.");
+    } catch (error) {
+      showToast(error.message || "Não foi possível atualizar a cidade.");
+    }
+  };
+  if ($?.fn?.select2) {
+    const $settingsCity = $(citySelect);
+    $settingsCity.select2({
+      width: "100%",
+      placeholder: citySelect.dataset.placeholder,
+      minimumInputLength: 2,
+      dropdownParent: $settingsCity.closest(".settings-location-card"),
+      language: { inputTooShort: () => "Digite ao menos 2 letras", searching: () => "Buscando cidades…", noResults: () => "Nenhuma cidade brasileira encontrada" },
+      ajax: {
+        delay: 200,
+        transport: (params, success, failure) => { estacaoApi.sugestoes(params.data.term || "").then(success).catch(failure); return { abort() {} }; },
+        processResults: suggestions => ({ results: suggestions.map(item => ({ id: locationId(item.cidade, item.estado), text: `${item.cidade} — ${item.nomeEstado || item.estado}`, cidade: item.cidade, estado: item.estado })) })
+      }
+    });
+    $settingsCity.on("select2:select", event => { void applyStation(event.params.data.cidade, event.params.data.estado); });
+  } else {
+    citySelect.addEventListener("change", () => {
+      const [city, state] = citySelect.value.split("::");
+      void applyStation(city, state);
+    });
+  }
+  selectStation(configuredStation || { cidade: saved.city, estado: saved.state });
   await fetchLatest();
-  showLastReading();
-  try {
-    const fonte = await leiturasApi.buscarFonte();
-    const link = document.querySelector("#settings-source-link");
-    link.href = fonte.urlConsulta;
-    link.hidden = false;
-    text("#settings-source-detail", `${fonte.nome} · ${fonte.cidade} · ${fonte.latitude}, ${fonte.longitude}`);
-  } catch (error) {
-    text("#settings-source-detail", "Link para a fonte indisponível");
-  }
-  try {
-    const total = await leiturasApi.buscarTotal();
-    text("#settings-db-detail", `${number(total.total, 0)} leituras disponíveis`);
-    text("#settings-db-badge", "Conectado");
-    document.querySelector("#settings-db-badge").classList.add("green-pill");
-  } catch (error) {
-    text("#settings-db-detail", error.message);
-    text("#settings-db-badge", "Indisponível");
-    document.querySelector("#settings-db-badge").classList.add("neutral-pill");
-  }
 }
 
-async function refreshCurrentPage() {
-  if (document.hidden || pageRefreshInProgress) return;
+function showDataRefreshOverlay() {
+  const overlay = document.querySelector("#data-refresh-overlay");
+  if (overlay) overlay.hidden = false;
+}
+
+function hideDataRefreshOverlay() {
+  const overlay = document.querySelector("#data-refresh-overlay");
+  if (overlay) overlay.hidden = true;
+}
+
+async function refreshCurrentPage({ showLoading = false } = {}) {
+  if (document.hidden) return false;
+  if (pageRefreshInProgress) {
+    if (showLoading) showDataRefreshOverlay();
+    try { return await currentRefreshPromise; }
+    finally { if (showLoading) hideDataRefreshOverlay(); }
+  }
   pageRefreshInProgress = true;
-  try {
+  if (showLoading) showDataRefreshOverlay();
+  currentRefreshPromise = (async () => {
     if (path === "/") {
       await refreshHome();
     } else if (path === "/historico") {
@@ -772,23 +1347,100 @@ async function refreshCurrentPage() {
     } else {
       await fetchLatest();
     }
+    return true;
+  })();
+  try {
+    return await currentRefreshPromise;
   } finally {
     pageRefreshInProgress = false;
+    currentRefreshPromise = null;
+    if (showLoading) hideDataRefreshOverlay();
   }
 }
 
-function refreshAfterCityChange() {
-  // A primeira tentativa é imediata; as demais acompanham a coleta e a sincronização da nova cidade.
-  [0, 2_000, 5_000, 10_000].forEach(delay => window.setTimeout(() => { void refreshCurrentPage(); }, delay));
+async function refreshAfterCityChange() {
+  // O coletor detecta uma estação nova em até 1 s e persiste a leitura. Não
+  // escondemos a animação antes de a API poder devolver dados daquela cidade.
+  showDataRefreshOverlay();
+  try {
+    const limite = Date.now() + 15_000;
+    let leituraNova = null;
+    while (Date.now() < limite && !leituraNova) {
+      try { leituraNova = await activeReadingsApi.buscarUltima(); }
+      catch { await wait(750); }
+    }
+    if (leituraNova) latestReading = leituraNova;
+    await refreshCurrentPage();
+  } finally {
+    hideDataRefreshOverlay();
+  }
 }
 
 function startBackgroundRefresh() {
-  window.setInterval(() => { void refreshCurrentPage(); }, 10_000);
+  restartBackgroundRefresh();
+  if (collectorRefreshTimer) window.clearInterval(collectorRefreshTimer);
+  collectorRefreshTimer = window.setInterval(() => { void refreshWhenCollectorChanges(); }, COLLECTOR_POLL_INTERVAL_MS);
   window.addEventListener("focus", () => { void refreshCurrentPage(); });
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) void refreshCurrentPage();
   });
 }
 
-({ "/": initHome, "/historico": initHistory, "/simulacoes": initSimulations, "/configuracoes": initSettings })[path]();
+async function initializePage(route, { initial = false } = {}) {
+  try {
+    await ({ "/": initHome, "/historico": initHistory, "/configuracoes": initSettings })[route]();
+  } catch (error) {
+    showToast(error.message || "Não foi possível carregar os dados iniciais.");
+  } finally {
+    initializedPages.add(route);
+    if (initial) hideInitialLoadingSkeleton();
+  }
+}
+
+function atualizarNavegacaoAtiva() {
+  const [title, subtitle] = pageHeadings[path];
+  document.title = `${title} · Meteora`;
+  text(".page-heading h1", title);
+  text("#page-subtitle", subtitle);
+  document.querySelectorAll(".nav-link, .bottom-nav-link").forEach(link => {
+    const active = link.getAttribute("href") === path;
+    link.classList.toggle("active", active);
+    if (active) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
+  });
+}
+
+async function navegarPara(nextPath, { push = true } = {}) {
+  if (!pages[nextPath]) return;
+  if (nextPath === path) {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+  // Trocar de aba mantém a interface já montada; não é uma ação de recarga e
+  // não deve cobrir a página com a animação. A animação fica reservada para
+  // troca de cidade, botão Atualizar e primeira carga.
+  if (push) window.history.pushState({}, "", nextPath);
+  const cached = mountPage(nextPath);
+  path = nextPath;
+  atualizarNavegacaoAtiva();
+  window.scrollTo({ top: 0, behavior: "auto" });
+  if (!cached || !initializedPages.has(path)) {
+    await initializePage(path);
+    return;
+  }
+  await refreshCurrentPage();
+}
+
+document.addEventListener("click", event => {
+  const link = event.target.closest("a[href]");
+  if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  const target = new URL(link.href, window.location.href);
+  const nextPath = ({ "/": "/", "/historico": "/historico", "/configuracoes": "/configuracoes" })[target.pathname.replace(/\/$/, "") || "/"];
+  if (!nextPath || target.origin !== window.location.origin) return;
+  event.preventDefault();
+  void navegarPara(nextPath);
+});
+
+window.addEventListener("popstate", () => { void navegarPara(routeFromLocation(), { push: false }); });
+void initializePage(path, { initial: true });
 startBackgroundRefresh();

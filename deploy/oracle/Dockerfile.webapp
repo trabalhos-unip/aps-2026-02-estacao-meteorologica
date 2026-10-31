@@ -1,0 +1,29 @@
+FROM maven:3.9.11-eclipse-temurin-21 AS build
+
+WORKDIR /workspace
+ENV MAVEN_OPTS="-Xmx384m"
+COPY pom.xml .
+COPY compartilhado/pom.xml compartilhado/pom.xml
+COPY collector/pom.xml collector/pom.xml
+COPY webapp/pom.xml webapp/pom.xml
+RUN mvn -B -pl webapp -am dependency:go-offline
+
+# Esta camada muda menos que o front-end e pode ser reutilizada pelo Docker.
+# O POM pai precisa estar no repositorio local para o artefato compartilhado
+# instalado abaixo ser resolvido fora do reactor Maven.
+RUN mvn -B -N install -Dmaven.test.skip=true
+COPY compartilhado/src compartilhado/src
+RUN mvn -B -pl compartilhado install -Dmaven.test.skip=true
+COPY webapp/src webapp/src
+RUN mvn -B -pl webapp package -Dmaven.test.skip=true \
+    && cp /workspace/webapp/target/webapp-0.0.1-SNAPSHOT.jar /workspace/webapp.jar
+
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+LABEL org.opencontainers.image.source="https://github.com/trabalhos-unip/aps-2026-02-estacao-meteorologica" \
+      org.opencontainers.image.title="Meteora webapp" \
+      org.opencontainers.image.description="Aplicação web Meteora"
+COPY --from=build /workspace/webapp.jar /app/app.jar
+EXPOSE 8080
+ENV JAVA_TOOL_OPTIONS="-Xms128m -Xmx512m"
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

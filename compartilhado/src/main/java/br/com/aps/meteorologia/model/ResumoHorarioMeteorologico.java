@@ -38,6 +38,7 @@ public class ResumoHorarioMeteorologico {
     @Column(name = "umidade_relativa") private Integer umidadeRelativa;
     private Double precipitacao;
     private Double chuva;
+    @Column(name = "probabilidade_chuva") private Integer probabilidadeChuva;
     @Column(name = "velocidade_vento") private Double velocidadeVento;
     @Column(name = "codigo_clima") private Integer codigoClima;
     @Column(name = "fonte_dados", nullable = false, length = 100) private String fonteDados;
@@ -59,6 +60,8 @@ public class ResumoHorarioMeteorologico {
     public void setPrecipitacao(Double precipitacao) { this.precipitacao = precipitacao; }
     public Double getChuva() { return chuva; }
     public void setChuva(Double chuva) { this.chuva = chuva; }
+    public Integer getProbabilidadeChuva() { return probabilidadeChuva; }
+    public void setProbabilidadeChuva(Integer probabilidadeChuva) { this.probabilidadeChuva = probabilidadeChuva; }
     public Double getVelocidadeVento() { return velocidadeVento; }
     public void setVelocidadeVento(Double velocidadeVento) { this.velocidadeVento = velocidadeVento; }
     public Integer getCodigoClima() { return codigoClima; }

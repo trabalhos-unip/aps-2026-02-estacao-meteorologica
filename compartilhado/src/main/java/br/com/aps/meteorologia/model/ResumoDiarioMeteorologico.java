@@ -57,6 +57,9 @@ public class ResumoDiarioMeteorologico {
     @Column(name = "precipitacao_total")
     private Double precipitacaoTotal;
 
+    @Column(name = "probabilidade_chuva_maxima")
+    private Integer probabilidadeChuvaMaxima;
+
     @Column(name = "vento_maximo")
     private Double ventoMaximo;
 
@@ -87,6 +90,8 @@ public class ResumoDiarioMeteorologico {
     public void setUmidadeMedia(Double umidadeMedia) { this.umidadeMedia = umidadeMedia; }
     public Double getPrecipitacaoTotal() { return precipitacaoTotal; }
     public void setPrecipitacaoTotal(Double precipitacaoTotal) { this.precipitacaoTotal = precipitacaoTotal; }
+    public Integer getProbabilidadeChuvaMaxima() { return probabilidadeChuvaMaxima; }
+    public void setProbabilidadeChuvaMaxima(Integer probabilidadeChuvaMaxima) { this.probabilidadeChuvaMaxima = probabilidadeChuvaMaxima; }
     public Double getVentoMaximo() { return ventoMaximo; }
     public void setVentoMaximo(Double ventoMaximo) { this.ventoMaximo = ventoMaximo; }
     public Integer getCodigoClima() { return codigoClima; }

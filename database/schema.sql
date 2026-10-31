@@ -17,7 +17,9 @@ CREATE TABLE IF NOT EXISTS estacao (
     PRIMARY KEY (id),
     CONSTRAINT uq_estacao_nome UNIQUE (nome),
     CONSTRAINT ck_estacao_latitude CHECK (latitude BETWEEN -90 AND 90),
-    CONSTRAINT ck_estacao_longitude CHECK (longitude BETWEEN -180 AND 180)
+    CONSTRAINT ck_estacao_longitude CHECK (longitude BETWEEN -180 AND 180),
+    CONSTRAINT ck_estacao_pais CHECK (pais = 'BR'),
+    CONSTRAINT ck_estacao_estado CHECK (estado REGEXP '^[A-Z]{2}$')
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS leitura_meteorologica (
@@ -103,6 +105,7 @@ CREATE TABLE IF NOT EXISTS resumo_diario_meteorologico (
     temperatura_media   DOUBLE       NULL,
     umidade_media       DOUBLE       NULL,
     precipitacao_total  DOUBLE       NULL,
+    probabilidade_chuva_maxima INT  NULL,
     vento_maximo        DOUBLE       NULL,
     codigo_clima        INT          NULL,
     fonte_dados         VARCHAR(100) NOT NULL,
@@ -112,6 +115,7 @@ CREATE TABLE IF NOT EXISTS resumo_diario_meteorologico (
         ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT uq_resumo_diario_estacao_data_tipo UNIQUE (estacao_id, data_referencia, tipo),
     CONSTRAINT ck_resumo_diario_tipo CHECK (tipo IN ('HISTORICO', 'PREVISAO')),
+    CONSTRAINT ck_resumo_diario_probabilidade_chuva CHECK (probabilidade_chuva_maxima BETWEEN 0 AND 100),
     INDEX idx_resumo_diario_estacao_data_tipo (estacao_id, data_referencia, tipo)
 ) ENGINE=InnoDB;
 
@@ -124,6 +128,7 @@ CREATE TABLE IF NOT EXISTS resumo_horario_meteorologico (
     umidade_relativa      INT          NULL,
     precipitacao          DOUBLE       NULL,
     chuva                 DOUBLE       NULL,
+    probabilidade_chuva   INT          NULL,
     velocidade_vento      DOUBLE       NULL,
     codigo_clima          INT          NULL,
     fonte_dados           VARCHAR(100) NOT NULL,
@@ -133,6 +138,7 @@ CREATE TABLE IF NOT EXISTS resumo_horario_meteorologico (
         ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT uq_resumo_horario_estacao_momento_tipo UNIQUE (estacao_id, data_hora_referencia, tipo),
     CONSTRAINT ck_resumo_horario_tipo CHECK (tipo IN ('HISTORICO', 'PREVISAO')),
+    CONSTRAINT ck_resumo_horario_probabilidade_chuva CHECK (probabilidade_chuva BETWEEN 0 AND 100),
     INDEX idx_resumo_horario_estacao_momento_tipo (estacao_id, data_hora_referencia, tipo)
 ) ENGINE=InnoDB;
 

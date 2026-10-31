@@ -8,5 +8,6 @@ import java.util.List;
 public interface ResumoHorarioMeteorologicoDAO {
     ResumoHorarioMeteorologico salvarOuAtualizar(ResumoHorarioMeteorologico resumo);
     List<ResumoHorarioMeteorologico> buscarHistorico(Long estacaoId, LocalDateTime inicio, LocalDateTime fim);
+    List<ResumoHorarioMeteorologico> buscarPrevisoes(Long estacaoId, LocalDateTime inicio, LocalDateTime fim);
     int removerPrevisoesAnterioresA(Long estacaoId, LocalDateTime dataHora);
 }

@@ -3,9 +3,7 @@
 O banco MySQL do projeto se chama `estacao_meteorologica` e possui cinco tabelas: `estacao`, `leitura_meteorologica`, `log_coleta`, `resumo_diario_meteorologico` e `resumo_horario_meteorologico`.
 
 - [schema.sql](../database/schema.sql) cria uma instalação nova.
-- [V2__estacao_log_e_variaveis_extras.sql](../database/migrations/V2__estacao_log_e_variaveis_extras.sql) atualiza a estrutura antiga sem apagar leituras.
-- [V3__resumos_por_estacao.sql](../database/migrations/V3__resumos_por_estacao.sql) vincula os resumos já existentes à estação correta.
-- [V4__estacao_brasileira_ativa.sql](../database/migrations/V4__estacao_brasileira_ativa.sql) identifica cidade, UF e país, além de definir a estação ativa.
+- [V2__estacao_log_e_variaveis_extras.sql](../database/migrations/V2__estacao_log_e_variaveis_extras.sql) é a migration consolidada: atualiza a estrutura antiga sem apagar leituras, vincula resumos à estação, identifica cidade/UF/país e inclui as probabilidades de chuva.
 - [dados-teste.sql](../database/dados-teste.sql) insere leituras de exemplo depois de a estação existir.
 
 ## Relacionamentos
@@ -67,7 +65,7 @@ Os status são `SUCESSO` e `ERRO`. Os tipos de erro são `TIMEOUT`, `REDE`, `LIM
 
 Os dois resumos recebem `estacao_id`, `tipo` (`HISTORICO` ou `PREVISAO`), a origem e o instante de atualização.
 O diário consolida mínima, máxima, média, umidade, precipitação, vento e código WMO por data. O horário mantém a
-série individual por hora. O coletor busca 15 dias anteriores e 7 dias futuros na Open-Meteo ao iniciar, a cada seis
+série individual por hora. O coletor busca 30 dias anteriores e 15 dias futuros na Open-Meteo ao iniciar, a cada seis
 horas e até 10 segundos após uma troca de estação; leituras locais continuam sendo o registro das condições atuais.
 
 ## Regras e validações

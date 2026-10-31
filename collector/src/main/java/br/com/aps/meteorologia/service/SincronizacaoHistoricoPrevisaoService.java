@@ -62,8 +62,8 @@ public class SincronizacaoHistoricoPrevisaoService {
                                                   @Value("${openmeteo.latitude}") double latitude,
                                                   @Value("${openmeteo.longitude}") double longitude,
                                                   @Value("${openmeteo.timezone}") String timezone,
-                                                  @Value("${sincronizacao.historico-dias:15}") int diasHistorico,
-                                                  @Value("${sincronizacao.previsao-dias:7}") int diasPrevisao) {
+                                                  @Value("${sincronizacao.historico-dias:30}") int diasHistorico,
+                                                  @Value("${sincronizacao.previsao-dias:15}") int diasPrevisao) {
         this.client = client;
         this.dao = dao;
         this.daoHorario = daoHorario;
@@ -150,7 +150,8 @@ public class SincronizacaoHistoricoPrevisaoService {
                 LocalDateTime momento = LocalDateTime.parse(tempos.get(indice));
                 AcumuladoDiario acumulado = porDia.computeIfAbsent(momento.toLocalDate(), AcumuladoDiario::new);
                 acumulado.adicionar(momento, valor(horas.temperatura(), indice), valor(horas.umidadeRelativa(), indice),
-                        valor(horas.precipitation(), indice), valor(horas.velocidadeVento(), indice), valor(horas.codigoClima(), indice));
+                        valor(horas.precipitation(), indice), valor(horas.probabilidadeChuva(), indice),
+                        valor(horas.velocidadeVento(), indice), valor(horas.codigoClima(), indice));
             } catch (DateTimeParseException e) {
                 log.warn("Horário inesperado ignorado na série da Open-Meteo: {}", tempos.get(indice));
             }
@@ -172,6 +173,7 @@ public class SincronizacaoHistoricoPrevisaoService {
                 resumo.setUmidadeRelativa(valor(horas.umidadeRelativa(), indice));
                 resumo.setPrecipitacao(valor(horas.precipitation(), indice));
                 resumo.setChuva(valor(horas.rain(), indice));
+                resumo.setProbabilidadeChuva(valor(horas.probabilidadeChuva(), indice));
                 resumo.setVelocidadeVento(valor(horas.velocidadeVento(), indice));
                 resumo.setCodigoClima(valor(horas.codigoClima(), indice));
                 resumo.setFonteDados(tipo == TipoResumoDiario.HISTORICO ? FONTE_HISTORICO : FONTE_PREVISAO);
@@ -193,17 +195,19 @@ public class SincronizacaoHistoricoPrevisaoService {
         private final List<Double> temperaturas = new ArrayList<>();
         private final List<Integer> umidades = new ArrayList<>();
         private final List<Double> precipitacoes = new ArrayList<>();
+        private final List<Integer> probabilidadesChuva = new ArrayList<>();
         private final List<Double> ventos = new ArrayList<>();
         private Integer codigoClima;
         private Integer codigoClimaMeioDia;
 
         private AcumuladoDiario(LocalDate data) { this.data = data; }
 
-        private void adicionar(LocalDateTime momento, Double temperatura, Integer umidade, Double precipitacao,
+        private void adicionar(LocalDateTime momento, Double temperatura, Integer umidade, Double precipitacao, Integer probabilidadeChuva,
                                Double vento, Integer codigo) {
             if (temperatura != null) temperaturas.add(temperatura);
             if (umidade != null) umidades.add(umidade);
             if (precipitacao != null) precipitacoes.add(precipitacao);
+            if (probabilidadeChuva != null) probabilidadesChuva.add(probabilidadeChuva);
             if (vento != null) ventos.add(vento);
             if (codigo != null) {
                 codigoClima = codigo;
@@ -221,6 +225,7 @@ public class SincronizacaoHistoricoPrevisaoService {
             resumo.setTemperaturaMedia(media(temperaturas));
             resumo.setUmidadeMedia(mediaInteiros(umidades));
             resumo.setPrecipitacaoTotal(soma(precipitacoes));
+            resumo.setProbabilidadeChuvaMaxima(maximoInteiros(probabilidadesChuva));
             resumo.setVentoMaximo(maximo(ventos));
             resumo.setCodigoClima(codigoClimaMeioDia != null ? codigoClimaMeioDia : codigoClima);
             resumo.setFonteDados(tipo == TipoResumoDiario.HISTORICO ? FONTE_HISTORICO : FONTE_PREVISAO);
@@ -233,5 +238,6 @@ public class SincronizacaoHistoricoPrevisaoService {
         private static Double soma(List<Double> valores) { return valores.isEmpty() ? null : valores.stream().mapToDouble(Double::doubleValue).sum(); }
         private static Double media(List<Double> valores) { return valores.isEmpty() ? null : valores.stream().mapToDouble(Double::doubleValue).average().orElseThrow(); }
         private static Double mediaInteiros(List<Integer> valores) { return valores.isEmpty() ? null : valores.stream().mapToInt(Integer::intValue).average().orElseThrow(); }
+        private static Integer maximoInteiros(List<Integer> valores) { return valores.stream().max(Comparator.naturalOrder()).orElse(null); }
     }
 }

@@ -16,6 +16,7 @@ public record RespostaSerieOpenMeteo(String timezone, DadosHorarios hourly) {
             @JsonProperty("relative_humidity_2m") List<Integer> umidadeRelativa,
             List<Double> precipitation,
             List<Double> rain,
+            @JsonProperty("precipitation_probability") List<Integer> probabilidadeChuva,
             @JsonProperty("wind_speed_10m") List<Double> velocidadeVento,
             @JsonProperty("weather_code") List<Integer> codigoClima) {
     }

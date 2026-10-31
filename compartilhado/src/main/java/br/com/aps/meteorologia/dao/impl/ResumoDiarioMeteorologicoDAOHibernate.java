@@ -23,6 +23,7 @@ public class ResumoDiarioMeteorologicoDAOHibernate implements ResumoDiarioMeteor
             existente.setTemperaturaMedia(resumo.getTemperaturaMedia());
             existente.setUmidadeMedia(resumo.getUmidadeMedia());
             existente.setPrecipitacaoTotal(resumo.getPrecipitacaoTotal());
+            existente.setProbabilidadeChuvaMaxima(resumo.getProbabilidadeChuvaMaxima());
             existente.setVentoMaximo(resumo.getVentoMaximo());
             existente.setCodigoClima(resumo.getCodigoClima());
             existente.setFonteDados(resumo.getFonteDados());

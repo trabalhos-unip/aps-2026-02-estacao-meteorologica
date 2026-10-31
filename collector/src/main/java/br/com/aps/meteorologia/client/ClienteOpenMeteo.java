@@ -28,6 +28,8 @@ public class ClienteOpenMeteo implements IFonteMeteorologica {
     static final String VARIAVEIS_METEOROLOGICAS =
             "temperature_2m,relative_humidity_2m,precipitation,rain,wind_speed_10m,weather_code,"
                     + "apparent_temperature,surface_pressure,wind_direction_10m,wind_gusts_10m,cloud_cover";
+    /** A probabilidade existe apenas na série horária; não é uma variável de condição atual. */
+    static final String VARIAVEIS_HORARIAS = VARIAVEIS_METEOROLOGICAS + ",precipitation_probability";
 
     private final ObjectMapper conversorJson;
     private final HttpClient clienteHttp;
@@ -177,7 +179,7 @@ public class ClienteOpenMeteo implements IFonteMeteorologica {
     private URI criarEnderecoSerie(int diasPassados, int diasPrevisao, double latitude, double longitude, String fusoHorario) {
         return URI.create(String.format(Locale.ROOT,
                 "%s?latitude=%.4f&longitude=%.4f&hourly=%s&past_days=%d&forecast_days=%d&timezone=%s",
-                urlBase, latitude, longitude, VARIAVEIS_METEOROLOGICAS, diasPassados, diasPrevisao,
+                urlBase, latitude, longitude, VARIAVEIS_HORARIAS, diasPassados, diasPrevisao,
                 URLEncoder.encode(fusoHorario, StandardCharsets.UTF_8)));
     }
 }

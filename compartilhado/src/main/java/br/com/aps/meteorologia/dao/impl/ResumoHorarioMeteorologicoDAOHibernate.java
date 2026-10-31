@@ -24,6 +24,7 @@ public class ResumoHorarioMeteorologicoDAOHibernate implements ResumoHorarioMete
             existente.setUmidadeRelativa(resumo.getUmidadeRelativa());
             existente.setPrecipitacao(resumo.getPrecipitacao());
             existente.setChuva(resumo.getChuva());
+            existente.setProbabilidadeChuva(resumo.getProbabilidadeChuva());
             existente.setVelocidadeVento(resumo.getVelocidadeVento());
             existente.setCodigoClima(resumo.getCodigoClima());
             existente.setFonteDados(resumo.getFonteDados());
@@ -38,6 +39,14 @@ public class ResumoHorarioMeteorologicoDAOHibernate implements ResumoHorarioMete
                 "from ResumoHorarioMeteorologico r where r.estacaoId = :estacaoId and r.tipo = :tipo and r.dataHora between :inicio and :fim order by r.dataHora",
                 ResumoHorarioMeteorologico.class).setParameter("estacaoId", estacaoId)
                 .setParameter("tipo", TipoResumoDiario.HISTORICO).setParameter("inicio", inicio).setParameter("fim", fim).getResultList());
+    }
+
+    @Override
+    public List<ResumoHorarioMeteorologico> buscarPrevisoes(Long estacaoId, LocalDateTime inicio, LocalDateTime fim) {
+        return OperacaoHibernate.consultar("Erro ao consultar previsões horárias", sessao -> sessao.createQuery(
+                "from ResumoHorarioMeteorologico r where r.estacaoId = :estacaoId and r.tipo = :tipo and r.dataHora between :inicio and :fim order by r.dataHora",
+                ResumoHorarioMeteorologico.class).setParameter("estacaoId", estacaoId)
+                .setParameter("tipo", TipoResumoDiario.PREVISAO).setParameter("inicio", inicio).setParameter("fim", fim).getResultList());
     }
 
     @Override

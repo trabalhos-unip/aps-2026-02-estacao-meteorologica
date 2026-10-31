@@ -1,0 +1,25 @@
+# O nome publico e fornecido apenas pelo arquivo .env.oracle, nunca pelo Git.
+# Caddy solicita e renova automaticamente o certificado TLS valido.
+{$CADDY_DOMAIN} {
+	encode zstd gzip
+
+	# Cabecalhos seguros para a aplicacao web.
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(), microphone=(), camera=()"
+	}
+
+	# O Docker pode recriar o webapp com outro IP. A consulta dinamica ao DNS
+	# interno evita que o proxy fique preso ao endereco antigo e devolva 502.
+	reverse_proxy {
+		dynamic a webapp 8080 {
+			refresh 10s
+			resolvers 127.0.0.11
+		}
+		lb_try_duration 5s
+		lb_try_interval 250ms
+	}
+}

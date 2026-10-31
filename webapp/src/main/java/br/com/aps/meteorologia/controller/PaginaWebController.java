@@ -17,8 +17,13 @@ public class PaginaWebController {
         return "redirect:/";
     }
 
-    @GetMapping({"/historico", "/simulacoes", "/configuracoes"})
+    @GetMapping({"/historico", "/configuracoes"})
     public String abrirAplicacao() {
         return "forward:/index.html";
+    }
+
+    @GetMapping("/simulacoes")
+    public String redirecionarSimulacoes() {
+        return "redirect:/";
     }
 }

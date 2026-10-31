@@ -1,0 +1,52 @@
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    env_file: .env.oracle
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    command: ["--innodb-buffer-pool-size=256M", "--max-connections=30"]
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ../../database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  webapp:
+    build:
+      context: ../..
+      dockerfile: deploy/oracle/Dockerfile.webapp
+    restart: unless-stopped
+    env_file: .env.oracle
+    environment:
+      MYSQL_HOST: mysql
+      SERVIDOR_PORTA: 8080
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+  collector:
+    build:
+      context: ../..
+      dockerfile: deploy/oracle/Dockerfile.collector
+    restart: unless-stopped
+    env_file: .env.oracle
+    environment:
+      MYSQL_HOST: mysql
+      COLETA_INTERVALO_MS: ${COLETA_INTERVALO_MS:-600000}
+      SINCRONIZACAO_HISTORICO_DIAS: ${SINCRONIZACAO_HISTORICO_DIAS:-30}
+      SINCRONIZACAO_PREVISAO_DIAS: ${SINCRONIZACAO_PREVISAO_DIAS:-15}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  mysql-data:
