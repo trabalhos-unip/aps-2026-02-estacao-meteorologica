@@ -3,7 +3,7 @@
 set -Eeuo pipefail
 
 readonly PROJETO="$HOME/aps-2026-02-estacao-meteorologica"
-readonly BRANCH="feature/probabilidade-chuva-horaria"
+readonly BRANCH="feature/ajustes-pos-documentacao"
 readonly COMPOSE=(
   docker compose
   --env-file deploy/oracle/.env.oracle
