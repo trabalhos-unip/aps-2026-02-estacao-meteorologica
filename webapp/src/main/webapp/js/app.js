@@ -612,11 +612,12 @@ function renderHomeReading(reading, recent) {
   setMetricProgress(".metric-card--wind", Number(reading.velocidadeVento), 30);
   const first = recent.at(0);
   const temperatures = numericValues(recent, "temperatura");
-  const today = dateInput(new Date());
-  const forecastForToday = dailyForecasts.find(item => {
-    const date = dataDaPrevisao(item);
-    return date && dateInput(date) === today;
-  });
+  // O painel "Próximos dias" trata o primeiro resumo devolvido pela API como
+  // "Hoje". O cartão usa exatamente esse mesmo item, sem recalcular a data
+  // no navegador (o que poderia cair no fallback perto da virada do dia).
+  const forecastForToday = dailyForecasts.find(item =>
+    Number.isFinite(Number(item.temperaturaMinima)) && Number.isFinite(Number(item.temperaturaMaxima))
+  );
   const minimumToday = Number(forecastForToday?.temperaturaMinima);
   const maximumToday = Number(forecastForToday?.temperaturaMaxima);
   const hasDailyExtremes = Number.isFinite(minimumToday) && Number.isFinite(maximumToday);
