@@ -39,30 +39,16 @@ function mountPage(route) {
 }
 
 function showInitialLoadingSkeleton() {
-  const bars = (count, className = "sk-row") => Array.from({ length: count }, () => `<i class="${className}"></i>`).join("");
-  const miniChart = () => `<article class="skeleton-block sk-mini-chart"><div class="sk-card-heading"><i class="sk-round"></i><span>${bars(2, "sk-text")}</span></div><i class="sk-plot"></i></article>`;
-  const metric = () => `<article class="skeleton-block sk-metric"><div class="sk-card-heading"><i class="sk-round"></i><i class="sk-text"></i></div><i class="sk-value"></i><i class="sk-text sk-detail"></i><i class="sk-progress"></i></article>`;
-  const forecastList = () => `<article class="skeleton-block sk-list-card"><div class="sk-card-heading"><i class="sk-round"></i><span>${bars(2, "sk-text")}</span></div><div class="sk-list">${bars(5)}</div></article>`;
-  const overview = `
-    <div class="skeleton-overview skeleton-real-overview">
-      <div class="skeleton-overview-main">
-        <section class="skeleton-block sk-hero"><i class="sk-text sk-city"></i><i class="sk-text sk-date"></i><i class="sk-hero-value"></i><i class="sk-text sk-condition"></i></section>
-        <div class="skeleton-metrics">${metric()}${metric()}${metric()}${metric()}</div>
-        <section class="skeleton-block sk-weather-chart"><div class="sk-card-heading"><i class="sk-round"></i><i class="sk-text"></i><i class="sk-tabs"></i></div><div class="sk-hour-columns">${Array.from({ length: 9 }, () => `<span>${bars(3, "sk-dot")}</span>`).join("")}</div><i class="sk-chart-line"></i></section>
-        <div class="skeleton-insights">${miniChart()}${miniChart()}${miniChart()}</div>
-      </div>
-      <div class="skeleton-overview-side">${forecastList()}<article class="skeleton-block sk-table-card"><div class="sk-card-heading"><i class="sk-round"></i><i class="sk-text"></i><i class="sk-button"></i></div><i class="sk-table-head"></i>${bars(7)}</article></div>
-    </div>`;
-  const history = `
-    <section class="skeleton-block sk-filter"><div><i class="sk-text"></i><i class="sk-segmented"></i></div><div><i class="sk-text"></i><i class="sk-select"></i></div></section><div class="skeleton-history"><div class="skeleton-history-main"><section class="skeleton-block sk-history-chart"><div class="sk-card-heading"><i class="sk-round"></i><span>${bars(2, "sk-text")}</span><i class="sk-legend"></i></div><i class="sk-plot"></i></section><div class="skeleton-insights">${miniChart()}${miniChart()}${miniChart()}</div></div><aside class="skeleton-history-side"><article class="skeleton-block sk-summary-card"><div class="sk-card-heading"><span>${bars(2, "sk-text")}</span></div><div class="sk-summary-rows">${Array.from({ length: 4 }, () => `<div><i class="sk-round"></i><i class="sk-text"></i><i class="sk-value"></i></div>`).join("")}</div></article>${forecastList()}</aside></div><section class="skeleton-block sk-records-card"><div class="sk-card-heading"><i class="sk-round"></i><i class="sk-text"></i></div><i class="sk-table-head"></i>${bars(6)}</section>`;
-  const settings = `
-    <div class="skeleton-settings"><div><section class="skeleton-block sk-settings-card"><div class="sk-card-heading"><i class="sk-round"></i><span>${bars(2, "sk-text")}</span></div><i class="sk-select"></i><div class="sk-two-fields"><i></i><i></i></div></section><section class="skeleton-block sk-settings-card"><div class="sk-card-heading"><i class="sk-round"></i><span>${bars(2, "sk-text")}</span></div><i class="sk-segmented"></i></section></div><div><section class="skeleton-block sk-settings-card"><div class="sk-card-heading"><i class="sk-round"></i><span>${bars(2, "sk-text")}</span></div><div class="sk-option-pair"><i></i><i></i></div></section><section class="skeleton-block sk-settings-card"><div class="sk-card-heading"><i class="sk-round"></i><span>${bars(2, "sk-text")}</span></div><div class="sk-theme-pair"><i></i><i></i><i></i></div></section></div></div><footer class="skeleton-block sk-settings-action"><i class="sk-text"></i><i class="sk-button"></i></footer>`;
-  const content = path === "/historico" ? history : path === "/configuracoes" ? settings : overview;
+  const pageName = path === "/historico" ? "seu histórico" : path === "/configuracoes" ? "suas configurações" : "a estação";
   document.querySelector("#app").insertAdjacentHTML("beforeend", `
-    <div class="initial-page-skeleton" role="status" aria-live="polite" aria-label="Carregando dados">
-      <aside class="skeleton-sidebar skeleton-block"><div class="sk-sidebar-brand"><i class="sk-logo"></i><span>${bars(2, "sk-text")}</span><i class="sk-collapse"></i></div><i class="sk-section-label"></i><nav class="sk-sidebar-nav"><i class="active"></i><i></i><i></i></nav><div class="sk-sidebar-footer"><i class="sk-refresh"></i><span>${bars(2, "sk-text")}</span></div></aside>
-      <main class="skeleton-workspace"><header class="skeleton-topbar"><div class="skeleton-heading"><i class="sk-page-title"></i><i class="sk-page-subtitle"></i></div><div class="sk-top-actions"><i class="sk-location"></i><i class="sk-theme-toggle"></i></div></header><div class="skeleton-page-content">${content}</div></main>
-      <nav class="skeleton-mobile-nav" aria-hidden="true"><i></i><i></i><i></i><i></i></nav><span class="sr-only">Carregando dados…</span>
+    <div class="initial-page-skeleton meteora-loading-screen" role="status" aria-live="polite" aria-label="Carregando dados meteorológicos">
+      <div class="meteora-loading-card">
+        <div class="meteora-loading-mark" aria-hidden="true"><i class="meteora-loading-sun"></i><i class="meteora-loading-cloud cloud-back"></i><i class="meteora-loading-cloud cloud-front"></i><i class="meteora-loading-rain"></i></div>
+        <span class="meteora-loading-brand">Meteora</span>
+        <strong>Carregando dados meteorológicos</strong>
+        <p>Preparando ${pageName} para você.</p>
+        <span class="meteora-loading-progress" aria-hidden="true"><i></i></span>
+      </div>
     </div>`);
   document.querySelector("#app").setAttribute("aria-busy", "true");
 }
