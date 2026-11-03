@@ -1,8 +1,8 @@
 # Estação Meteorológica — APS 2026/2
 
 Sistema acadêmico para coletar, armazenar e visualizar dados meteorológicos. O projeto consulta a
-[Open-Meteo](https://open-meteo.com/en/docs), grava as leituras em um banco MySQL e disponibiliza uma interface Web
-com dados e gráficos.
+[Open-Meteo](https://open-meteo.com/en/docs), grava leituras, histórico e previsão em um banco MySQL e disponibiliza
+uma interface Web responsiva com dados, gráficos e seleção de cidades brasileiras.
 
 > A Open-Meteo fornece dados de modelos meteorológicos, e não medições de sensores físicos instalados pelo grupo.
 > Por isso, cada leitura mantém separadamente o horário da coleta e o horário informado pela fonte.
@@ -13,8 +13,8 @@ O projeto Maven possui três módulos:
 
 - **`collector`**: obtém dados meteorológicos reais ou simulados, grava as leituras no MySQL e registra o resultado de
   cada tentativa em `log_coleta`;
-- **`webapp`**: consulta as leituras no banco e as apresenta no navegador por meio de uma página HTML/CSS/JavaScript e
-  de uma API JSON;
+- **`webapp`**: oferece a API JSON e a interface Meteora, com visão geral, histórico, previsão horária e diária,
+  configurações, temas claro/escuro e seleção da cidade monitorada;
 - **`compartilhado`**: contém as entidades, DAOs, regras de configuração e conexão Hibernate utilizadas pelas duas
   aplicações.
 
@@ -22,9 +22,10 @@ O banco possui cinco tabelas principais:
 
 - `estacao`: cadastro da estação monitorada;
 - `leitura_meteorologica`: dados meteorológicos coletados;
-- `log_coleta`: histórico de sucessos e falhas do coletor.
-- `resumo_diario_meteorologico`: histórico diário reconstituído e previsão diária, separados por tipo.
-- `resumo_horario_meteorologico`: série horária que preenche lacunas quando o coletor ficou desligado.
+- `log_coleta`: histórico de sucessos e falhas do coletor;
+- `resumo_diario_meteorologico`: histórico diário reconstituído e previsão diária, separados por tipo;
+- `resumo_horario_meteorologico`: série horária que preenche lacunas quando o coletor ficou desligado e armazena a
+  probabilidade de chuva por horário.
 
 A instalação inicial utiliza **Sorocaba/SP**. Pela tela de configurações, é possível escolher qualquer cidade do
 Brasil informando cidade e UF. A aplicação consulta a Geocoding API da Open-Meteo, persiste cidade, UF, coordenadas e
@@ -49,14 +50,15 @@ coordenadas da estação ativa no próximo ciclo, sem precisar ser reiniciado.
 - MySQL 8;
 - Maven;
 - HTML, CSS e JavaScript;
-- Tomcat embutido no Spring Boot.
+- Tomcat embutido no Spring Boot;
+- Docker e Caddy no ambiente de publicação da Oracle Cloud.
 
 ## Requisitos
 
 - JDK 21 ou superior;
 - Maven 3.9 ou o Maven integrado ao IntelliJ IDEA;
 - MySQL 8 instalado e em execução;
-- acesso à internet somente para coletas no modo `REAL`.
+- acesso à internet para coletas no modo `REAL`, sincronização de histórico/previsão e busca de cidades.
 
 Não é necessário instalar um servidor Tomcat separadamente.
 
@@ -112,7 +114,8 @@ Para atualizar uma instalação anterior à V2, faça um backup e execute a migr
 [`database/migrations/V2__estacao_log_e_variaveis_extras.sql`](database/migrations/V2__estacao_log_e_variaveis_extras.sql).
 Ela preserva as leituras e resumos existentes e acrescenta estação, localização brasileira, logs,
 resumos por estação e probabilidades de chuva.
-Não execute as migrações depois do `schema.sql` atual, pois uma instalação nova já nasce completa.
+Não execute a migration depois do `schema.sql` atual, pois uma instalação nova já nasce completa. Bancos que já
+receberam a sequência antiga de migrations V2–V6 também não devem reaplicar a V2 consolidada.
 
 O arquivo [`database/dados-teste.sql`](database/dados-teste.sql) é opcional e insere leituras reais e simuladas para
 testes da interface.
@@ -203,12 +206,16 @@ sempre que alterar o modo ou o cenário.
 | `MYSQL_DATABASE` | `estacao_meteorologica` | Nome do banco |
 | `MYSQL_USER` | `aps` | Usuário da aplicação |
 | `MYSQL_PASSWORD` | vazio | Senha local do usuário da aplicação |
-| `ESTACAO_NOME` | `Estação Sorocaba` | Alternativa usada somente antes do primeiro cadastro no banco |
+| `ESTACAO_NOME` | `Estacao Sorocaba` | Nome alternativo usado somente antes do primeiro cadastro no banco |
 | `OPENMETEO_LATITUDE` | `-23.5015` | Coordenada alternativa antes do primeiro cadastro ou no modo simulado |
 | `OPENMETEO_LONGITUDE` | `-47.4526` | Coordenada alternativa antes do primeiro cadastro ou no modo simulado |
+| `OPENMETEO_TIMEZONE` | `America/Sao_Paulo` | Fuso padrão do webapp; a estação ativa mantém seu próprio fuso no banco |
 | `COLETA_INTERVALO_MS` | `10000` | Intervalo entre coletas em milissegundos |
 | `COLETA_VERIFICACAO_ESTACAO_MS` | `1000` | Verificação leve de troca de estação; consulta a API somente quando há mudança |
-| `SINCRONIZACAO_VERIFICACAO_ESTACAO_MS` | `10000` | Verificação de troca de cidade para recarregar histórico e previsão |
+| `SINCRONIZACAO_HISTORICO_DIAS` | `30` | Quantidade de dias anteriores carregados da Open-Meteo |
+| `SINCRONIZACAO_PREVISAO_DIAS` | `15` | Quantidade de dias futuros carregados da Open-Meteo |
+| `SINCRONIZACAO_INTERVALO_MS` | `21600000` | Atualização periódica do histórico e da previsão (6 horas) |
+| `SINCRONIZACAO_VERIFICACAO_ESTACAO_MS` | `1000` | Verificação de troca de cidade para recarregar histórico e previsão |
 | `COLETA_MODO` | `REAL` | Origem da coleta: `REAL` ou `SIMULADO` |
 | `COLETA_CENARIO` | vazio | Cenário fixo no modo simulado; vazio alterna os cenários |
 | `SERVIDOR_PORTA` | `8080` | Porta HTTP do webapp |
@@ -220,13 +227,18 @@ necessários de teste e demonstração, respeitando os limites da Open-Meteo.
 
 | Endereço | Resultado |
 |---|---|
-| <http://localhost:8080> | Página principal com a leitura mais recente e o gráfico |
+| <http://localhost:8080> | Visão geral com condições atuais, gráficos e previsões |
+| <http://localhost:8080/historico> | Histórico por período e variável meteorológica |
+| <http://localhost:8080/configuracoes> | Localização, modo visual e preferências da interface |
 | <http://localhost:8080/api/leituras/ultima> | Leitura mais recente em JSON |
 | <http://localhost:8080/api/leituras?limite=20> | Últimas 20 leituras em ordem cronológica |
 | <http://localhost:8080/api/leituras?modo=REAL> | Somente leituras reais |
 | <http://localhost:8080/api/leituras?modo=SIMULADO> | Somente leituras simuladas |
-| <http://localhost:8080/api/leituras/total> | Quantidade total de leituras |
+| <http://localhost:8080/api/leituras/total> | Quantidade total de leituras no banco |
 | <http://localhost:8080/api/estacao> | Estação brasileira ativa |
+| <http://localhost:8080/api/estacao/sugestoes?termo=Sorocaba> | Sugestões de cidades brasileiras |
+| <http://localhost:8080/api/fonte> | Fonte e localização atualmente consultadas |
+| <http://localhost:8080/api/resumos-diarios/previsoes?dias=5> | Previsão diária, de 1 a 16 dias |
 
 A consulta por período também está disponível:
 
@@ -236,6 +248,18 @@ http://localhost:8080/api/leituras/periodo?inicio=2026-10-20T00:00:00&fim=2026-1
 
 O período máximo é de 31 dias e o limite máximo é de 1.000 registros. Os parâmetros `modo` e `limite` são opcionais.
 
+Também existem consultas de resumos diários e horários:
+
+```text
+GET /api/resumos-diarios/historico?inicio=2026-10-01&fim=2026-10-30
+GET /api/resumos-diarios/previsoes?dias=5
+GET /api/resumos-horarios/historico?inicio=2026-10-30T00:00:00&fim=2026-10-30T23:59:59
+GET /api/resumos-horarios/previsoes?inicio=2026-10-31T00:00:00&fim=2026-11-01T23:59:59
+```
+
+Para selecionar outra cidade, envie `POST /api/estacao` com JSON no formato
+`{"cidade":"Campinas","estado":"SP"}`. A estação anterior e seus dados permanecem preservados.
+
 ## Testes
 
 Execute todos os testes na raiz do projeto:
@@ -244,8 +268,13 @@ Execute todos os testes na raiz do projeto:
 mvn test
 ```
 
-Os testes automatizados não dependem do MySQL local nem de acesso à internet. O módulo compartilhado usa H2 em memória
-no modo de compatibilidade com MySQL, e o cliente da API é testado com um servidor HTTP local.
+Estado verificado em 02/11/2026: **58 testes, 0 falhas, 0 erros e 0 ignorados** — 11 no módulo `compartilhado`,
+30 no `collector` e 17 no `webapp`.
+
+A suíte conclui sem exigir um MySQL disponível nem acesso externo à Open-Meteo. O módulo compartilhado usa H2 em
+memória no modo de compatibilidade com MySQL, e o cliente da API é testado com um servidor HTTP local. Durante os
+testes de contexto do collector podem aparecer tentativas de sincronização com o MySQL local; a indisponibilidade é
+tratada e não interrompe a suíte.
 
 ## Segurança e arquivos locais
 
@@ -261,6 +290,7 @@ compartilhado/  Entidades, interfaces de persistência, DAOs Hibernate e configu
 collector/      Fontes meteorológicas, normalização dos dados, conversor e serviço de coleta
 webapp/         Servlet, serviço de consulta e interface HTML/CSS/JavaScript
 database/       Schema atual, migração da estrutura antiga e dados de teste
+deploy/oracle/  Dockerfiles, Compose, Caddy e guia de publicação na Oracle Cloud
 docs/           Arquitetura, modelo de dados, planejamento, testes e evidências
 scripts/        Guias detalhados para executar o collector e o webapp
 .run/           Configurações de execução do IntelliJ IDEA
@@ -272,7 +302,9 @@ Pacote Java principal: `br.com.aps.meteorologia`.
 
 Para publicar a aplicação completa em uma VM Oracle Cloud Always Free, consulte
 [`deploy/oracle/GUIA.md`](deploy/oracle/GUIA.md). Ele inclui os Dockerfiles do
-`webapp` e do `collector`, MySQL persistente e os passos do console da Oracle.
+`webapp` e do `collector`, MySQL persistente, configuração para VMs de 1 GB, Caddy com HTTPS e acesso administrativo ao
+banco por túnel SSH. O workflow de GitHub Actions só executa quando `ORACLE_DEPLOY_ENABLED=true` e está atualmente
+associado à branch `feature/probabilidade-chuva-horaria`.
 
 | Documento | Conteúdo |
 |---|---|
