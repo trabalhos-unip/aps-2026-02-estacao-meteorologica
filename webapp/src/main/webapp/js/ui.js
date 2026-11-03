@@ -161,9 +161,21 @@ export function updateCollectorCard(latest) {
   text("#sidebar-last-reading", stamp ? dateTime(stamp) : "—");
 }
 
+function mensagemParaUsuario(message) {
+  const original = String(message || "").trim();
+  const tecnico = /\b(?:typeerror|referenceerror|syntaxerror|cannot|undefined|null|innerhtml|stack|exception)\b|\bat\s+[\w$.]+\s*\(|^error\s*:|\b(?:http|status)\s*[45]\d{2}\b/i.test(original);
+  if (!tecnico) return original || "Não foi possível concluir esta ação agora.";
+  // O detalhe continua acessível para quem estiver inspecionando o navegador,
+  // mas não é uma mensagem apropriada para a pessoa que usa a aplicação.
+  console.error("Erro técnico ocultado da notificação:", message);
+  if (/fetch|network|networkerror|load failed/i.test(original)) return "Não foi possível conectar aos dados da estação. Tente novamente em instantes.";
+  return "Não foi possível concluir esta ação agora. Tente novamente em instantes.";
+}
+
 export function showToast(message) {
   const toast = document.querySelector("#toast");
-  const normalized = String(message || "");
+  if (!toast) return;
+  const normalized = mensagemParaUsuario(message);
   const kind = /n[aã]o foi|erro|falha|indispon[ií]vel/i.test(normalized)
     ? "error"
     : /salv|atualizad|ativo|conclu[ií]d/i.test(normalized)
