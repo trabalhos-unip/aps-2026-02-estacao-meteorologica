@@ -403,3 +403,10 @@
 :where([data-theme="dark"]) .data-refresh-overlay{background:rgba(10,18,29,.94)}:where([data-theme="dark"]) .data-refresh-overlay-card{border-color:#2b4056;background:#141f2b;color:#e8f4ff;box-shadow:0 18px 45px #00000055}:where([data-theme="dark"]) .data-refresh-overlay-card>span:last-child{color:#9db3c9}
 
 :where([data-theme="dark"]) .data-refresh-overlay{background:rgba(10,18,29,.94)}:where([data-theme="dark"]) .data-refresh-overlay-card{border-color:#2b4056;background:#141f2b;color:#e8f4ff;box-shadow:0 18px 45px #00000055}:where([data-theme="dark"]) .data-refresh-overlay-card span{color:#9db3c9}
+
+/* O alternador de tema é uma ação neutra da navegação móvel: sem fundo de
+   seleção e usando a mesma cor-base dos demais ícones inativos. */
+@media(max-width:760px){
+  :root[data-theme="dark"] .bottom-theme-button,:root[data-theme="dark"] .bottom-theme-button:hover,:root[data-theme="dark"] .bottom-theme-button:focus-visible{background:transparent!important;color:#b7c8da!important;box-shadow:none!important}
+  :root[data-theme="dark"] .bottom-theme-button:hover,:root[data-theme="dark"] .bottom-theme-button:focus-visible{background:#202d3a!important;color:#e9f5ff!important}
+}
