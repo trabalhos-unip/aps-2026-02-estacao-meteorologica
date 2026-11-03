@@ -343,6 +343,21 @@
 :where([data-theme="dark"]) .toast p{color:#b8c3d1}
 :where([data-theme="dark"]) .toast-icon{background:#12314a;color:#65beff}
 :where([data-theme="dark"]) .toast[data-kind="success"] .toast-icon{background:#103a2d;color:#64dcaa}
+
+/* Sidebar desktop: os botões herdavam os discos claros do tema base. No
+   escuro, cada ação usa uma superfície neutra e o azul fica reservado ao
+   item selecionado, sem alterar a navegação compacta do celular. */
+@media(min-width:761px){
+  :root[data-theme="dark"] .sidebar .nav-link{color:#d5deea}
+  :root[data-theme="dark"] .sidebar .nav-link .icon{background:#1a2028;color:#aebed0}
+  :root[data-theme="dark"] .sidebar .nav-link:hover{background:#172434;color:#e6f4ff}
+  :root[data-theme="dark"] .sidebar .nav-link:hover .icon{background:#20364b;color:#94d1ff}
+  :root[data-theme="dark"] .sidebar .nav-link.active{background:#123b62;color:#e8f6ff;box-shadow:inset 0 0 0 1px #237ab9}
+  :root[data-theme="dark"] .sidebar .nav-link.active .icon{background:#1f82d2;color:#f5fbff;box-shadow:0 5px 12px #0b5b9d66}
+  :root[data-theme="dark"] .sidebar .collector-card{background:#171c23!important;color:#c4d0df!important}
+  :root[data-theme="dark"] .sidebar .collector-update-label{color:#93a6bc}
+  :root[data-theme="dark"] .sidebar .collector-card #sidebar-last-reading{color:#d7e2ef!important}
+}
 :where([data-theme="dark"]) .toast[data-kind="error"] .toast-icon{background:#452220;color:#ff948a}
 
 /* Mesmas proporções do conteúdo no carregamento, sem clarões no tema escuro. */

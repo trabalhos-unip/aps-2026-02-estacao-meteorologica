@@ -385,6 +385,10 @@ let pageRefreshInProgress = false;
 let homeChartRange = "24h";
 let homeChartRequest = 0;
 let recentReadings = [];
+// A previsão diária já é usada no painel de próximos dias. Mantemos a versão
+// atual para que o cartão de temperatura possa exibir os extremos do dia,
+// sem misturar leituras de dias/horários anteriores.
+let dailyForecasts = [];
 let recentCurrentPage = 1;
 const RECENT_PAGE_SIZE = 15;
 // A coleta permanece independente no Java. Este intervalo controla somente
@@ -608,7 +612,17 @@ function renderHomeReading(reading, recent) {
   setMetricProgress(".metric-card--wind", Number(reading.velocidadeVento), 30);
   const first = recent.at(0);
   const temperatures = numericValues(recent, "temperatura");
-  text("#temperature-detail", temperatures.length ? `Mín. ${number(Math.min(...temperatures))}° · Máx. ${number(Math.max(...temperatures))}°` : "Sem histórico comparável");
+  const today = dateInput(new Date());
+  const forecastForToday = dailyForecasts.find(item => {
+    const date = dataDaPrevisao(item);
+    return date && dateInput(date) === today;
+  });
+  const minimumToday = Number(forecastForToday?.temperaturaMinima);
+  const maximumToday = Number(forecastForToday?.temperaturaMaxima);
+  const hasDailyExtremes = Number.isFinite(minimumToday) && Number.isFinite(maximumToday);
+  text("#temperature-detail", hasDailyExtremes
+    ? `Mín. ${number(minimumToday)}° · Máx. ${number(maximumToday)}°`
+    : temperatures.length ? `Mín. ${number(Math.min(...temperatures))}° · Máx. ${number(Math.max(...temperatures))}°` : "Sem previsão diária disponível");
   text("#humidity-detail", humidityCondition(reading.umidadeRelativa));
   text("#wind-detail", "");
   const delta = first && first.temperatura !== null && reading.temperatura !== null ? Number(reading.temperatura) - Number(first.temperatura) : null;
@@ -899,13 +913,14 @@ function atualizarNavegacaoPrevisaoDiaria() {
 
 function renderDemoForecast() {
   if (!simulated()) return;
+  dailyForecasts = previsoesDiariasDeExemplo(5);
   text("#forecast-source", "Exemplo de previsão simulada");
   text("#forecast-note", "Previsão ilustrativa gerada neste navegador.");
   document.querySelector("#forecast-note").hidden = false;
   text("#overview-data-note", "Modo simulado: todos os valores desta tela são exemplos locais. Nenhum deles é gravado no MySQL.");
   const rows = document.querySelector("#forecast-rows");
   rows.setAttribute("aria-label", "Previsão simulada para cinco dias");
-  rows.innerHTML = previsoesDiariasDeExemplo(5).map(renderLinhaPrevisaoDiaria).join("");
+  rows.innerHTML = dailyForecasts.map(renderLinhaPrevisaoDiaria).join("");
 }
 
 function renderLinhaPrevisaoDiaria(item, indice) {
@@ -925,6 +940,7 @@ async function renderForecast() {
   try {
     const previsoes = await buscarPrevisoesDiarias(5);
     if (!previsoes.length) throw new Error("A previsão ainda não foi carregada pelo coletor.");
+    dailyForecasts = previsoes;
     text("#forecast-source", "Previsão da Open-Meteo");
     const note = document.querySelector("#forecast-note");
     note.hidden = true;
@@ -932,6 +948,7 @@ async function renderForecast() {
     rows.setAttribute("aria-label", "Previsão para os próximos cinco dias");
     rows.innerHTML = previsoes.map(renderLinhaPrevisaoDiaria).join("");
   } catch (error) {
+    dailyForecasts = [];
     text("#forecast-source", "Previsão ainda indisponível");
     text("#forecast-note", "Inicie o coletor para carregar os próximos dias.");
     document.querySelector("#forecast-note").hidden = false;
