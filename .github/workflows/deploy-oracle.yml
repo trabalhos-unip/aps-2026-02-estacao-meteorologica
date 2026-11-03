@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/probabilidade-chuva-horaria
+      - feature/ajustes-pos-documentacao
   workflow_dispatch:
 
 permissions:
