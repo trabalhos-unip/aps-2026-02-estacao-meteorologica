@@ -38,25 +38,17 @@ function mountPage(route) {
   return cached;
 }
 
-function showInitialLoadingSkeleton() {
-  const pageName = path === "/historico" ? "seu histórico" : path === "/configuracoes" ? "suas configurações" : "a estação";
-  document.querySelector("#app").insertAdjacentHTML("beforeend", `
-    <div class="initial-page-skeleton meteora-loading-screen" role="status" aria-live="polite" aria-label="Carregando dados meteorológicos">
-      <div class="meteora-loading-card">
-        <div class="meteora-loading-mark" aria-hidden="true"><i class="meteora-loading-sun"></i><i class="meteora-loading-cloud cloud-back"></i><i class="meteora-loading-cloud cloud-front"></i><i class="meteora-loading-rain"></i></div>
-        <span class="meteora-loading-brand">Meteora</span>
-        <strong>Carregando dados meteorológicos</strong>
-        <p>Preparando ${pageName} para você.</p>
-        <span class="meteora-loading-progress" aria-hidden="true"><i></i></span>
-      </div>
-    </div>`);
-  document.querySelector("#app").setAttribute("aria-busy", "true");
+function showInitialLoadingState() {
+  const app = document.querySelector("#app");
+  app.dataset.initialLoading = "true";
+  app.setAttribute("aria-busy", "true");
 }
-function hideInitialLoadingSkeleton() {
-  document.querySelector(".initial-page-skeleton")?.remove();
-  document.querySelector("#app").removeAttribute("aria-busy");
+function hideInitialLoadingState() {
+  const app = document.querySelector("#app");
+  delete app.dataset.initialLoading;
+  app.removeAttribute("aria-busy");
 }
-showInitialLoadingSkeleton();
+showInitialLoadingState();
 const preferencesKey = "meteora-ui-preferences";
 function savedPreferences() {
   try {
@@ -1402,7 +1394,7 @@ async function initializePage(route, { initial = false } = {}) {
     showToast(error.message || "Não foi possível carregar os dados iniciais.");
   } finally {
     initializedPages.add(route);
-    if (initial) hideInitialLoadingSkeleton();
+    if (initial) hideInitialLoadingState();
   }
 }
 
