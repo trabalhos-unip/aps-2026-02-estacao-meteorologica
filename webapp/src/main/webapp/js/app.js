@@ -1,6 +1,6 @@
 import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js?v=20261030-7";
 import { demoApi } from "./demo-data.js?v=20261026-4";
-import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261030-10";
+import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261104-1";
 import { overviewPage, historyPage, settingsPage } from "./pages.js?v=20261030-40";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261103-28";
 
@@ -426,7 +426,7 @@ function isDailyPeriod(start, end) {
 function numericAggregate(readings, field, method = "average") {
   const values = numericValues(readings, field);
   if (!values.length) return null;
-  return method === "maximum" ? Math.max(...values) : values.reduce((total, value) => total + value, 0) / values.length;
+  return method === "minimum" ? Math.min(...values) : method === "maximum" ? Math.max(...values) : values.reduce((total, value) => total + value, 0) / values.length;
 }
 
 function consolidateByDay(readings) {
@@ -444,6 +444,8 @@ function consolidateByDay(readings) {
       id: readingsOfDay.at(-1).id,
       dataHoraColeta: `${day}T12:00:00`,
       temperatura: numericAggregate(readingsOfDay, "temperatura"),
+      temperaturaMinima: numericAggregate(readingsOfDay, "temperatura", "minimum"),
+      temperaturaMaxima: numericAggregate(readingsOfDay, "temperatura", "maximum"),
       umidadeRelativa: numericAggregate(readingsOfDay, "umidadeRelativa"),
       // A fonte pode repetir o mesmo acumulado durante o dia; usar o maior valor evita somar a mesma chuva a cada coleta.
       precipitacao: numericAggregate(readingsOfDay, "precipitacao", "maximum"),
@@ -469,6 +471,8 @@ function resumoComoLeitura(resumo) {
     id: resumo.id,
     dataHoraColeta: `${resumo.data}T12:00:00`,
     temperatura,
+    temperaturaMinima: resumo.temperaturaMinima,
+    temperaturaMaxima: resumo.temperaturaMaxima,
     umidadeRelativa: resumo.umidadeMedia,
     precipitacao: resumo.precipitacaoTotal,
     velocidadeVento: resumo.ventoMaximo,
@@ -1091,7 +1095,7 @@ function redrawHistoryCharts() {
   const variable = document.querySelector("#history-variable").value;
   const settings = variables[variable];
   text("#history-chart-title", `Histórico de ${settings.title}`);
-  const domain = { start: historyStart, end: historyEnd, daily: isDailyPeriod(historyStart, historyEnd) };
+  const domain = { start: historyStart, end: historyEnd, daily: isDailyPeriod(historyStart, historyEnd), temperatureExtremes: variable === "temperatura" };
   const periodSubtitle = (_summary, field) => ({
     temperatura: "Variação da temperatura",
     umidadeRelativa: "Umidade relativa do ar",
@@ -1102,7 +1106,8 @@ function redrawHistoryCharts() {
   text("#history-chart-subtitle", periodSubtitle(summary, variable));
   const legend = document.querySelector("#history-series-legend");
   if (legend) {
-    legend.hidden = summary.forecast === 0;
+    legend.hidden = variable !== "temperatura" && summary.forecast === 0;
+    legend.innerHTML = `<span class="measured"><i></i>${variable === "temperatura" ? "Média" : "Medido"}</span>${variable === "temperatura" ? '<span><i style="border-top-color:#269ceb;border-top-style:dashed"></i>Mínima</span><span><i style="border-top-color:#ef6b5b;border-top-style:dashed"></i>Máxima</span>' : ""}${summary.forecast ? '<span class="forecast"><i></i>Previsão</span>' : ""}`;
     legend.style.setProperty("--measured-series-color", settings.color);
   }
   const miniCharts = [
