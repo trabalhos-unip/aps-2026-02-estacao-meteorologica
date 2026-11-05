@@ -158,10 +158,17 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
   const daily = Boolean(domain.daily);
   const forecastColor = "#afbdcc";
   const slots = calendarSlots(domain.start, domain.end, daily);
+  const forecastOnly = field === "probabilidadeChuva";
   const values = valuesBySlot(readings, field, daily);
-  const available = slots.map((slot, index) => ({ ...slot, index, value: values.get(slot.key), source: "measured" }))
+  const apiForecastValues = valuesBySlot(forecasts, field, daily);
+  // A probabilidade não é uma leitura física da estação. Quando ela também
+  // vier junto de um resumo já coletado, é um valor de previsão persistido e
+  // deve continuar sendo desenhada como tal, nunca como "Última medição".
+  const forecastValues = forecastOnly
+    ? new Map([...values, ...apiForecastValues])
+    : apiForecastValues;
+  const available = forecastOnly ? [] : slots.map((slot, index) => ({ ...slot, index, value: values.get(slot.key), source: "measured" }))
     .filter(slot => slot.value !== undefined);
-  const forecastValues = valuesBySlot(forecasts, field, daily);
   // Mantém todas as previsões para consulta no tooltip. A linha, porém,
   // continua exibindo apenas as horas posteriores à última medição real.
   const forecastAtSlot = slots.map((slot, index) => ({ ...slot, index, value: forecastValues.get(slot.key), source: "forecast" }))
@@ -361,7 +368,7 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
     tooltipLabel.hidden = true;
     tooltip.querySelector("strong").textContent = `${number(slot.value)} ${suffix}`;
     tooltipNote.textContent = slot.source === "forecast"
-      ? (available.some(item => item.index === slot.index) ? "Há medição real neste horário" : "Sem medição real neste horário")
+      ? (forecastOnly ? "Probabilidade prevista para este horário" : available.some(item => item.index === slot.index) ? "Há medição real neste horário" : "Sem medição real neste horário")
       : previsaoDoHorario ? `Previsão: ${number(previsaoDoHorario.value)} ${suffix}` : "Sem previsão disponível";
     tooltipNoteIcon.innerHTML = infoIcon;
     if (temperatureSeries.length) {
