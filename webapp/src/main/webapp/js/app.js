@@ -1189,7 +1189,16 @@ async function initHistory() {
     const button = event.target.closest("[data-range]");
     if (button) setHistoryPreset(button.dataset.range);
   });
-  document.querySelector("#history-variable").addEventListener("change", redrawHistoryCharts);
+  document.querySelector("#history-variable").addEventListener("change", event => {
+    // A chance de chuva é uma previsão horária e pode ter sido sincronizada
+    // depois do lote inicial do Histórico. Reconsulta apenas o conteúdo do
+    // período ao escolhê-la; a página e seus componentes globais não recarregam.
+    if (event.target.value === "probabilidadeChuva" && historyStart && historyEnd) {
+      void loadHistory(historyStart, historyEnd);
+      return;
+    }
+    redrawHistoryCharts();
+  });
   document.querySelector("#history-pagination").addEventListener("click", event => {
     const direction = event.target.closest("[data-history-page]")?.dataset.historyPage;
     if (!direction) return;
