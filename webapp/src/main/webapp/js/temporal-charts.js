@@ -328,6 +328,9 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
   const tooltipLabel = tooltip.querySelector(".temporal-tooltip-label");
   const tooltipNote = tooltip.querySelector("em span");
   const tooltipNoteIcon = tooltip.querySelector(".temporal-tooltip-note-icon");
+  const infoIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/></svg>';
+  const downIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 13.5-7.5 7.5m0 0-7.5-7.5M12 21V3"/></svg>';
+  const upIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 10.5 7.5-7.5m0 0 7.5 7.5M12 3v18"/></svg>';
   function select(slot) {
     const x = xAt(slot.index);
     guide.setAttribute("x1", x);
@@ -344,7 +347,7 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
     tooltipNote.textContent = slot.source === "forecast"
       ? (available.some(item => item.index === slot.index) ? "Há medição real neste horário" : "Sem medição real neste horário")
       : previsaoDoHorario ? `Previsão: ${number(previsaoDoHorario.value)} ${suffix}` : "Sem previsão disponível";
-    tooltipNoteIcon.textContent = "ⓘ";
+    tooltipNoteIcon.innerHTML = infoIcon;
     if (temperatureSeries.length) {
       tooltipLabel.hidden = false;
       tooltipLabel.textContent = "Média";
@@ -352,8 +355,8 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
       const extremaDoHorario = slot.source === "forecast" ? "forecast" : "measured";
       const minimum = minimumSeries?.[extremaDoHorario].find(item => item.index === slot.index);
       const maximum = maximumSeries?.[extremaDoHorario].find(item => item.index === slot.index);
-      tooltipNote.innerHTML = `<span class="temporal-tooltip-minimum">↓ Mín: ${minimum ? `${number(minimum.value)} ${suffix}` : "—"}</span><span class="temporal-tooltip-maximum">↑ Máx: ${maximum ? `${number(maximum.value)} ${suffix}` : "—"}</span>`;
-      tooltipNoteIcon.textContent = "";
+      tooltipNote.innerHTML = `<span class="temporal-tooltip-minimum">${downIcon}<span>Mín: ${minimum ? `${number(minimum.value)} ${suffix}` : "—"}</span></span><span class="temporal-tooltip-maximum">${upIcon}<span>Máx: ${maximum ? `${number(maximum.value)} ${suffix}` : "—"}</span></span>`;
+      tooltipNoteIcon.innerHTML = "";
       minimumMarker?.setAttribute("cx", x); minimumMarker?.setAttribute("cy", minimum ? yAt(minimum.value) : yAt(slot.value));
       maximumMarker?.setAttribute("cx", x); maximumMarker?.setAttribute("cy", maximum ? yAt(maximum.value) : yAt(slot.value));
     }
