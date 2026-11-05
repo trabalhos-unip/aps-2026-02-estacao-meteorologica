@@ -319,12 +319,15 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
   const selectedMarkers = temperatureHistory
     ? `<circle class="temporal-range-marker temporal-maximum-marker" cx="0" cy="0" r="4" fill="#ff9f5a" stroke="#fff" stroke-width="2"/><circle class="temporal-range-marker temporal-minimum-marker" cx="0" cy="0" r="4" fill="#4aa8ff" stroke="#fff" stroke-width="2"/><circle class="temporal-selected" cx="0" cy="0" r="5" fill="#eaf4ff" stroke="#fff" stroke-width="2"/>`
     : `<circle class="temporal-selected" cx="0" cy="0" r="${compact ? 4 : 6}" fill="${color}" stroke="#fff" stroke-width="2"/>`;
-  target.innerHTML = `<svg class="plot temporal-plot${temperatureHistory ? " temporal-temperature-plot" : ""}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${axisTitle}${temperatureSeries.length ? ", temperatura mínima e máxima" : ""}: ${available.length} ${daily ? "dias" : "horas"} medidos${projected.length ? ` e ${projected.length} previstos` : ""} de ${total}; ${suffix}"><text x="2" y="12" class="axis-label">${suffix}</text>${horizontal}${vertical}${shape}<line class="temporal-guide" x1="0" x2="0" y1="${top}" y2="${baseline}" stroke="${temperatureHistory ? "#4a586a" : color}" stroke-dasharray="${temperatureHistory ? "3 4" : "4 4"}"/>${selectedMarkers}</svg><div class="temporal-tooltip${temperatureHistory ? " temporal-temperature-tooltip" : ""}" aria-hidden="true"><small></small><strong></strong><em></em></div>`;
+  target.innerHTML = `<svg class="plot temporal-plot${temperatureHistory ? " temporal-temperature-plot" : ""}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${axisTitle}${temperatureSeries.length ? ", temperatura mínima e máxima" : ""}: ${available.length} ${daily ? "dias" : "horas"} medidos${projected.length ? ` e ${projected.length} previstos` : ""} de ${total}; ${suffix}"><text x="2" y="12" class="axis-label">${suffix}</text>${horizontal}${vertical}${shape}<line class="temporal-guide" x1="0" x2="0" y1="${top}" y2="${baseline}" stroke="${temperatureHistory ? "#4a586a" : color}" stroke-dasharray="${temperatureHistory ? "3 4" : "4 4"}"/>${selectedMarkers}</svg><div class="temporal-tooltip${temperatureHistory ? " temporal-temperature-tooltip" : ""}" aria-hidden="true"><small></small><b class="temporal-tooltip-label" hidden></b><strong></strong><em><i class="temporal-tooltip-note-icon"></i><span></span></em></div>`;
   const guide = target.querySelector(".temporal-guide");
   const marker = target.querySelector(".temporal-selected");
   const minimumMarker = target.querySelector(".temporal-minimum-marker");
   const maximumMarker = target.querySelector(".temporal-maximum-marker");
   const tooltip = target.querySelector(".temporal-tooltip");
+  const tooltipLabel = tooltip.querySelector(".temporal-tooltip-label");
+  const tooltipNote = tooltip.querySelector("em span");
+  const tooltipNoteIcon = tooltip.querySelector(".temporal-tooltip-note-icon");
   function select(slot) {
     const x = xAt(slot.index);
     guide.setAttribute("x1", x);
@@ -336,16 +339,21 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
     tooltip.querySelector("small").textContent = slot.source === "forecast"
       ? `Previsão · ${slot.label}`
       : temperatureHistory ? `Medição · ${slot.label}` : slot.index === lastMeasured?.index ? `Última medição · ${slot.label}` : `Medição · ${slot.label}`;
+    tooltipLabel.hidden = true;
     tooltip.querySelector("strong").textContent = `${number(slot.value)} ${suffix}`;
-    tooltip.querySelector("em").textContent = slot.source === "forecast"
+    tooltipNote.textContent = slot.source === "forecast"
       ? (available.some(item => item.index === slot.index) ? "Há medição real neste horário" : "Sem medição real neste horário")
       : previsaoDoHorario ? `Previsão: ${number(previsaoDoHorario.value)} ${suffix}` : "Sem previsão disponível";
+    tooltipNoteIcon.textContent = "ⓘ";
     if (temperatureSeries.length) {
-      tooltip.querySelector("strong").textContent = `Média: ${number(slot.value)} ${suffix}`;
+      tooltipLabel.hidden = false;
+      tooltipLabel.textContent = "Média";
+      tooltip.querySelector("strong").textContent = `${number(slot.value)} ${suffix}`;
       const extremaDoHorario = slot.source === "forecast" ? "forecast" : "measured";
       const minimum = minimumSeries?.[extremaDoHorario].find(item => item.index === slot.index);
       const maximum = maximumSeries?.[extremaDoHorario].find(item => item.index === slot.index);
-      tooltip.querySelector("em").textContent = `Mínima: ${minimum ? `${number(minimum.value)} ${suffix}` : "—"} · Máxima: ${maximum ? `${number(maximum.value)} ${suffix}` : "—"}`;
+      tooltipNote.innerHTML = `<span class="temporal-tooltip-minimum">↓ Mín: ${minimum ? `${number(minimum.value)} ${suffix}` : "—"}</span><span class="temporal-tooltip-maximum">↑ Máx: ${maximum ? `${number(maximum.value)} ${suffix}` : "—"}</span>`;
+      tooltipNoteIcon.textContent = "";
       minimumMarker?.setAttribute("cx", x); minimumMarker?.setAttribute("cy", minimum ? yAt(minimum.value) : yAt(slot.value));
       maximumMarker?.setAttribute("cx", x); maximumMarker?.setAttribute("cy", maximum ? yAt(maximum.value) : yAt(slot.value));
     }
