@@ -121,18 +121,12 @@ function monotoneArea(upper, lower) {
 // A API horária atual pode entregar somente a temperatura média. Neste caso,
 // o intervalo abaixo existe apenas para a apresentação do gráfico: ele cria
 // as duas ondas que delimitam visualmente a média, sem alterar a leitura nem
-// qualquer payload recebido da API. Quando a origem vier a fornecer extremos
-// reais, eles são preservados integralmente.
+// qualquer payload recebido da API. Extremos reais mais amplos continuam
+// sendo respeitados; o envelope só evita que linhas coincidentes desapareçam.
 function applyVisualTemperatureEnvelope(series, averageSeries) {
   for (const source of ["measured", "forecast"]) {
     const averages = new Map(averageSeries[source].map(slot => [slot.index, slot.value]));
     const values = series[source];
-    const hasRealRange = values.some(slot => {
-      const average = averages.get(slot.index);
-      return Number.isFinite(average) && Math.abs(slot.value - average) > .01;
-    });
-    if (hasRealRange) continue;
-
     series[source] = values.map((slot, position) => {
       const average = averages.get(slot.index);
       if (!Number.isFinite(average)) return slot;
@@ -142,8 +136,15 @@ function applyVisualTemperatureEnvelope(series, averageSeries) {
       // alternância impede que a faixa pareça uma cópia rígida da média.
       const change = Math.min(.18, (Math.abs(after - before) + Math.abs(average - before)) * .10);
       const rhythm = ((slot.index % 4) - 1.5) * .035;
-      const amplitude = .46 + change + rhythm;
-      return { ...slot, value: average + (series.method === "maximum" ? amplitude : -amplitude) };
+      const amplitude = .52 + change + rhythm;
+      const visualValue = average + (series.method === "maximum" ? amplitude : -amplitude);
+      // Mantém extremos reais quando eles já são expressivos, mas garante uma
+      // distância mínima visível caso a fonte traga mínimo/máximo quase iguais
+      // à média (situação atual da coleta horária).
+      return {
+        ...slot,
+        value: series.method === "maximum" ? Math.max(slot.value, visualValue) : Math.min(slot.value, visualValue),
+      };
     });
   }
   return series;
@@ -294,6 +295,13 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
     }).join("");
     const linesFor = (series, source, dash = "") => groupedSections(source).map(group => {
       const points = rangePoints(series[source].filter(point => group.some(item => item.index === point.index)));
+      // A previsão parte da última coordenada da MESMA série. Assim a linha
+      // laranja continua a laranja e a azul continua a azul, sem um salto ou
+      // uma ligação indevida pela curva da média.
+      if (source === "forecast" && points.length) {
+        const anchor = series.measured.find(point => point.index === group[0].index - 1);
+        if (anchor) points.unshift({ x: xAt(anchor.index), y: yAt(anchor.value), index: anchor.index });
+      }
       return points.length > 1 ? `<path d="${monotonePath(points)}" fill="none" stroke="${series.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"${dash ? ` stroke-dasharray="${dash}"` : ""}/>` : "";
     }).join("");
     const averageLine = (groups, stroke, width, dash = "") => groups.map(group => group.length > 1
