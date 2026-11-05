@@ -1,6 +1,6 @@
 import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js?v=20261030-7";
 import { demoApi } from "./demo-data.js?v=20261026-4";
-import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261104-1";
+import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261105-2";
 import { overviewPage, historyPage, settingsPage } from "./pages.js?v=20261030-40";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261103-28";
 
@@ -1107,7 +1107,7 @@ function redrawHistoryCharts() {
   const legend = document.querySelector("#history-series-legend");
   if (legend) {
     legend.hidden = variable !== "temperatura" && summary.forecast === 0;
-    legend.innerHTML = `<span class="measured"><i></i>${variable === "temperatura" ? "Média" : "Medido"}</span>${variable === "temperatura" ? '<span><i style="border-top-color:#269ceb;border-top-style:dashed"></i>Mínima</span><span><i style="border-top-color:#ef6b5b;border-top-style:dashed"></i>Máxima</span>' : ""}${summary.forecast ? '<span class="forecast"><i></i>Previsão</span>' : ""}`;
+    legend.innerHTML = `<span class="measured"><i></i>${variable === "temperatura" ? "Média" : "Medido"}</span>${variable === "temperatura" ? '<span class="temperature-minimum"><i></i>Mínima</span><span class="temperature-maximum"><i></i>Máxima</span>' : ""}${summary.forecast ? '<span class="forecast"><i></i>Previsão</span>' : ""}`;
     legend.style.setProperty("--measured-series-color", settings.color);
   }
   const miniCharts = [

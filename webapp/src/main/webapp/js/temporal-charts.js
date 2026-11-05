@@ -87,6 +87,37 @@ function visibleTicks(count, compact, daily, availableWidth) {
   return ticks;
 }
 
+// Curva cúbica monotônica (Fritsch-Carlson): suaviza a série sem criar
+// picos artificiais entre duas medições, ao contrário de uma spline comum.
+function monotonePath(points) {
+  if (!points.length) return "";
+  if (points.length === 1) return `M${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+  const slopes = points.slice(0, -1).map((point, index) => (points[index + 1].y - point.y) / (points[index + 1].x - point.x));
+  const tangents = points.map((point, index) => {
+    if (index === 0) return slopes[0];
+    if (index === points.length - 1) return slopes.at(-1);
+    const previous = slopes[index - 1];
+    const next = slopes[index];
+    if (previous === 0 || next === 0 || previous * next < 0) return 0;
+    const previousWidth = points[index].x - points[index - 1].x;
+    const nextWidth = points[index + 1].x - points[index].x;
+    return (previousWidth + nextWidth) / ((previousWidth / previous) + (nextWidth / next));
+  });
+  let path = `M${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const current = points[index];
+    const next = points[index + 1];
+    const distance = next.x - current.x;
+    path += ` C${(current.x + distance / 3).toFixed(2)} ${(current.y + tangents[index] * distance / 3).toFixed(2)} ${(next.x - distance / 3).toFixed(2)} ${(next.y - tangents[index + 1] * distance / 3).toFixed(2)} ${next.x.toFixed(2)} ${next.y.toFixed(2)}`;
+  }
+  return path;
+}
+
+function monotoneArea(upper, lower) {
+  if (upper.length < 2 || lower.length < 2) return "";
+  return `${monotonePath(upper)} ${monotonePath([...lower].reverse()).replace(/^M/, "L")} Z`;
+}
+
 /** SVG próprio: horas observadas em linha; dias do calendário em colunas independentes. */
 export function drawTemporalChart(selector, readings, field, suffix, color, domain, forecasts = []) {
   const target = document.querySelector(selector);
@@ -105,10 +136,19 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
   const projected = slots.map((slot, index) => ({ ...slot, index, value: forecastValues.get(slot.key), source: "forecast" }))
     .filter(slot => slot.value !== undefined && slot.index > lastMeasuredIndex);
   const plotted = [...available, ...projected].sort((a, b) => a.index - b.index);
-  const extremes = domain.temperatureExtremes && field === "temperatura"
-    ? [["minimum", "Mínima", "#269ceb"], ["maximum", "Máxima", "#ef6b5b"]].map(([method, label, color]) => {
-      const values = valuesBySlot(readings, field, daily, method);
-      return { label, color, points: slots.map((slot, index) => ({ ...slot, index, value: values.get(slot.key) })).filter(slot => slot.value !== undefined) };
+  const temperatureHistory = selector === "#history-chart-canvas" && domain.temperatureExtremes && field === "temperatura";
+  const temperatureSeries = temperatureHistory
+    ? [["minimum", "Mínima", "#4aa8ff"], ["maximum", "Máxima", "#ff9f5a"]].map(([method, label, seriesColor]) => {
+      const measuredValues = valuesBySlot(readings, field, daily, method);
+      const forecastValues = valuesBySlot(forecasts, field, daily, method);
+      const bySlot = values => slots.map((slot, index) => ({ ...slot, index, value: values.get(slot.key) })).filter(slot => slot.value !== undefined);
+      return {
+        method,
+        label,
+        color: seriesColor,
+        measured: bySlot(measuredValues),
+        forecast: bySlot(forecastValues).filter(slot => slot.index > lastMeasuredIndex),
+      };
     }) : [];
   const total = daily ? slots.length : 24;
   const summary = { available: available.length, forecast: projected.length, total, daily,
@@ -127,7 +167,9 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
   const bottom = compact ? 26 : 30;
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
-  const scale = yScale([...plotted.map(slot => slot.value), ...extremes.flatMap(series => series.points.map(slot => slot.value))], field, daily);
+  const scale = temperatureHistory && !daily
+    ? { minimum: 24, maximum: 32 }
+    : yScale([...plotted.map(slot => slot.value), ...temperatureSeries.flatMap(series => [...series.measured, ...series.forecast].map(slot => slot.value))], field, daily);
   // Recuo nas pontas: os pontos não invadem os rótulos do eixo.
   const inset = compact ? 6 : 8;
   const xAt = index => left + inset + (slots.length === 1 ? (plotWidth - 2 * inset) / 2 : index * (plotWidth - 2 * inset) / (slots.length - 1));
@@ -153,7 +195,7 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
       : visibleTicks(slots.length, compact, daily, plotWidth - 2 * inset);
   const vertical = tickIndexes.map(index => {
     const x = xAt(index);
-    return `<line x1="${x}" y1="${top}" x2="${x}" y2="${baseline}" class="grid-line temporal-grid-vertical"/><text x="${x}" y="${height - 7}" text-anchor="middle" class="axis-label">${slots[index].label}</text>`;
+    return `${temperatureHistory ? "" : `<line x1="${x}" y1="${top}" x2="${x}" y2="${baseline}" class="grid-line temporal-grid-vertical"/>`}<text x="${x}" y="${height - 7}" text-anchor="middle" class="axis-label${temperatureHistory ? " temporal-hour-label" : ""}">${slots[index].label}</text>`;
   }).join("");
 
   const groupedSections = source => {
@@ -189,22 +231,54 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
   const forecastDots = projected.map(slot => `<circle cx="${xAt(slot.index)}" cy="${yAt(slot.value)}" r="${compact ? 3 : 4}" fill="${forecastColor}" stroke="#fff" stroke-width="1.5"/>`).join("");
   // A medição vem por cima da previsão, para permanecer legível no trecho em
   // que as duas séries existem para o mesmo horário.
-  const extremeShapes = extremes.map(series => {
+  const extremeShapes = temperatureSeries.map(series => {
     let previous = -2;
-    const path = series.points.map(slot => {
+    const path = series.measured.map(slot => {
       const command = slot.index === previous + 1 ? "L" : "M";
       previous = slot.index;
       return `${command}${xAt(slot.index).toFixed(2)} ${yAt(slot.value).toFixed(2)}`;
     }).join(" ");
-    const dots = series.points.map(slot => `<circle cx="${xAt(slot.index)}" cy="${yAt(slot.value)}" r="3" fill="${series.color}"/>`).join("");
-    return `<path d="${path}" fill="none" stroke="${series.color}" stroke-width="2" stroke-dasharray="5 3" stroke-linejoin="round"/>${dots}`;
+    return `<path d="${path}" fill="none" stroke="${series.color}" stroke-width="2" stroke-dasharray="5 3" stroke-linejoin="round"/>`;
   }).join("");
-  const shape = `${forecastLines}${measuredLines}${extremeShapes}${forecastDots}${measuredDots}`;
+  const rangePoints = series => series.map(slot => ({ x: xAt(slot.index), y: yAt(slot.value), index: slot.index }));
+  const averagePoints = source => groupedSections(source).map(group => rangePoints(group));
+  const findSeries = method => temperatureSeries.find(series => series.method === method);
+  const minimumSeries = findSeries("minimum");
+  const maximumSeries = findSeries("maximum");
+  const temperatureShape = (() => {
+    if (!temperatureHistory || !minimumSeries || !maximumSeries) return "";
+    const measuredAverage = averagePoints("measured");
+    const forecastAverage = averagePoints("forecast");
+    const fillSegments = (averageGroups, minima, maxima, opacity) => averageGroups.map(group => {
+      const minimum = rangePoints(minima.filter(point => group.some(item => item.index === point.index)));
+      const maximum = rangePoints(maxima.filter(point => group.some(item => item.index === point.index)));
+      if (group.length < 2 || minimum.length !== group.length || maximum.length !== group.length) return "";
+      return `<path d="${monotoneArea(maximum, group)}" fill="#ff9f5a" opacity="${opacity.orange}"/><path d="${monotoneArea(group, minimum)}" fill="#4aa8ff" opacity="${opacity.blue}"/>`;
+    }).join("");
+    const linesFor = (series, source, dash = "") => groupedSections(source).map(group => {
+      const points = rangePoints(series[source].filter(point => group.some(item => item.index === point.index)));
+      return points.length > 1 ? `<path d="${monotonePath(points)}" fill="none" stroke="${series.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"${dash ? ` stroke-dasharray="${dash}"` : ""}/>` : "";
+    }).join("");
+    const averageLine = (groups, stroke, width, dash = "") => groups.map(group => group.length > 1
+      ? `<path d="${monotonePath(group)}" fill="none" stroke="${stroke}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round"${dash ? ` stroke-dasharray="${dash}"` : ""}/>` : "").join("");
+    const forecastStart = projected[0] ? Math.max(left, xAt(projected[0].index) - (plotWidth - 2 * inset) / Math.max(slots.length - 1, 1) / 2) : null;
+    const zone = forecastStart == null ? "" : `<rect x="${forecastStart.toFixed(2)}" y="${top}" width="${(width - right - forecastStart).toFixed(2)}" height="${plotHeight}" fill="#ffffff" opacity=".04"/>`;
+    return `${zone}${fillSegments(measuredAverage, minimumSeries.measured, maximumSeries.measured, { orange: ".22", blue: ".24" })}${fillSegments(forecastAverage, minimumSeries.forecast, maximumSeries.forecast, { orange: ".11", blue: ".12" })}${linesFor(maximumSeries, "measured")}${linesFor(minimumSeries, "measured")}${averageLine(measuredAverage, "#eaf4ff", "2.75")}${linesFor(maximumSeries, "forecast", "5 5")}${linesFor(minimumSeries, "forecast", "5 5")}${averageLine(forecastAverage.map(group => {
+      const anchor = available.find(slot => slot.index === group[0]?.index - 1);
+      return anchor ? [{ x: xAt(anchor.index), y: yAt(anchor.value), index: anchor.index }, ...group] : group;
+    }), "#eaf4ff", "2.75", "6 5")}`;
+  })();
+  const shape = temperatureHistory ? temperatureShape : `${forecastLines}${measuredLines}${extremeShapes}${forecastDots}${measuredDots}`;
 
   const axisTitle = `${field === "precipitacao" ? "Maior valor" : "Média"} por ${daily ? "dia" : "hora"}`;
-  target.innerHTML = `<svg class="plot temporal-plot" viewBox="0 0 ${width} ${height}" role="img" aria-label="${axisTitle}${extremes.length ? ", temperatura mínima e máxima" : ""}: ${available.length} ${daily ? "dias" : "horas"} medidos${projected.length ? ` e ${projected.length} previstos` : ""} de ${total}; ${suffix}"><text x="2" y="12" class="axis-label">${suffix}</text>${horizontal}${vertical}${shape}<line class="temporal-guide" x1="0" x2="0" y1="${top}" y2="${baseline}" stroke="${color}" stroke-dasharray="4 4"/><circle class="temporal-selected" cx="0" cy="0" r="${compact ? 4 : 6}" fill="${color}" stroke="#fff" stroke-width="2"/></svg><div class="temporal-tooltip" aria-hidden="true"><small></small><strong></strong><em></em></div>`;
+  const selectedMarkers = temperatureHistory
+    ? `<circle class="temporal-range-marker temporal-maximum-marker" cx="0" cy="0" r="4" fill="#ff9f5a" stroke="#fff" stroke-width="2"/><circle class="temporal-range-marker temporal-minimum-marker" cx="0" cy="0" r="4" fill="#4aa8ff" stroke="#fff" stroke-width="2"/><circle class="temporal-selected" cx="0" cy="0" r="5" fill="#eaf4ff" stroke="#fff" stroke-width="2"/>`
+    : `<circle class="temporal-selected" cx="0" cy="0" r="${compact ? 4 : 6}" fill="${color}" stroke="#fff" stroke-width="2"/>`;
+  target.innerHTML = `<svg class="plot temporal-plot${temperatureHistory ? " temporal-temperature-plot" : ""}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${axisTitle}${temperatureSeries.length ? ", temperatura mínima e máxima" : ""}: ${available.length} ${daily ? "dias" : "horas"} medidos${projected.length ? ` e ${projected.length} previstos` : ""} de ${total}; ${suffix}"><text x="2" y="12" class="axis-label">${suffix}</text>${horizontal}${vertical}${shape}<line class="temporal-guide" x1="0" x2="0" y1="${top}" y2="${baseline}" stroke="${temperatureHistory ? "#4a586a" : color}" stroke-dasharray="${temperatureHistory ? "3 4" : "4 4"}"/>${selectedMarkers}</svg><div class="temporal-tooltip${temperatureHistory ? " temporal-temperature-tooltip" : ""}" aria-hidden="true"><small></small><strong></strong><em></em></div>`;
   const guide = target.querySelector(".temporal-guide");
   const marker = target.querySelector(".temporal-selected");
+  const minimumMarker = target.querySelector(".temporal-minimum-marker");
+  const maximumMarker = target.querySelector(".temporal-maximum-marker");
   const tooltip = target.querySelector(".temporal-tooltip");
   function select(slot) {
     const x = xAt(slot.index);
@@ -216,24 +290,36 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
     const previsaoDoHorario = projected.find(item => item.index === slot.index);
     tooltip.querySelector("small").textContent = slot.source === "forecast"
       ? `Previsão · ${slot.label}`
-      : slot.index === lastMeasured?.index ? `Última medição · ${slot.label}` : `Medição · ${slot.label}`;
+      : temperatureHistory ? `Medição · ${slot.label}` : slot.index === lastMeasured?.index ? `Última medição · ${slot.label}` : `Medição · ${slot.label}`;
     tooltip.querySelector("strong").textContent = `${number(slot.value)} ${suffix}`;
     tooltip.querySelector("em").textContent = slot.source === "forecast"
       ? (available.some(item => item.index === slot.index) ? "Há medição real neste horário" : "Sem medição real neste horário")
       : previsaoDoHorario ? `Previsão: ${number(previsaoDoHorario.value)} ${suffix}` : "Sem previsão disponível";
-    if (extremes.length && slot.source === "measured") {
+    if (temperatureSeries.length) {
       tooltip.querySelector("strong").textContent = `Média: ${number(slot.value)} ${suffix}`;
-      tooltip.querySelector("em").textContent = extremes.map(series => {
-        const point = series.points.find(item => item.index === slot.index);
-        return `${series.label}: ${point ? number(point.value) + " " + suffix : "—"}`;
-      }).join(" · ");
+      const extremaDoHorario = slot.source === "forecast" ? "forecast" : "measured";
+      const minimum = minimumSeries?.[extremaDoHorario].find(item => item.index === slot.index);
+      const maximum = maximumSeries?.[extremaDoHorario].find(item => item.index === slot.index);
+      tooltip.querySelector("em").textContent = `Mínima: ${minimum ? `${number(minimum.value)} ${suffix}` : "—"} · Máxima: ${maximum ? `${number(maximum.value)} ${suffix}` : "—"}`;
+      minimumMarker?.setAttribute("cx", x); minimumMarker?.setAttribute("cy", minimum ? yAt(minimum.value) : yAt(slot.value));
+      maximumMarker?.setAttribute("cx", x); maximumMarker?.setAttribute("cy", maximum ? yAt(maximum.value) : yAt(slot.value));
     }
-    guide.setAttribute("stroke", slot.source === "forecast" ? forecastColor : color);
-    marker.setAttribute("fill", slot.source === "forecast" ? forecastColor : color);
+    guide.setAttribute("stroke", temperatureHistory ? "#4a586a" : slot.source === "forecast" ? forecastColor : color);
+    marker.setAttribute("fill", temperatureHistory ? "#eaf4ff" : slot.source === "forecast" ? forecastColor : color);
     // Mantém a dica inteira dentro do gráfico (ela é centralizada no ponto com translateX(-50%)).
     const box = target.clientWidth;
-    const half = Math.min(tooltip.offsetWidth / 2, box / 2);
-    tooltip.style.left = `${Math.min(box - half, Math.max(half, x / width * box))}px`;
+    if (temperatureHistory) {
+      const cursor = x / width * box;
+      const tooltipWidth = tooltip.offsetWidth || 150;
+      const rightPosition = Math.min(box - tooltipWidth - 8, cursor + 14);
+      tooltip.style.left = `${Math.max(8, rightPosition)}px`;
+      tooltip.style.top = `${Math.max(8, (yAt(slot.value) / height * target.clientHeight) - 80)}px`;
+      tooltip.classList.toggle("is-left", rightPosition < cursor);
+      target.querySelectorAll(".temporal-hour-label").forEach(label => label.classList.toggle("is-active", label.textContent === slot.label));
+    } else {
+      const half = Math.min(tooltip.offsetWidth / 2, box / 2);
+      tooltip.style.left = `${Math.min(box - half, Math.max(half, x / width * box))}px`;
+    }
   }
   select(available.at(-1) || projected.at(-1));
   target.onpointermove = event => {
