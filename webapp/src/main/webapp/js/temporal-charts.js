@@ -156,7 +156,7 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
   if (!target) return null;
   rendered.set(selector, [readings, field, suffix, color, domain, forecasts]);
   const daily = Boolean(domain.daily);
-  const forecastColor = "#afbdcc";
+  const forecastColor = "#A0A9B4";
   const slots = calendarSlots(domain.start, domain.end, daily);
   const forecastOnly = field === "probabilidadeChuva";
   const values = valuesBySlot(readings, field, daily);
@@ -351,8 +351,8 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
   const tooltipNote = tooltip.querySelector("em span");
   const tooltipNoteIcon = tooltip.querySelector(".temporal-tooltip-note-icon");
   const infoIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/></svg>';
-  const downIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 13.5-7.5 7.5m0 0-7.5-7.5M12 21V3"/></svg>';
-  const upIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 10.5 7.5-7.5m0 0 7.5 7.5M12 3v18"/></svg>';
+  const downIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 13.5-7.5 7.5m0 0-7.5-7.5M12 21V3"/></svg>';
+  const upIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 10.5 7.5-7.5m0 0 7.5 7.5M12 3v18"/></svg>';
   const timeLabel = slot => daily ? slot.label : `${String(slot.index).padStart(2, "0")}:00`;
   function select(slot) {
     const x = xAt(slot.index);
