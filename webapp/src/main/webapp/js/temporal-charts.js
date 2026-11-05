@@ -211,9 +211,14 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
   const bottom = compact ? 26 : 30;
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
+  const seriesValues = [...plotted.map(slot => slot.value), ...temperatureSeries.flatMap(series => [...series.measured, ...series.forecast].map(slot => slot.value))];
+  const calculatedScale = yScale(seriesValues, field, daily);
+  // A referência visual 24–32 °C é preservada quando os dados cabem nela.
+  // Em dias mais frios/quentes, porém, a escala se expande: assim nenhum
+  // caminho SVG sai da área do card e invade os gráficos abaixo.
   const scale = temperatureHistory && !daily
-    ? { minimum: 24, maximum: 32 }
-    : yScale([...plotted.map(slot => slot.value), ...temperatureSeries.flatMap(series => [...series.measured, ...series.forecast].map(slot => slot.value))], field, daily);
+    ? { minimum: Math.min(24, calculatedScale.minimum), maximum: Math.max(32, calculatedScale.maximum) }
+    : calculatedScale;
   // Recuo nas pontas: os pontos não invadem os rótulos do eixo.
   const inset = compact ? 6 : 8;
   const xAt = index => left + inset + (slots.length === 1 ? (plotWidth - 2 * inset) / 2 : index * (plotWidth - 2 * inset) / (slots.length - 1));
