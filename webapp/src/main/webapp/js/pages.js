@@ -93,7 +93,7 @@ export function overviewPage() {
 export function historyPage() {
   return `<form class="card filter-bar" id="history-filter">
     <div class="field period-field"><label>Período</label>${tabs("history-range")}</div>
-    <label class="field">Variável<select id="history-variable"><option value="temperatura">Temperatura</option><option value="umidadeRelativa">Umidade</option><option value="precipitacao">Precipitação</option><option value="velocidadeVento">Vento</option></select></label>
+    <label class="field">Variável<select id="history-variable"><option value="temperatura">Temperatura</option><option value="umidadeRelativa">Umidade</option><option value="precipitacao">Precipitação</option><option value="probabilidadeChuva">Chance de chuva</option><option value="velocidadeVento">Vento</option></select></label>
   </form>
   <div class="history-grid">
     <div class="history-charts">
