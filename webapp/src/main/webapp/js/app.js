@@ -1,6 +1,6 @@
 import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js?v=20261030-7";
 import { demoApi } from "./demo-data.js?v=20261026-4";
-import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261105-7";
+import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261105-8";
 import { overviewPage, historyPage, settingsPage } from "./pages.js?v=20261030-40";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261103-28";
 
@@ -377,11 +377,7 @@ const RECENT_PAGE_SIZE = 15;
 // A coleta permanece independente no Java. Este intervalo controla somente
 // quando a interface consulta novamente os dados, sem recarregar a página.
 const DEFAULT_UI_REFRESH_INTERVAL_SECONDS = 900;
-// A coleta grava uma leitura nova a cada 10 s. Esta verificação leve só faz a
-// tela redesenhar quando o banco realmente recebeu uma leitura diferente.
-const COLLECTOR_POLL_INTERVAL_MS = 10_000;
 let backgroundRefreshTimer = null;
-let collectorRefreshTimer = null;
 
 function refreshIntervalMs() {
   const seconds = Number(savedPreferences().interval);
@@ -395,19 +391,6 @@ function restartBackgroundRefresh() {
 
 function wait(milliseconds) {
   return new Promise(resolve => window.setTimeout(resolve, milliseconds));
-}
-
-async function refreshWhenCollectorChanges() {
-  if (document.hidden || pageRefreshInProgress || simulated()) return;
-  try {
-    const reading = await activeReadingsApi.buscarUltima();
-    if (!reading || reading.id === latestReading?.id) return;
-    latestReading = reading;
-    await refreshCurrentPage();
-  } catch {
-    // A troca de estação pode acontecer entre a consulta e a próxima coleta.
-    // O próximo ciclo fará a tentativa novamente, sem interromper a interface.
-  }
 }
 
 function rangeDates(range, anchor = anchorDate(latestReading)) {
@@ -1384,12 +1367,6 @@ async function refreshAfterCityChange() {
 
 function startBackgroundRefresh() {
   restartBackgroundRefresh();
-  if (collectorRefreshTimer) window.clearInterval(collectorRefreshTimer);
-  collectorRefreshTimer = window.setInterval(() => { void refreshWhenCollectorChanges(); }, COLLECTOR_POLL_INTERVAL_MS);
-  window.addEventListener("focus", () => { void refreshCurrentPage(); });
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) void refreshCurrentPage();
-  });
 }
 
 async function initializePage(route, { initial = false } = {}) {

@@ -335,6 +335,7 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
   const infoIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/></svg>';
   const downIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 13.5-7.5 7.5m0 0-7.5-7.5M12 21V3"/></svg>';
   const upIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 10.5 7.5-7.5m0 0 7.5 7.5M12 3v18"/></svg>';
+  const timeLabel = slot => daily ? slot.label : `${String(slot.index).padStart(2, "0")}:00`;
   function select(slot) {
     const x = xAt(slot.index);
     guide.setAttribute("x1", x);
@@ -344,8 +345,8 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
     const lastMeasured = available.at(-1);
     const previsaoDoHorario = projected.find(item => item.index === slot.index);
     tooltip.querySelector("small").textContent = slot.source === "forecast"
-      ? `Previsão · ${slot.label}`
-      : temperatureHistory ? `Medição · ${slot.label}` : slot.index === lastMeasured?.index ? `Última medição · ${slot.label}` : `Medição · ${slot.label}`;
+      ? `Previsão · ${timeLabel(slot)}`
+      : temperatureHistory ? `Medição · ${timeLabel(slot)}` : slot.index === lastMeasured?.index ? `Última medição · ${timeLabel(slot)}` : `Medição · ${timeLabel(slot)}`;
     tooltipLabel.hidden = true;
     tooltip.querySelector("strong").textContent = `${number(slot.value)} ${suffix}`;
     tooltipNote.textContent = slot.source === "forecast"
@@ -353,8 +354,6 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
       : previsaoDoHorario ? `Previsão: ${number(previsaoDoHorario.value)} ${suffix}` : "Sem previsão disponível";
     tooltipNoteIcon.innerHTML = infoIcon;
     if (temperatureSeries.length) {
-      tooltipLabel.hidden = false;
-      tooltipLabel.textContent = "Média";
       tooltip.querySelector("strong").textContent = `${number(slot.value)} ${suffix}`;
       const extremaDoHorario = slot.source === "forecast" ? "forecast" : "measured";
       const minimum = minimumSeries?.[extremaDoHorario].find(item => item.index === slot.index);
