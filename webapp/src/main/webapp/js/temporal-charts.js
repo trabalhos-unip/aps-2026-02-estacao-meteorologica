@@ -162,11 +162,14 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
   const available = slots.map((slot, index) => ({ ...slot, index, value: values.get(slot.key), source: "measured" }))
     .filter(slot => slot.value !== undefined);
   const forecastValues = valuesBySlot(forecasts, field, daily);
+  // Mantém todas as previsões para consulta no tooltip. A linha, porém,
+  // continua exibindo apenas as horas posteriores à última medição real.
+  const forecastAtSlot = slots.map((slot, index) => ({ ...slot, index, value: forecastValues.get(slot.key), source: "forecast" }))
+    .filter(slot => slot.value !== undefined);
   const lastMeasuredIndex = available.at(-1)?.index ?? -1;
   // Horas/dias já medidos pertencem exclusivamente à série azul. A previsão
   // começa no primeiro intervalo ainda não medido, sem voltar sobre o histórico.
-  const projected = slots.map((slot, index) => ({ ...slot, index, value: forecastValues.get(slot.key), source: "forecast" }))
-    .filter(slot => slot.value !== undefined && slot.index > lastMeasuredIndex);
+  const projected = forecastAtSlot.filter(slot => slot.index > lastMeasuredIndex);
   const plotted = [...available, ...projected].sort((a, b) => a.index - b.index);
   const temperatureHistory = selector === "#history-chart-canvas" && domain.temperatureExtremes && field === "temperatura";
   const temperaturePalette = document.documentElement.dataset.theme === "dark"
@@ -346,7 +349,7 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
     marker.setAttribute("cx", x);
     marker.setAttribute("cy", yAt(slot.value));
     const lastMeasured = available.at(-1);
-    const previsaoDoHorario = projected.find(item => item.index === slot.index);
+    const previsaoDoHorario = forecastAtSlot.find(item => item.index === slot.index);
     tooltip.querySelector("small").textContent = slot.source === "forecast"
       ? `Previsão · ${timeLabel(slot)}`
       : temperatureHistory ? `Medição · ${timeLabel(slot)}` : slot.index === lastMeasured?.index ? `Última medição · ${timeLabel(slot)}` : `Medição · ${timeLabel(slot)}`;
