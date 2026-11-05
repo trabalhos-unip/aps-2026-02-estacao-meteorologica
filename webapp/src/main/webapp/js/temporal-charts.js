@@ -287,6 +287,13 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
     if (!temperatureHistory || !minimumSeries || !maximumSeries) return "";
     const measuredAverage = averagePoints("measured");
     const forecastAverage = averagePoints("forecast");
+    const withMeasuredAnchor = (groups, source) => groups.map(group => {
+      const anchor = source.find(slot => slot.index === group[0]?.index - 1);
+      return anchor ? [{ x: xAt(anchor.index), y: yAt(anchor.value), index: anchor.index }, ...group] : group;
+    });
+    // A faixa prevista também recebe o último ponto medido. Isso forma uma
+    // superfície contínua mesmo quando sobra somente uma hora de previsão.
+    const forecastAverageWithAnchor = withMeasuredAnchor(forecastAverage, available);
     const fillSegments = (averageGroups, minima, maxima, opacity) => averageGroups.map(group => {
       const minimum = rangePoints(minima.filter(point => group.some(item => item.index === point.index)));
       const maximum = rangePoints(maxima.filter(point => group.some(item => item.index === point.index)));
@@ -308,10 +315,7 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
       ? `<path d="${monotonePath(group)}" fill="none" stroke="${stroke}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round"${dash ? ` stroke-dasharray="${dash}"` : ""}/>` : "").join("");
     const forecastStart = projected[0] ? Math.max(left, xAt(projected[0].index) - (plotWidth - 2 * inset) / Math.max(slots.length - 1, 1) / 2) : null;
     const zone = forecastStart == null ? "" : `<rect x="${forecastStart.toFixed(2)}" y="${top}" width="${(width - right - forecastStart).toFixed(2)}" height="${plotHeight}" fill="#ffffff" opacity=".04"/>`;
-    return `${zone}${fillSegments(measuredAverage, minimumSeries.measured, maximumSeries.measured, { orange: ".22", blue: ".24" })}${fillSegments(forecastAverage, minimumSeries.forecast, maximumSeries.forecast, { orange: ".11", blue: ".12" })}${linesFor(maximumSeries, "measured")}${linesFor(minimumSeries, "measured")}${averageLine(measuredAverage, "#eaf4ff", "2.75")}${linesFor(maximumSeries, "forecast", "5 5")}${linesFor(minimumSeries, "forecast", "5 5")}${averageLine(forecastAverage.map(group => {
-      const anchor = available.find(slot => slot.index === group[0]?.index - 1);
-      return anchor ? [{ x: xAt(anchor.index), y: yAt(anchor.value), index: anchor.index }, ...group] : group;
-    }), "#eaf4ff", "2.75", "6 5")}`;
+    return `${zone}${fillSegments(measuredAverage, minimumSeries.measured, maximumSeries.measured, { orange: ".22", blue: ".24" })}${fillSegments(forecastAverageWithAnchor, [...minimumSeries.measured, ...minimumSeries.forecast], [...maximumSeries.measured, ...maximumSeries.forecast], { orange: ".11", blue: ".12" })}${linesFor(maximumSeries, "measured")}${linesFor(minimumSeries, "measured")}${averageLine(measuredAverage, "#eaf4ff", "2.75")}${linesFor(maximumSeries, "forecast", "5 5")}${linesFor(minimumSeries, "forecast", "5 5")}${averageLine(forecastAverageWithAnchor, "#eaf4ff", "2.75", "6 5")}`;
   })();
   const shape = temperatureHistory ? temperatureShape : `${forecastLines}${measuredLines}${extremeShapes}${forecastDots}${measuredDots}`;
 
