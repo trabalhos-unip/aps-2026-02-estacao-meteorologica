@@ -1,6 +1,6 @@
 import { leiturasApi, resumosDiariosApi, resumosHorariosApi, estacaoApi } from "./api.js?v=20261030-7";
 import { demoApi } from "./demo-data.js?v=20261026-4";
-import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261105-2";
+import { drawTemporalChart, clearTemporalChart } from "./temporal-charts.js?v=20261105-3";
 import { overviewPage, historyPage, settingsPage } from "./pages.js?v=20261030-40";
 import { anchorDate, apiDate, dateInput, dateTime, fillTable, icon, number, parseDate, renderShell, showToast, text, time, unit, updateCollectorCard } from "./ui.js?v=20261103-28";
 

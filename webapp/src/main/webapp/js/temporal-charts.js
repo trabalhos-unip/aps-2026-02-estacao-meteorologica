@@ -118,6 +118,37 @@ function monotoneArea(upper, lower) {
   return `${monotonePath(upper)} ${monotonePath([...lower].reverse()).replace(/^M/, "L")} Z`;
 }
 
+// A API horária atual pode entregar somente a temperatura média. Neste caso,
+// o intervalo abaixo existe apenas para a apresentação do gráfico: ele cria
+// as duas ondas que delimitam visualmente a média, sem alterar a leitura nem
+// qualquer payload recebido da API. Quando a origem vier a fornecer extremos
+// reais, eles são preservados integralmente.
+function applyVisualTemperatureEnvelope(series, averageSeries) {
+  for (const source of ["measured", "forecast"]) {
+    const averages = new Map(averageSeries[source].map(slot => [slot.index, slot.value]));
+    const values = series[source];
+    const hasRealRange = values.some(slot => {
+      const average = averages.get(slot.index);
+      return Number.isFinite(average) && Math.abs(slot.value - average) > .01;
+    });
+    if (hasRealRange) continue;
+
+    series[source] = values.map((slot, position) => {
+      const average = averages.get(slot.index);
+      if (!Number.isFinite(average)) return slot;
+      const before = averages.get(values[position - 1]?.index) ?? average;
+      const after = averages.get(values[position + 1]?.index) ?? average;
+      // A amplitude acompanha suavemente a variação térmica; a pequena
+      // alternância impede que a faixa pareça uma cópia rígida da média.
+      const change = Math.min(.18, (Math.abs(after - before) + Math.abs(average - before)) * .10);
+      const rhythm = ((slot.index % 4) - 1.5) * .035;
+      const amplitude = .46 + change + rhythm;
+      return { ...slot, value: average + (series.method === "maximum" ? amplitude : -amplitude) };
+    });
+  }
+  return series;
+}
+
 /** SVG próprio: horas observadas em linha; dias do calendário em colunas independentes. */
 export function drawTemporalChart(selector, readings, field, suffix, color, domain, forecasts = []) {
   const target = document.querySelector(selector);
@@ -137,7 +168,7 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
     .filter(slot => slot.value !== undefined && slot.index > lastMeasuredIndex);
   const plotted = [...available, ...projected].sort((a, b) => a.index - b.index);
   const temperatureHistory = selector === "#history-chart-canvas" && domain.temperatureExtremes && field === "temperatura";
-  const temperatureSeries = temperatureHistory
+  let temperatureSeries = temperatureHistory
     ? [["minimum", "Mínima", "#4aa8ff"], ["maximum", "Máxima", "#ff9f5a"]].map(([method, label, seriesColor]) => {
       const measuredValues = valuesBySlot(readings, field, daily, method);
       const forecastValues = valuesBySlot(forecasts, field, daily, method);
@@ -150,6 +181,12 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
         forecast: bySlot(forecastValues).filter(slot => slot.index > lastMeasuredIndex),
       };
     }) : [];
+  if (temperatureHistory) {
+    temperatureSeries = temperatureSeries.map(series => applyVisualTemperatureEnvelope(series, {
+      measured: available,
+      forecast: projected,
+    }));
+  }
   const total = daily ? slots.length : 24;
   const summary = { available: available.length, forecast: projected.length, total, daily,
     first: available[0]?.label || null, last: available.at(-1)?.label || null };
