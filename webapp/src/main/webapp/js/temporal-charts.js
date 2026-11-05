@@ -169,6 +169,9 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
     .filter(slot => slot.value !== undefined && slot.index > lastMeasuredIndex);
   const plotted = [...available, ...projected].sort((a, b) => a.index - b.index);
   const temperatureHistory = selector === "#history-chart-canvas" && domain.temperatureExtremes && field === "temperatura";
+  const temperaturePalette = document.documentElement.dataset.theme === "dark"
+    ? { average: "#eaf4ff", guide: "#4a586a", forecastZone: "#ffffff" }
+    : { average: "#294967", guide: "#8aa0b5", forecastZone: "#8ca0b4" };
   let temperatureSeries = temperatureHistory
     ? [["minimum", "Mínima", "#4aa8ff"], ["maximum", "Máxima", "#ff9f5a"]].map(([method, label, seriesColor]) => {
       const measuredValues = valuesBySlot(readings, field, daily, method);
@@ -314,16 +317,16 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
     const averageLine = (groups, stroke, width, dash = "") => groups.map(group => group.length > 1
       ? `<path d="${monotonePath(group)}" fill="none" stroke="${stroke}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round"${dash ? ` stroke-dasharray="${dash}"` : ""}/>` : "").join("");
     const forecastStart = projected[0] ? Math.max(left, xAt(projected[0].index) - (plotWidth - 2 * inset) / Math.max(slots.length - 1, 1) / 2) : null;
-    const zone = forecastStart == null ? "" : `<rect x="${forecastStart.toFixed(2)}" y="${top}" width="${(width - right - forecastStart).toFixed(2)}" height="${plotHeight}" fill="#ffffff" opacity=".04"/>`;
-    return `${zone}${fillSegments(measuredAverage, minimumSeries.measured, maximumSeries.measured, { orange: ".22", blue: ".24" })}${fillSegments(forecastAverageWithAnchor, [...minimumSeries.measured, ...minimumSeries.forecast], [...maximumSeries.measured, ...maximumSeries.forecast], { orange: ".11", blue: ".12" })}${linesFor(maximumSeries, "measured")}${linesFor(minimumSeries, "measured")}${averageLine(measuredAverage, "#eaf4ff", "2.75")}${linesFor(maximumSeries, "forecast", "5 5")}${linesFor(minimumSeries, "forecast", "5 5")}${averageLine(forecastAverageWithAnchor, "#eaf4ff", "2.75", "6 5")}`;
+    const zone = forecastStart == null ? "" : `<rect x="${forecastStart.toFixed(2)}" y="${top}" width="${(width - right - forecastStart).toFixed(2)}" height="${plotHeight}" fill="${temperaturePalette.forecastZone}" opacity=".04"/>`;
+    return `${zone}${fillSegments(measuredAverage, minimumSeries.measured, maximumSeries.measured, { orange: ".22", blue: ".24" })}${fillSegments(forecastAverageWithAnchor, [...minimumSeries.measured, ...minimumSeries.forecast], [...maximumSeries.measured, ...maximumSeries.forecast], { orange: ".11", blue: ".12" })}${linesFor(maximumSeries, "measured")}${linesFor(minimumSeries, "measured")}${averageLine(measuredAverage, temperaturePalette.average, "2.75")}${linesFor(maximumSeries, "forecast", "5 5")}${linesFor(minimumSeries, "forecast", "5 5")}${averageLine(forecastAverageWithAnchor, temperaturePalette.average, "2.75", "6 5")}`;
   })();
   const shape = temperatureHistory ? temperatureShape : `${forecastLines}${measuredLines}${extremeShapes}${forecastDots}${measuredDots}`;
 
   const axisTitle = `${field === "precipitacao" ? "Maior valor" : "Média"} por ${daily ? "dia" : "hora"}`;
   const selectedMarkers = temperatureHistory
-    ? `<circle class="temporal-range-marker temporal-maximum-marker" cx="0" cy="0" r="4" fill="#ff9f5a" stroke="#fff" stroke-width="2"/><circle class="temporal-range-marker temporal-minimum-marker" cx="0" cy="0" r="4" fill="#4aa8ff" stroke="#fff" stroke-width="2"/><circle class="temporal-selected" cx="0" cy="0" r="5" fill="#eaf4ff" stroke="#fff" stroke-width="2"/>`
+    ? `<circle class="temporal-range-marker temporal-maximum-marker" cx="0" cy="0" r="4" fill="#ff9f5a" stroke="#fff" stroke-width="2"/><circle class="temporal-range-marker temporal-minimum-marker" cx="0" cy="0" r="4" fill="#4aa8ff" stroke="#fff" stroke-width="2"/><circle class="temporal-selected" cx="0" cy="0" r="5" fill="${temperaturePalette.average}" stroke="#fff" stroke-width="2"/>`
     : `<circle class="temporal-selected" cx="0" cy="0" r="${compact ? 4 : 6}" fill="${color}" stroke="#fff" stroke-width="2"/>`;
-  target.innerHTML = `<svg class="plot temporal-plot${temperatureHistory ? " temporal-temperature-plot" : ""}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${axisTitle}${temperatureSeries.length ? ", temperatura mínima e máxima" : ""}: ${available.length} ${daily ? "dias" : "horas"} medidos${projected.length ? ` e ${projected.length} previstos` : ""} de ${total}; ${suffix}"><text x="2" y="12" class="axis-label">${suffix}</text>${horizontal}${vertical}${shape}<line class="temporal-guide" x1="0" x2="0" y1="${top}" y2="${baseline}" stroke="${temperatureHistory ? "#4a586a" : color}" stroke-dasharray="${temperatureHistory ? "3 4" : "4 4"}"/>${selectedMarkers}</svg><div class="temporal-tooltip${temperatureHistory ? " temporal-temperature-tooltip" : ""}" aria-hidden="true"><small></small><b class="temporal-tooltip-label" hidden></b><strong></strong><em><i class="temporal-tooltip-note-icon"></i><span></span></em></div>`;
+  target.innerHTML = `<svg class="plot temporal-plot${temperatureHistory ? " temporal-temperature-plot" : ""}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${axisTitle}${temperatureSeries.length ? ", temperatura mínima e máxima" : ""}: ${available.length} ${daily ? "dias" : "horas"} medidos${projected.length ? ` e ${projected.length} previstos` : ""} de ${total}; ${suffix}"><text x="2" y="12" class="axis-label">${suffix}</text>${horizontal}${vertical}${shape}<line class="temporal-guide" x1="0" x2="0" y1="${top}" y2="${baseline}" stroke="${temperatureHistory ? temperaturePalette.guide : color}" stroke-dasharray="${temperatureHistory ? "3 4" : "4 4"}"/>${selectedMarkers}</svg><div class="temporal-tooltip${temperatureHistory ? " temporal-temperature-tooltip" : ""}" aria-hidden="true"><small></small><b class="temporal-tooltip-label" hidden></b><strong></strong><em><i class="temporal-tooltip-note-icon"></i><span></span></em></div>`;
   const guide = target.querySelector(".temporal-guide");
   const marker = target.querySelector(".temporal-selected");
   const minimumMarker = target.querySelector(".temporal-minimum-marker");
@@ -363,8 +366,8 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
       minimumMarker?.setAttribute("cx", x); minimumMarker?.setAttribute("cy", minimum ? yAt(minimum.value) : yAt(slot.value));
       maximumMarker?.setAttribute("cx", x); maximumMarker?.setAttribute("cy", maximum ? yAt(maximum.value) : yAt(slot.value));
     }
-    guide.setAttribute("stroke", temperatureHistory ? "#4a586a" : slot.source === "forecast" ? forecastColor : color);
-    marker.setAttribute("fill", temperatureHistory ? "#eaf4ff" : slot.source === "forecast" ? forecastColor : color);
+    guide.setAttribute("stroke", temperatureHistory ? temperaturePalette.guide : slot.source === "forecast" ? forecastColor : color);
+    marker.setAttribute("fill", temperatureHistory ? temperaturePalette.average : slot.source === "forecast" ? forecastColor : color);
     // Mantém a dica inteira dentro do gráfico (ela é centralizada no ponto com translateX(-50%)).
     const box = target.clientWidth;
     if (temperatureHistory) {
