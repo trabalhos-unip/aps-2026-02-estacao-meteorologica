@@ -174,7 +174,7 @@ export function drawTemporalChart(selector, readings, field, suffix, color, doma
   const temperatureHistory = selector === "#history-chart-canvas" && domain.temperatureExtremes && field === "temperatura";
   const temperaturePalette = document.documentElement.dataset.theme === "dark"
     ? { average: "#eaf4ff", guide: "#4a586a", forecastZone: "#ffffff" }
-    : { average: "#294967", guide: "#8aa0b5", forecastZone: "#8ca0b4" };
+    : { average: "#788594", guide: "#8aa0b5", forecastZone: "#8ca0b4" };
   let temperatureSeries = temperatureHistory
     ? [["minimum", "Mínima", "#4aa8ff"], ["maximum", "Máxima", "#ff9f5a"]].map(([method, label, seriesColor]) => {
       const measuredValues = valuesBySlot(readings, field, daily, method);
